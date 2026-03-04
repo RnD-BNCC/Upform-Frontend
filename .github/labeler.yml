@@ -14,7 +14,7 @@ hooks:
   - changed-files:
     - any-glob-to-any-file: 'src/hooks/**'
 
-styles:
+styling:
   - changed-files:
     - any-glob-to-any-file:
       - 'src/**/*.css'
