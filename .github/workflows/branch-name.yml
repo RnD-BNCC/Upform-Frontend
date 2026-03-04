@@ -18,7 +18,13 @@ jobs:
         with:
           script: |
             const branch = context.payload.pull_request.head.ref
+            const excluded = ['main', 'master', 'uat', 'develop']
             const pattern = /^(feat|fix|hotfix|chore|docs|refactor|perf|test|ci)\/[a-z0-9]+([a-z0-9-]*[a-z0-9])?$/
+
+            if (excluded.includes(branch)) {
+              console.log(`Branch "${branch}" is a protected branch, skipping check.`)
+              return
+            }
 
             if (!pattern.test(branch)) {
               core.setFailed(
