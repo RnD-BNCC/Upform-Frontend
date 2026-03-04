@@ -1,0 +1,35 @@
+feature:
+  - changed-files:
+    - any-glob-to-any-file: 'src/pages/**'
+
+components:
+  - changed-files:
+    - any-glob-to-any-file: 'src/components/**'
+
+config:
+  - changed-files:
+    - any-glob-to-any-file: 'src/config/**'
+
+hooks:
+  - changed-files:
+    - any-glob-to-any-file: 'src/hooks/**'
+
+styles:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/**/*.css'
+      - 'tailwind.config.*'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: '*.md'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
