@@ -1,34 +1,34 @@
-feature:
+🚀 Feature:
   - changed-files:
     - any-glob-to-any-file: 'src/pages/**'
 
-components:
+🧩 Components:
   - changed-files:
     - any-glob-to-any-file: 'src/components/**'
 
-config:
+⚙️ Config:
   - changed-files:
     - any-glob-to-any-file: 'src/config/**'
 
-hooks:
+🪝 Hooks:
   - changed-files:
     - any-glob-to-any-file: 'src/hooks/**'
 
-styles:
+🎨 Styling:
   - changed-files:
     - any-glob-to-any-file:
       - 'src/**/*.css'
       - 'tailwind.config.*'
 
-documentation:
+📝 Documentation:
   - changed-files:
     - any-glob-to-any-file: '*.md'
 
-ci:
+🔧 CI:
   - changed-files:
     - any-glob-to-any-file: '.github/**'
 
-dependencies:
+📦 Dependencies:
   - changed-files:
     - any-glob-to-any-file:
       - 'package.json'
