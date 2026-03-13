@@ -30,6 +30,18 @@
   border-color: var(--color-border);
 }
 
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 60% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background: radial-gradient(circle at 20% 50%, var(--color-primary-800) 0%, var(--color-primary-500) 35%, var(--color-primary-400) 60%, var(--color-primary-200) 100%);
+  background-size: 150% 150%;
+  animation: gradient-shift 8s ease infinite;
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
