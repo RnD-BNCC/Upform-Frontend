@@ -45,6 +45,7 @@ export default function RichInput({
 
   useEffect(() => {
     if (ref.current) ref.current.innerHTML = value
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // mount only
 
   useEffect(() => {
@@ -186,7 +187,7 @@ export default function RichInput({
     }
     if (!li.childNodes.length) li.appendChild(document.createElement('br'))
     list.appendChild(li)
-    node.replaceWith(list)
+    ;(node as ChildNode).replaceWith(list)
     const r = document.createRange()
     r.selectNodeContents(li)
     r.collapse(false)
