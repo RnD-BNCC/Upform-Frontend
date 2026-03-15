@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PlusCircleIcon,
@@ -23,8 +23,9 @@ type ToolbarBtn = {
     className?: string;
   }>;
   title: string;
-  onClick: () => void;
-};
+} & ({ onClick: () => void; htmlFor?: never } | { htmlFor: string; onClick?: never });
+
+const IMG_INPUT_ID = "sidebar-img-upload";
 
 export default function FieldTypeSidebar({
   onAddQuestion,
@@ -33,27 +34,18 @@ export default function FieldTypeSidebar({
   onAddImageBlock,
 }: Props) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const imgInputRef = useRef<HTMLInputElement>(null);
 
   const buttons: ToolbarBtn[] = [
     { Icon: PlusCircleIcon, title: "Add question", onClick: onAddQuestion },
-    {
-      Icon: TextTIcon,
-      title: "Add title & description",
-      onClick: onAddTitleBlock,
-    },
-    {
-      Icon: ImageIcon,
-      title: "Add image",
-      onClick: () => imgInputRef.current?.click(),
-    },
+    { Icon: TextTIcon, title: "Add title & description", onClick: onAddTitleBlock },
+    { Icon: ImageIcon, title: "Add image", htmlFor: IMG_INPUT_ID },
     { Icon: RowsIcon, title: "Add section", onClick: onAddSection },
   ];
 
   return (
     <>
       <input
-        ref={imgInputRef}
+        id={IMG_INPUT_ID}
         type="file"
         accept="image/*"
         className="hidden"
@@ -64,25 +56,36 @@ export default function FieldTypeSidebar({
         }}
       />
 
-      {/* Desktop sidebar */}
       <div className="hidden sm:flex flex-col bg-white rounded-2xl shadow-sm px-2 py-3 items-center gap-1.5 sticky top-20 self-start shrink-0">
-        {buttons.map(({ Icon, title, onClick }, i) => (
+        {buttons.map(({ Icon, title, onClick, htmlFor }, i) => (
           <div
             key={title}
             className="relative"
             onMouseEnter={() => setHoveredIdx(i)}
             onMouseLeave={() => setHoveredIdx(null)}
           >
-            <motion.button
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.15 }}
-              whileTap={{ scale: 0.92 }}
-              onClick={onClick}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all text-gray-500 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
-            >
-              <Icon size={22} weight="regular" />
-            </motion.button>
+            {htmlFor ? (
+              <motion.label
+                htmlFor={htmlFor}
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.15 }}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all text-gray-500 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
+              >
+                <Icon size={22} weight="regular" />
+              </motion.label>
+            ) : (
+              <motion.button
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.15 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={onClick}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all text-gray-500 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
+              >
+                <Icon size={22} weight="regular" />
+              </motion.button>
+            )}
 
             <AnimatePresence>
               {hoveredIdx === i && (
@@ -102,22 +105,35 @@ export default function FieldTypeSidebar({
         ))}
       </div>
 
-      {/* Mobile bottom toolbar */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white shadow-lg border-t border-gray-200 mx-10 rounded-t-2xl ">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white shadow-lg border-t border-gray-200 mx-10 rounded-t-2xl">
         <div className="flex items-center">
-          {buttons.map(({ Icon, title, onClick }) => (
-            <button
-              key={title}
-              onClick={onClick}
-              title={title}
-              className="flex-1 flex flex-col items-center gap-0.5 py-3 text-gray-500 active:text-primary-600 active:bg-primary-50 transition-colors"
-            >
-              <Icon size={22} weight="regular" />
-              <span className="text-[10px] text-gray-400 leading-none">
-                {title.replace("Add ", "")}
-              </span>
-            </button>
-          ))}
+          {buttons.map(({ Icon, title, onClick, htmlFor }) =>
+            htmlFor ? (
+              <label
+                key={title}
+                htmlFor={htmlFor}
+                title={title}
+                className="flex-1 flex flex-col items-center gap-0.5 py-3 text-gray-500 active:text-primary-600 active:bg-primary-50 transition-colors cursor-pointer"
+              >
+                <Icon size={22} weight="regular" />
+                <span className="text-[10px] text-gray-400 leading-none">
+                  {title.replace("Add ", "")}
+                </span>
+              </label>
+            ) : (
+              <button
+                key={title}
+                onClick={onClick}
+                title={title}
+                className="flex-1 flex flex-col items-center gap-0.5 py-3 text-gray-500 active:text-primary-600 active:bg-primary-50 transition-colors"
+              >
+                <Icon size={22} weight="regular" />
+                <span className="text-[10px] text-gray-400 leading-none">
+                  {title.replace("Add ", "")}
+                </span>
+              </button>
+            )
+          )}
         </div>
       </div>
     </>
