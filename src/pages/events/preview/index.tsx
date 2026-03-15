@@ -40,41 +40,6 @@ export default function EventPreviewPage() {
   const currentSection = sectionHistory[sectionHistory.length - 1];
   const section = sections[currentSection];
 
-  const estimatedTotal = (() => {
-    const seen = new Set<number>();
-    let cur = 0;
-    let count = 0;
-    while (cur >= 0 && cur < sections.length && !seen.has(cur)) {
-      seen.add(cur);
-      count++;
-      let next: number | "end" = cur + 1;
-      for (const field of sections[cur].fields) {
-        if (!field.branches) continue;
-        const answer = answers[field.id];
-        if (!answer) continue;
-        const v = Array.isArray(answer) ? answer[0] : answer;
-        const target = field.branches[v];
-        if (!target) continue;
-        if (target === "end") {
-          next = "end";
-          break;
-        }
-        const ti = sections.findIndex((s) => s.id === target);
-        if (ti !== -1) {
-          next = ti;
-          break;
-        }
-      }
-      if (next === "end" || typeof next !== "number" || next >= sections.length)
-        break;
-      cur = next;
-    }
-    return count;
-  })();
-
-  const progress =
-    sections.length > 1 ? (sectionHistory.length / estimatedTotal) * 100 : null;
-
   const getBranchNext = (): number | "end" => {
     for (const field of section?.fields ?? []) {
       if (!field.branches) continue;
@@ -91,10 +56,12 @@ export default function EventPreviewPage() {
   };
 
   const nextIdx = getBranchNext();
-  const isTerminalSection = section?.fields.some(
-    (f) => f.branches && Object.values(f.branches).every((v) => v === "end"),
-  ) ?? false;
-  const isLast = nextIdx === "end" || nextIdx >= sections.length || isTerminalSection;
+  const isTerminalSection =
+    section?.fields.some(
+      (f) => f.branches && Object.values(f.branches).every((v) => v === "end"),
+    ) ?? false;
+  const isLast =
+    nextIdx === "end" || nextIdx >= sections.length || isTerminalSection;
 
   const setAnswer = (fieldId: string, value: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [fieldId]: value }));
@@ -285,7 +252,6 @@ export default function EventPreviewPage() {
             )}
           </div>
         </div>
-
 
         {section?.title && (
           <p className="text-sm font-semibold text-gray-600">{section.title}</p>
