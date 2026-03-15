@@ -1,56 +1,59 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { authClient } from '@/lib/auth-client'
-import GoogleIcon from '@/components/ui/GoogleIcon'
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { authClient } from "@/lib/auth-client";
+import GoogleIcon from "@/components/ui/GoogleIcon";
 
 const GREETINGS = [
-  'Hello',
-  'Halo',
-  'Bonjour',
-  'Hola',
-  'こんにちは',
-  '안녕하세요',
-  'مرحبا',
-  '你好',
-  'Hallo',
-  'Olá',
-]
+  "Hello",
+  "Halo",
+  "Bonjour",
+  "Hola",
+  "こんにちは",
+  "안녕하세요",
+  "مرحبا",
+  "你好",
+  "Hallo",
+  "Olá",
+];
 
 function useTypewriter(words: string[], speed = 100, pause = 1500) {
-  const [displayed, setDisplayed] = useState('')
-  const [wordIndex, setWordIndex] = useState(0)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [displayed, setDisplayed] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const current = words[wordIndex]
+    const current = words[wordIndex];
 
-    const timeout = setTimeout(() => {
-      if (!isDeleting) {
-        setDisplayed(current.slice(0, displayed.length + 1))
-        if (displayed.length + 1 === current.length) {
-          setTimeout(() => setIsDeleting(true), pause)
+    const timeout = setTimeout(
+      () => {
+        if (!isDeleting) {
+          setDisplayed(current.slice(0, displayed.length + 1));
+          if (displayed.length + 1 === current.length) {
+            setTimeout(() => setIsDeleting(true), pause);
+          }
+        } else {
+          setDisplayed(current.slice(0, displayed.length - 1));
+          if (displayed.length - 1 === 0) {
+            setIsDeleting(false);
+            setWordIndex((prev) => (prev + 1) % words.length);
+          }
         }
-      } else {
-        setDisplayed(current.slice(0, displayed.length - 1))
-        if (displayed.length - 1 === 0) {
-          setIsDeleting(false)
-          setWordIndex((prev) => (prev + 1) % words.length)
-        }
-      }
-    }, isDeleting ? speed / 2 : speed)
+      },
+      isDeleting ? speed / 2 : speed,
+    );
 
-    return () => clearTimeout(timeout)
-  }, [displayed, isDeleting, wordIndex, words, speed, pause])
+    return () => clearTimeout(timeout);
+  }, [displayed, isDeleting, wordIndex, words, speed, pause]);
 
-  return displayed
+  return displayed;
 }
 
 export default function LoginPage() {
-  const greeting = useTypewriter(GREETINGS)
+  const greeting = useTypewriter(GREETINGS);
 
   const handleGoogleSignIn = async () => {
-    await authClient.signIn.social({ provider: 'google' })
-  }
+    await authClient.signIn.social({ provider: "google", callbackURL: "/" });
+  };
 
   return (
     <div className="animate-gradient flex min-h-screen flex-col items-center justify-center">
@@ -58,7 +61,7 @@ export default function LoginPage() {
         className="w-full max-w-[320px]"
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="bg-white px-10 py-10 shadow-md">
           <p className="mb-6 text-center text-2xl italic font-semibold text-primary-500">
@@ -86,8 +89,11 @@ export default function LoginPage() {
           </motion.button>
 
           <p className="mt-5 text-center text-xs text-gray-400">
-            Can't sign in?{' '}
-            <a href="mailto:contact@bncc.net" className="text-gray-500 underline">
+            Can't sign in?{" "}
+            <a
+              href="mailto:contact@bncc.net"
+              className="text-gray-500 underline"
+            >
               Contact us
             </a>
           </p>
@@ -98,5 +104,5 @@ export default function LoginPage() {
         © {new Date().getFullYear()} UpForm. All Rights Reserved.
       </p>
     </div>
-  )
+  );
 }
