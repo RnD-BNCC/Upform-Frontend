@@ -20,7 +20,7 @@ export default function EventDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [capacity, setCapacity] = useState({
+  const [capacity] = useState({
   total: 200,
   onlineLimit: 100,
   offlineLimit: 100,
