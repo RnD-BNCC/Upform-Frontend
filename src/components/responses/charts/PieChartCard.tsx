@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
+import type { PieLabelProps, PieSectorProps } from '@/types/form'
 import { CHART_COLORS } from '@/utils/response-aggregation'
 
 interface PieChartCardProps {
@@ -14,8 +15,7 @@ interface HoveredSlice {
 
 const RADIAN = Math.PI / 180
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) {
+function renderLabel({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }: PieLabelProps) {
   if (percent < 0.05) return null
   const radius = innerRadius + (outerRadius - innerRadius) / 2
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
@@ -41,8 +41,7 @@ export default function PieChartCard({ data }: PieChartCardProps) {
   const [hovered, setHovered] = useState<HoveredSlice | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleMouseEnter = useCallback((sectorData: any, index: number) => {
+  const handleMouseEnter = useCallback((sectorData: PieSectorProps, index: number) => {
     const wrapper = containerRef.current?.querySelector('.recharts-wrapper')
     if (!wrapper) return
     const wrapperRect = wrapper.getBoundingClientRect()
@@ -50,7 +49,10 @@ export default function PieChartCard({ data }: PieChartCardProps) {
     const offsetX = wrapperRect.left - containerRect.left
     const offsetY = wrapperRect.top - containerRect.top
 
-    const { cx, cy, midAngle, outerRadius } = sectorData
+    const cx = sectorData.cx ?? 0
+    const cy = sectorData.cy ?? 0
+    const midAngle = sectorData.midAngle ?? 0
+    const outerRadius = sectorData.outerRadius ?? 0
     const tooltipRadius = outerRadius + 40
     const x = offsetX + cx + tooltipRadius * Math.cos(-midAngle * RADIAN)
     const y = offsetY + cy + tooltipRadius * Math.sin(-midAngle * RADIAN)

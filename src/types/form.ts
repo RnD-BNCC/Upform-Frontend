@@ -71,6 +71,22 @@ export interface FormResponse {
   answers: Record<string, string | string[]>
 }
 
+export interface PieLabelProps {
+  cx?: number
+  cy?: number
+  midAngle?: number
+  innerRadius?: number
+  outerRadius?: number
+  percent?: number
+}
+
+export interface PieSectorProps {
+  cx?: number
+  cy?: number
+  midAngle?: number
+  outerRadius?: number
+}
+
 export interface FormEvent {
   id: string
   name: string
