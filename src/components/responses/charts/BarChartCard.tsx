@@ -15,23 +15,27 @@ export default function BarChartCard({ data, layout = 'vertical', colorful = fal
   }
 
   if (layout === 'horizontal') {
+    const maxCount = Math.max(...data.map((d) => d.count))
+    const barScale = 0.6
     return (
-      <div className="py-2 space-y-2.5">
+      <div className="py-2 space-y-3">
         {data.map((item, i) => {
-          const pct = total > 0 ? (item.count / total) * 100 : 0
+          const pct = total > 0 ? ((item.count / total) * 100).toFixed(1) : '0.0'
+          const barWidth = maxCount > 0 ? (item.count / maxCount) * barScale * 100 : 0
           return (
             <div key={item.label} className="flex items-center gap-3 text-sm">
-              <span className="w-32 text-gray-700 truncate shrink-0">{item.label}</span>
-              <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+              <span className="w-40 text-gray-700 text-right shrink-0 leading-tight">{item.label}</span>
+              <div className="flex-1 flex items-center gap-2">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-7 rounded shrink-0 transition-all duration-500"
                   style={{
-                    width: `${Math.max(pct, 2)}%`,
+                    width: `${Math.max(barWidth, 1.5)}%`,
                     backgroundColor: colorful ? CHART_COLORS[i % CHART_COLORS.length] : '#0054a5',
                   }}
                 />
+                <span className="text-gray-500 text-xs whitespace-nowrap">{pct}%</span>
               </div>
-              <span className="text-gray-500 text-xs w-8 text-right shrink-0">{item.count}</span>
+              <span className="text-gray-600 text-xs font-medium shrink-0">{item.count}</span>
             </div>
           )
         })}
