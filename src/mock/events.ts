@@ -48,6 +48,13 @@ export const mockEvents: FormEvent[] = [
             required: true,
             options: ['2022', '2023', '2024', '2025'],
           },
+          {
+            id: 'f5',
+            type: 'checkbox',
+            label: 'Which BNCC events are you interested in? (Select all that apply)',
+            required: false,
+            options: ['Tech Talk', 'Workshop', 'Hackathon', 'Study Group', 'Networking Night'],
+          },
         ],
       },
       {

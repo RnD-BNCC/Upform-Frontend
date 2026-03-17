@@ -47,6 +47,12 @@ function pickWeighted<T>(arr: T[], weights: number[]): T {
   return arr[arr.length - 1]
 }
 
+function pickMultiple<T>(arr: T[], min: number, max: number): T[] {
+  const count = min + Math.floor(Math.random() * (max - min + 1))
+  const shuffled = [...arr].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, count)
+}
+
 export function generateOrientationResponses(count: number): FormResponse[] {
   const majors = ['Computer Science', 'Information Systems', 'Accounting', 'Management']
   const majorWeights = [40, 25, 20, 15]
@@ -70,11 +76,14 @@ export function generateOrientationResponses(count: number): FormResponse[] {
 
     const date = new Date(baseDate.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000)
 
+    const events = ['Tech Talk', 'Workshop', 'Hackathon', 'Study Group', 'Networking Night']
+
     const answers: Record<string, string | string[]> = {
       f1: fullName,
       f2: studentId,
       f3: major,
       f4: batchYear,
+      f5: pickMultiple(events, 1, 3),
     }
 
     if (major === 'Computer Science' || major === 'Information Systems') {
