@@ -7,11 +7,7 @@ import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard } from '@/components/builder'
 import { mockEvents } from '@/mock/events'
 import type { FormField, FormSection, FieldType, FormResponse } from '@/types/form'
-import {
-  ClipboardTextIcon,
-  CalendarBlankIcon,
-  UsersIcon,
-} from '@phosphor-icons/react'
+import { ResponsesPanel } from '@/components/responses'
 
 type Tab = 'questions' | 'responses'
 
@@ -284,94 +280,11 @@ export default function EventDetailPage() {
             />
           </>
         ) : (
-          <div className="flex-1 min-w-0">
-            {responses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 h-64">
-                <ClipboardTextIcon size={44} weight="light" className="text-gray-300" />
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-600">No responses yet</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Share your form to start collecting responses.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
-                      <UsersIcon size={18} className="text-primary-500" />
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-gray-900">{responses.length}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Total Responses</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
-                      <CalendarBlankIcon size={18} className="text-primary-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {new Date(responses[responses.length - 1].submittedAt).toLocaleDateString('en-GB', {
-                          day: 'numeric', month: 'short', year: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">Last Response</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-100 bg-gray-50">
-                          <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 w-8">#</th>
-                          <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">Submitted</th>
-                          {allFields.map((f) => (
-                            <th key={f.id} className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap max-w-40">
-                              <span className="block truncate">{f.label}</span>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {responses.map((r, i) => (
-                          <motion.tr
-                            key={r.id}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.03 }}
-                            className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-4 py-3 text-xs text-gray-400">{i + 1}</td>
-                            <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                              {new Date(r.submittedAt).toLocaleDateString('en-GB', {
-                                day: 'numeric', month: 'short',
-                              })}{' '}
-                              <span className="text-gray-400">
-                                {new Date(r.submittedAt).toLocaleTimeString('en-GB', {
-                                  hour: '2-digit', minute: '2-digit',
-                                })}
-                              </span>
-                            </td>
-                            {allFields.map((f) => {
-                              const val = r.answers[f.id]
-                              const display = Array.isArray(val) ? val.join(', ') : (val ?? '—')
-                              return (
-                                <td key={f.id} className="px-4 py-3 text-xs text-gray-700 max-w-48">
-                                  <span className="block truncate" title={display}>{display || '—'}</span>
-                                </td>
-                              )
-                            })}
-                          </motion.tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ResponsesPanel
+            responses={responses}
+            sections={sections}
+            allFields={allFields}
+          />
         )}
       </div>
     </div>

@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Montserrat', sans-serif;
+  --font-sans: "Montserrat", sans-serif;
 
-  --color-primary-50:  #e6f0fb;
+  --color-primary-50: #e6f0fb;
   --color-primary-100: #cce0f7;
   --color-primary-200: #99c1ef;
   --color-primary-300: #66a2e7;
@@ -15,15 +15,15 @@
   --color-primary-800: #002c58;
   --color-primary-900: #001d3a;
 
-  --color-background:       #ffffff;
-  --color-foreground:       #09090b;
-  --color-card:             #ffffff;
-  --color-card-foreground:  #09090b;
-  --color-muted:            #f4f4f5;
+  --color-background: #ffffff;
+  --color-foreground: #09090b;
+  --color-card: #ffffff;
+  --color-card-foreground: #09090b;
+  --color-muted: #f4f4f5;
   --color-muted-foreground: #71717a;
-  --color-border:           #e4e4e7;
-  --color-input:            #e4e4e7;
-  --color-ring:             #0054a5;
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
+  --color-ring: #0054a5;
 }
 
 * {
@@ -31,13 +31,25 @@
 }
 
 @keyframes gradient-shift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 60% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 60% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .animate-gradient {
-  background: radial-gradient(circle at 20% 50%, var(--color-primary-800) 0%, var(--color-primary-500) 35%, var(--color-primary-400) 60%, var(--color-primary-200) 100%);
+  background: radial-gradient(
+    circle at 20% 50%,
+    var(--color-primary-800) 0%,
+    var(--color-primary-500) 35%,
+    var(--color-primary-400) 60%,
+    var(--color-primary-200) 100%
+  );
   background-size: 150% 150%;
   animation: gradient-shift 8s ease infinite;
 }
@@ -47,4 +59,33 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-surface * {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.recharts-wrapper *:focus,
+.recharts-wrapper *:focus-visible,
+.recharts-wrapper *:active,
+.recharts-wrapper [tabindex],
+.recharts-wrapper [tabindex]:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.recharts-pie-sector,
+.recharts-pie-sector *,
+.recharts-active-shape,
+.recharts-active-shape * {
+  stroke: none !important;
+  outline: none !important;
+  border: none !important;
+  filter: none !important;
 }
