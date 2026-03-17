@@ -1,45 +1,8 @@
-import type { FormEvent, FormResponse } from '@/types/form'
+import type { FormEvent } from '@/types/form'
+import { generateOrientationResponses, generateFeedbackResponses } from './response-generator'
 
-const orientationResponses: FormResponse[] = [
-  {
-    id: 'r1',
-    submittedAt: new Date('2025-03-10T08:12:00').toISOString(),
-    answers: { f1: 'Alice Tan', f2: '2501001234', f3: 'Computer Science', f4: '2025', f5: ['Software Development', 'UI/UX Design'], f6: 'Passionate about building products.' },
-  },
-  {
-    id: 'r2',
-    submittedAt: new Date('2025-03-10T09:34:00').toISOString(),
-    answers: { f1: 'Brian Kusuma', f2: '2501005678', f3: 'Information Systems', f4: '2024', f5: ['Data Science'], f6: 'I love data.' },
-  },
-  {
-    id: 'r3',
-    submittedAt: new Date('2025-03-11T11:05:00').toISOString(),
-    answers: { f1: 'Celine Wirawan', f2: '2501009999', f3: 'Management', f4: '2025', f5: ['Cybersecurity'], f6: '' },
-  },
-  {
-    id: 'r4',
-    submittedAt: new Date('2025-03-12T14:22:00').toISOString(),
-    answers: { f1: 'David Santoso', f2: '2501004321', f3: 'Accounting', f4: '2023', f5: ['Software Development'], f6: 'Looking forward to learning.' },
-  },
-]
-
-const feedbackResponses: FormResponse[] = [
-  {
-    id: 'r1',
-    submittedAt: new Date('2025-03-05T16:10:00').toISOString(),
-    answers: { f1: 'Excellent', f2: 'The speaker was amazing!', f3: 'Maybe more time for Q&A.' },
-  },
-  {
-    id: 'r2',
-    submittedAt: new Date('2025-03-05T17:45:00').toISOString(),
-    answers: { f1: 'Good', f2: 'Interesting topic.', f3: 'Shorter duration would be better.' },
-  },
-  {
-    id: 'r3',
-    submittedAt: new Date('2025-03-06T09:00:00').toISOString(),
-    answers: { f1: 'Excellent', f2: 'Hands-on demos were great.', f3: '' },
-  },
-]
+const orientationResponses = generateOrientationResponses(28)
+const feedbackResponses = generateFeedbackResponses(25)
 
 export const mockEvents: FormEvent[] = [
   {
