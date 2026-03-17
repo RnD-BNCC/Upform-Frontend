@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
@@ -282,7 +282,6 @@ export default function EventDetailPage() {
         ) : (
           <ResponsesPanel
             responses={responses}
-            sections={sections}
             allFields={allFields}
           />
         )}

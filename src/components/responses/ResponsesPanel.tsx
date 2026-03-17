@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ClipboardTextIcon } from '@phosphor-icons/react'
-import type { FormField, FormResponse, FormSection } from '@/types/form'
+import type { FormField, FormResponse } from '@/types/form'
 import SummaryTab from './SummaryTab'
 import QuestionsTab from './QuestionsTab'
 import IndividualTab from './IndividualTab'
@@ -10,7 +10,6 @@ type SubTab = 'summary' | 'questions' | 'individual'
 
 interface ResponsesPanelProps {
   responses: FormResponse[]
-  sections: FormSection[]
   allFields: FormField[]
 }
 
@@ -20,7 +19,7 @@ const SUB_TABS: Array<{ key: SubTab; label: string }> = [
   { key: 'individual', label: 'Individual' },
 ]
 
-export default function ResponsesPanel({ responses, sections, allFields }: ResponsesPanelProps) {
+export default function ResponsesPanel({ responses, allFields }: ResponsesPanelProps) {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('summary')
 
   if (responses.length === 0) {
