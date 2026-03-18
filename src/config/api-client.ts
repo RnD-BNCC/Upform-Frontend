@@ -2,7 +2,7 @@ import axios from "axios";
 import { authClient } from "@/lib/auth-client";
 
 export const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: `${import.meta.env.VITE_API_URL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,3 +26,4 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+

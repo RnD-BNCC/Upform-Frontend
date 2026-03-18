@@ -5,9 +5,11 @@ import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard } from '@/components/builder'
-import { mockEvents } from '@/mock/events'
-import type { FormField, FormSection, FieldType, FormResponse } from '@/types/form'
+import { useQueryEventDetail } from '@/api/events'
+import { useQueryResponses } from '@/api/responses'
+import type { FormField, FormSection, FieldType } from '@/types/form'
 import { ResponsesPanel } from '@/components/responses'
+import { SpinnerGap } from '@phosphor-icons/react'
 
 type Tab = 'questions' | 'responses'
 
@@ -16,25 +18,41 @@ export default function EventDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const existing = mockEvents.find((e) => e.id === id)
+  const { data: existing, isLoading } = useQueryEventDetail(id ?? '')
+  const { data: responses = [] } = useQueryResponses(id ?? '')
   const createState = location.state as { title?: string; description?: string } | null
 
-  const [formTitle, setFormTitle] = useState(
-    createState?.title ?? existing?.name ?? 'Untitled Form',
-  )
-  const [formDescription, setFormDescription] = useState(
-    createState?.description ?? existing?.description ?? '',
-  )
-  const [bannerColor, setBannerColor] = useState(existing?.color ?? '#0054a5')
+  const [formTitle, setFormTitle] = useState('Untitled Form')
+  const [formDescription, setFormDescription] = useState('')
+  const [bannerColor, setBannerColor] = useState('#0054a5')
   const [bannerImage, setBannerImage] = useState<string | null>(null)
   const questionsEndRef = useRef<HTMLDivElement>(null)
-  const initialSections: FormSection[] = existing?.sections?.length
-    ? existing.sections
-    : [{ id: crypto.randomUUID(), title: '', fields: [] }]
   const [history, setHistory] = useState<{ stack: FormSection[][]; index: number }>({
-    stack: [initialSections],
+    stack: [[{ id: crypto.randomUUID(), title: '', fields: [] }]],
     index: 0,
   })
+  const [initialized, setInitialized] = useState(false)
+
+  useEffect(() => {
+    if (initialized) return
+    if (isLoading) return
+    if (existing) {
+      setFormTitle(existing.name || 'Untitled Form')
+      setFormDescription(existing.description || '')
+      setBannerColor(existing.color || '#0054a5')
+      const secs = existing.sections?.length
+        ? existing.sections
+        : [{ id: crypto.randomUUID(), title: '', fields: [] }]
+      setHistory({ stack: [secs], index: 0 })
+      setInitialized(true)
+    } else if (createState) {
+      setFormTitle(createState.title ?? 'Untitled Form')
+      setFormDescription(createState.description ?? '')
+      setInitialized(true)
+    } else {
+      setInitialized(true)
+    }
+  }, [existing, isLoading, createState, initialized])
   const sections = history.stack[history.index]
   const setSections = (updater: FormSection[] | ((prev: FormSection[]) => FormSection[])) => {
     setHistory((prev) => {
@@ -184,7 +202,17 @@ export default function EventDetailPage() {
 
   const lastSectionId = sections[sections.length - 1]?.id
   const allFields = sections.flatMap((s) => s.fields)
-  const responses: FormResponse[] = existing?.responses ?? []
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <SpinnerGap size={32} className="text-primary-500 animate-spin" />
+          <p className="text-sm text-gray-400">Loading form...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div

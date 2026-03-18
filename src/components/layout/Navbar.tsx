@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, List, X, SignOut } from "@phosphor-icons/react";
 import { useAuth } from "@/hooks/useAuth";
 import { authClient } from "@/lib/auth-client";
+import { useMutationCreateEvent } from "@/api/events";
 
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const createEvent = useMutationCreateEvent();
   const user = session?.user;
   const initials = user?.name
     ? user.name
@@ -80,7 +82,10 @@ export default function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3">
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate(`/events/${crypto.randomUUID()}`)}
+            onClick={async () => {
+              const event = await createEvent.mutateAsync({});
+              navigate(`/events/${event.id}`);
+            }}
             className="flex items-center gap-1.5 bg-white text-primary-900 px-3 sm:px-3.5 py-1.5 text-xs font-bold tracking-widest uppercase border-2 border-primary-900 shadow-[2px_2px_0px_0px_#001d3a] hover:bg-primary-500 hover:text-white hover:border-primary-500 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-150"
           >
             <Plus size={14} weight="bold" />

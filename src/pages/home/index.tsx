@@ -1,58 +1,127 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar, Footer } from "@/components/layout";
 import { EventCard, ContextMenu } from "@/components/events";
 import { NoFormsIllustration } from "@/components/ui";
-import { mockEvents } from "@/mock/events";
+import {
+  useQueryEvents,
+  useMutationDeleteEvent,
+  useMutationUpdateEvent,
+} from "@/api/events";
 import type { FormEvent } from "@/types/form";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
 
 type Filter = "All" | "Active" | "Draft" | "Closed";
 const FILTERS: Filter[] = ["All", "Active", "Draft", "Closed"];
+
+function useAnimatedNumber(target: number, duration = 800) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (target === 0) {
+      setDisplay(0);
+      return;
+    }
+
+    const start = performance.now();
+    const from = 0;
+
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setDisplay(Math.round(from + (target - from) * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration]);
+
+  return display;
+}
+
+function AnimatedStat({ value, label }: { value: number; label: string }) {
+  const display = useAnimatedNumber(value);
+
+  return (
+    <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
+      <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
+        {display}
+      </span>
+      <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
 
-  const [events, setEvents] = useState<FormEvent[]>(mockEvents);
   const [filter, setFilter] = useState<Filter>("All");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page when filter changes
+  const handleFilterChange = useCallback((f: Filter) => {
+    setFilter(f);
+    setPage(1);
+  }, []);
+
+  const { data: result, isLoading } = useQueryEvents({
+    page,
+    take: 9,
+    status: filter === "All" ? undefined : (filter.toLowerCase() as "draft" | "active" | "closed"),
+    search: debouncedSearch || undefined,
+  });
+
+  const events = result?.data ?? [];
+  const meta = result?.meta;
+  const counts = result?.counts;
+
+  const deleteEvent = useMutationDeleteEvent();
+  const updateEvent = useMutationUpdateEvent();
+
   const [ctxMenu, setCtxMenu] = useState<{
     id: string;
     x: number;
     y: number;
   } | null>(null);
 
-  const activeCount = events.filter((e) => e.status === "active").length;
-  const totalResponses = events.reduce((sum, e) => sum + e.responseCount, 0);
-
-  const filtered = events.filter((e) => {
-    const matchFilter =
-      filter === "All" ||
-      e.status === (filter.toLowerCase() as FormEvent["status"]);
-    const matchSearch =
-      !search || e.name.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
-
   const handleDelete = (id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+    deleteEvent.mutate(id);
     setCtxMenu(null);
   };
 
   const handleToggleStatus = (id: string) => {
+    const event = events.find((e) => e.id === id);
+    if (!event) return;
     const next: Record<string, FormEvent["status"]> = {
       active: "draft",
       draft: "active",
       closed: "active",
     };
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id !== id ? e : { ...e, status: next[e.status] ?? e.status },
-      ),
-    );
+    updateEvent.mutate({
+      eventId: id,
+      status: next[event.status] ?? event.status,
+    });
     setCtxMenu(null);
   };
 
@@ -135,23 +204,9 @@ export default function HomePage() {
 
             {/* Stat bar */}
             <div className="stat-card flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm divide-x divide-white/10 w-full sm:w-auto shrink-0">
-              {[
-                { value: events.length, label: "Total Forms" },
-                { value: activeCount, label: "Active" },
-                { value: totalResponses, label: "Responses" },
-              ].map(({ value, label }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5"
-                >
-                  <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight">
-                    {value}
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
-                    {label}
-                  </span>
-                </div>
-              ))}
+              <AnimatedStat value={counts?.total ?? 0} label="Total Forms" />
+              <AnimatedStat value={counts?.active ?? 0} label="Active" />
+              <AnimatedStat value={counts?.totalResponses ?? 0} label="Responses" />
             </div>
           </div>
         </div>
@@ -165,7 +220,7 @@ export default function HomePage() {
             <div className="flex items-center gap-2.5">
               <h2 className="text-base font-bold text-gray-900">All Forms</h2>
               <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-semibold">
-                {filtered.length}
+                {meta?.total ?? 0}
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
@@ -194,7 +249,7 @@ export default function HomePage() {
               {FILTERS.map((f) => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f)}
+                  onClick={() => handleFilterChange(f)}
                   className={`text-xs px-3 sm:px-3.5 py-1.5 rounded-md font-medium transition-all ${
                     filter === f
                       ? "bg-primary-500 text-white shadow-sm"
@@ -210,7 +265,21 @@ export default function HomePage() {
 
         {/* Grid or empty */}
         <AnimatePresence mode="wait">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center gap-3 py-16 sm:py-24"
+            >
+              <SpinnerGap
+                size={32}
+                className="text-primary-500 animate-spin"
+              />
+              <p className="text-sm text-gray-400">Loading forms...</p>
+            </motion.div>
+          ) : events.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0, y: 12 }}
@@ -220,12 +289,12 @@ export default function HomePage() {
             >
               <NoFormsIllustration />
               <div className="text-center">
-                <p className="text-sm font-semibold text-gray-600">
+                <p className="text-sm font-bold text-gray-500">
                   No forms found
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {search
-                    ? `No results for "${search}". Try a different keyword.`
+                  {debouncedSearch
+                    ? `No results for "${debouncedSearch}". Try a different keyword.`
                     : "Try a different filter, or create a new form."}
                 </p>
               </div>
@@ -236,16 +305,40 @@ export default function HomePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
             >
-              {filtered.map((event, i) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  index={i}
-                  onContextMenu={(id, x, y) => setCtxMenu({ id, x, y })}
-                />
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {events.map((event, i) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    index={i}
+                    onContextMenu={(id, x, y) => setCtxMenu({ id, x, y })}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {meta && meta.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="text-xs px-3 py-1.5 rounded-md font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-gray-500 font-medium px-2">
+                    {page} / {meta.totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                    disabled={page >= meta.totalPages}
+                    className="text-xs px-3 py-1.5 rounded-md font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
