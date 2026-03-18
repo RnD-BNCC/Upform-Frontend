@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { UseMutationOptions } from '@tanstack/react-query'
 import { apiClient, publicApiClient } from '@/config/api-client'
 import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '../queryKeys'
@@ -31,7 +32,9 @@ export function useQueryEventDetail(eventId: string) {
   })
 }
 
-export function useMutationCreateEvent() {
+export function useMutationCreateEvent(
+  options?: UseMutationOptions<FormEvent, Error, CreateEventPayload>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -39,13 +42,17 @@ export function useMutationCreateEvent() {
       const { data } = await apiClient.post<FormEvent>(Api.events, payload)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      options?.onSuccess?.(...args)
     },
+    onError: options?.onError,
   })
 }
 
-export function useMutationUpdateEvent() {
+export function useMutationUpdateEvent(
+  options?: UseMutationOptions<FormEvent, Error, UpdateEventPayload & { eventId: string }>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -53,10 +60,12 @@ export function useMutationUpdateEvent() {
       const { data } = await apiClient.patch<FormEvent>(Api.eventDetail(eventId), payload)
       return data
     },
-    onSuccess: (_data, { eventId }) => {
+    onSuccess: (_data, variables, ...rest) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, variables.eventId] })
+      options?.onSuccess?.(_data, variables, ...rest)
     },
+    onError: options?.onError,
   })
 }
 
@@ -72,15 +81,19 @@ export function useQueryPublicEvent(eventId: string) {
   })
 }
 
-export function useMutationDeleteEvent() {
+export function useMutationDeleteEvent(
+  options?: UseMutationOptions<void, Error, string>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (eventId: string) => {
       await apiClient.delete(Api.eventDetail(eventId))
     },
-    onSuccess: () => {
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      options?.onSuccess?.(...args)
     },
+    onError: options?.onError,
   })
 }
