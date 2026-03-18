@@ -1,27 +1,34 @@
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import { AnimatePresence, motion } from 'framer-motion'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
-import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard } from '@/components/builder'
-import { useQueryEventDetail } from '@/api/events'
+import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard, ShareDialog } from '@/components/builder'
+import { useQueryEventDetail, useMutationUpdateEvent } from '@/api/events'
+import { useMutationUpdateSection } from '@/api/sections'
 import { useQueryResponses } from '@/api/responses'
 import type { FormField, FormSection, FieldType } from '@/types/form'
 import { ResponsesPanel } from '@/components/responses'
-import { SpinnerGap } from '@phosphor-icons/react'
+import { SpinnerGapIcon } from '@phosphor-icons/react'
 
 type Tab = 'questions' | 'responses'
+
+type SavedSnapshot = {
+  title: string
+  description: string
+  color: string
+  sections: FormSection[]
+}
 
 export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const { data: existing, isLoading } = useQueryEventDetail(id ?? '')
   const { data: responses = [] } = useQueryResponses(id ?? '')
-  const createState = location.state as { title?: string; description?: string } | null
-
+  const updateEvent = useMutationUpdateEvent()
+  const updateSection = useMutationUpdateSection(id ?? '')
   const [formTitle, setFormTitle] = useState('Untitled Form')
   const [formDescription, setFormDescription] = useState('')
   const [bannerColor, setBannerColor] = useState('#0054a5')
@@ -32,27 +39,34 @@ export default function EventDetailPage() {
     index: 0,
   })
   const [initialized, setInitialized] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedSnapshot, setSavedSnapshot] = useState<SavedSnapshot | null>(null)
+  const [eventStatus, setEventStatus] = useState<'draft' | 'active' | 'closed'>('draft')
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState(false)
 
   useEffect(() => {
     if (initialized) return
     if (isLoading) return
     if (existing) {
-      setFormTitle(existing.name || 'Untitled Form')
-      setFormDescription(existing.description || '')
-      setBannerColor(existing.color || '#0054a5')
+      const title = existing.name || 'Untitled Form'
+      const desc = existing.description || ''
+      const color = existing.color || '#0054a5'
       const secs = existing.sections?.length
         ? existing.sections
         : [{ id: crypto.randomUUID(), title: '', fields: [] }]
+      setFormTitle(title)
+      setFormDescription(desc)
+      setBannerColor(color)
       setHistory({ stack: [secs], index: 0 })
-      setInitialized(true)
-    } else if (createState) {
-      setFormTitle(createState.title ?? 'Untitled Form')
-      setFormDescription(createState.description ?? '')
+      setSavedSnapshot({ title, description: desc, color, sections: secs })
+      setEventStatus(existing.status)
       setInitialized(true)
     } else {
-      setInitialized(true)
+      navigate('/', { replace: true })
     }
-  }, [existing, isLoading, createState, initialized])
+  }, [existing, isLoading, initialized, navigate])
+
   const sections = history.stack[history.index]
   const setSections = (updater: FormSection[] | ((prev: FormSection[]) => FormSection[])) => {
     setHistory((prev) => {
@@ -64,9 +78,73 @@ export default function EventDetailPage() {
     })
   }
 
+  const isDirty = useMemo(() => {
+    if (!savedSnapshot) return false
+    if (formTitle !== savedSnapshot.title) return true
+    if (formDescription !== savedSnapshot.description) return true
+    if (bannerColor !== savedSnapshot.color) return true
+    return JSON.stringify(sections) !== JSON.stringify(savedSnapshot.sections)
+  }, [formTitle, formDescription, bannerColor, sections, savedSnapshot])
+
+  const handleSave = useCallback(async () => {
+    if (!id || isSaving) return
+    setIsSaving(true)
+    try {
+      await updateEvent.mutateAsync({
+        eventId: id,
+        name: formTitle,
+        description: formDescription,
+        color: bannerColor,
+      })
+      await Promise.all(
+        sections.map((s) =>
+          updateSection.mutateAsync({
+            sectionId: s.id,
+            title: s.title,
+            description: s.description,
+            fields: s.fields,
+          }),
+        ),
+      )
+      setSavedSnapshot({
+        title: formTitle,
+        description: formDescription,
+        color: bannerColor,
+        sections: JSON.parse(JSON.stringify(sections)),
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }, [id, isSaving, formTitle, formDescription, bannerColor, sections, updateEvent, updateSection])
+
+  const handlePublish = useCallback(async () => {
+    if (!id || isPublishing) return
+    if (isDirty) await handleSave()
+    setIsPublishing(true)
+    try {
+      await updateEvent.mutateAsync({ eventId: id, status: 'active' })
+      setEventStatus('active')
+      setShowShareDialog(true)
+    } finally {
+      setIsPublishing(false)
+    }
+  }, [id, isPublishing, isDirty, handleSave, updateEvent])
+
+  const handleStatusChange = useCallback(async (status: 'draft' | 'active' | 'closed') => {
+    if (!id) return
+    await updateEvent.mutateAsync({ eventId: id, status })
+    setEventStatus(status)
+  }, [id, updateEvent])
+
+  const publicFormUrl = `${window.location.origin}/forms/${id}`
+
+  // Ctrl+S + undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        handleSave()
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
         setHistory((prev) => (prev.index <= 0 ? prev : { ...prev, index: prev.index - 1 }))
       } else if (
@@ -81,8 +159,19 @@ export default function EventDetailPage() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [handleSave])
 
+  // Browser refresh/close guard
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [, setActiveId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('questions')
@@ -153,7 +242,6 @@ export default function EventDetailPage() {
       const idx = prev.findIndex((s) => s.id === sectionId)
       if (idx <= 0 || prev.length <= 1) return prev
       const next = prev.map((s) => ({ ...s, fields: [...s.fields] }))
-      // Move fields to previous section
       next[idx - 1].fields.push(...next[idx].fields)
       next.splice(idx, 1)
       return next
@@ -207,7 +295,7 @@ export default function EventDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <SpinnerGap size={32} className="text-primary-500 animate-spin" />
+          <SpinnerGapIcon size={32} className="text-primary-500 animate-spin" />
           <p className="text-sm text-gray-400">Loading form...</p>
         </div>
       </div>
@@ -229,8 +317,17 @@ export default function EventDetailPage() {
         onTitleChange={setFormTitle}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onBack={() => navigate('/')}
-        onPreview={() => navigate(`/events/${id}/preview`, { state: { sections, formTitle, formDescription, bannerColor, bannerImage } })}
+        onBack={() => isDirty ? setShowLeaveDialog(true) : navigate('/')}
+        onPreview={() => navigate(`/forms/${id}/preview`, { state: { sections, formTitle, formDescription, bannerColor, bannerImage } })}
+        onSave={handleSave}
+        isSaving={isSaving}
+        isDirty={isDirty}
+        eventStatus={eventStatus}
+        onPublish={handlePublish}
+        isPublishing={isPublishing}
+        onShare={() => setShowShareDialog(true)}
+        onUnpublish={() => handleStatusChange('draft')}
+        onClose={() => handleStatusChange('closed')}
       />
 
       <div className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex gap-5">
@@ -314,6 +411,54 @@ export default function EventDetailPage() {
           />
         )}
       </div>
+
+      {/* Unsaved changes navigation dialog */}
+      <AnimatePresence>
+        {showLeaveDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowLeaveDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-sm font-bold text-gray-900">Unsaved Changes</h3>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                You have unsaved changes that will be lost if you leave this page. Would you like to stay and save your work?
+              </p>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button
+                  onClick={() => { setShowLeaveDialog(false); navigate('/') }}
+                  className="px-3.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Leave
+                </button>
+                <button
+                  onClick={() => setShowLeaveDialog(false)}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-white bg-primary-500 hover:bg-primary-600 rounded-lg transition-colors"
+                >
+                  Stay
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Share dialog */}
+      <AnimatePresence>
+        {showShareDialog && (
+          <ShareDialog url={publicFormUrl} onClose={() => setShowShareDialog(false)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
