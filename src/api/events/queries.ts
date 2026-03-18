@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/config/api-client'
+import { apiClient, publicApiClient } from '@/config/api-client'
 import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '../queryKeys'
 import type { FormEvent } from '@/types/form'
@@ -57,6 +57,18 @@ export function useMutationUpdateEvent() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
     },
+  })
+}
+
+export function useQueryPublicEvent(eventId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.PUBLIC_EVENT, eventId],
+    queryFn: async () => {
+      const { data } = await publicApiClient.get<FormEvent>(Api.publicEventDetail(eventId))
+      return data
+    },
+    enabled: !!eventId,
+    retry: false,
   })
 }
 

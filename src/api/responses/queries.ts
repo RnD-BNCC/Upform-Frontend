@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/config/api-client'
+import { apiClient, publicApiClient } from '@/config/api-client'
 import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '../queryKeys'
 import type { FormResponse } from '@/types/form'
@@ -27,6 +27,15 @@ export function useMutationSubmitResponse(eventId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.RESPONSES, eventId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+    },
+  })
+}
+
+export function useMutationSubmitPublicResponse(eventId: string) {
+  return useMutation({
+    mutationFn: async (payload: SubmitResponsePayload) => {
+      const { data } = await publicApiClient.post<FormResponse>(Api.responses(eventId), payload)
+      return data
     },
   })
 }

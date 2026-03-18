@@ -3,5 +3,6 @@ export {
   useQueryEventDetail,
   useMutationCreateEvent,
   useMutationUpdateEvent,
+  useQueryPublicEvent,
   useMutationDeleteEvent,
 } from './queries'
