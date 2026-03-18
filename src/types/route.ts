@@ -9,5 +9,6 @@ export type Route = {
   isEnabled: boolean
   noLayout?: boolean
   isPublic?: boolean
+  isUnguarded?: boolean
   children?: Route[]
 }

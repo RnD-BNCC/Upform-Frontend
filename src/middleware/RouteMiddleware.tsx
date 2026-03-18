@@ -18,7 +18,9 @@ export function renderRoutes(routes: RouteConfig[]) {
         </RootLayout>
       )
 
-      const element = route.isPublic ? (
+      const element = route.isUnguarded ? (
+        page
+      ) : route.isPublic ? (
         <GuestGuard>{page}</GuestGuard>
       ) : (
         <AuthGuard>{page}</AuthGuard>

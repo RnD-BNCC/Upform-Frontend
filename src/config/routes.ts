@@ -3,6 +3,7 @@ import HomePage from '@/pages/home'
 import LoginPage from '@/pages/login'
 import EventDetailPage from '@/pages/events/detail'
 import EventPreviewPage from '@/pages/events/preview'
+import PublicFormPage from '@/pages/forms'
 
 export const publicRoutes: Route[] = [
   {
@@ -23,19 +24,28 @@ export const publicRoutes: Route[] = [
     isPublic: true,
   },
   {
-    key: 'event-detail',
+    key: 'form-builder',
     title: 'Form Builder',
-    path: '/events/:id',
+    path: '/forms/:id/edit',
     component: EventDetailPage,
     isEnabled: true,
     noLayout: true,
   },
   {
-    key: 'event-preview',
+    key: 'form-preview',
     title: 'Form Preview',
-    path: '/events/:id/preview',
+    path: '/forms/:id/preview',
     component: EventPreviewPage,
     isEnabled: true,
     noLayout: true,
+  },
+  {
+    key: 'public-form',
+    title: 'Form',
+    path: '/forms/:id',
+    component: PublicFormPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
   },
 ]
