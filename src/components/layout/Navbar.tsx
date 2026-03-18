@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, List, X, SignOut } from "@phosphor-icons/react";
 import { useAuth } from "@/hooks/useAuth";
 import { authClient } from "@/lib/auth-client";
-import { useMutationCreateEvent } from "@/api/events";
+import { useCreateEvent } from "@/hooks/events";
 
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
@@ -19,7 +19,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const createEvent = useMutationCreateEvent();
+  const createEvent = useCreateEvent();
   const user = session?.user;
   const initials = user?.name
     ? user.name

@@ -8,14 +8,14 @@ import {
   SpinnerGapIcon,
 } from '@phosphor-icons/react'
 import PreviewField from '@/pages/events/preview/section/PreviewField'
-import { useQueryPublicEvent } from '@/api/events'
-import { useMutationSubmitPublicResponse } from '@/api/responses'
+import { useGetPublicEvent } from '@/hooks/events'
+import { useSubmitPublicResponse } from '@/hooks/responses'
 import type { FormSection } from '@/types/form'
 
 export default function PublicFormPage() {
   const { id } = useParams()
-  const { data: event, isLoading, isError } = useQueryPublicEvent(id ?? '')
-  const submitResponse = useMutationSubmitPublicResponse(id ?? '')
+  const { data: event, isLoading, isError } = useGetPublicEvent(id ?? '')
+  const submitResponse = useSubmitPublicResponse(id ?? '')
 
   const [sectionHistory, setSectionHistory] = useState<number[]>([0])
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({})

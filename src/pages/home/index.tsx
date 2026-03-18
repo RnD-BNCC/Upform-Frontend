@@ -5,11 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Navbar, Footer } from "@/components/layout";
 import { EventCard, ContextMenu } from "@/components/events";
 import { NoFormsIllustration } from "@/components/ui";
-import {
-  useQueryEvents,
-  useMutationDeleteEvent,
-  useMutationUpdateEvent,
-} from "@/api/events";
+import { useGetEvents, useDeleteEvent, useUpdateEvent } from "@/hooks/events";
 import type { FormEvent } from "@/types/form";
 import { MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
 
@@ -85,7 +81,7 @@ export default function HomePage() {
     setPage(1);
   }, []);
 
-  const { data: result, isLoading } = useQueryEvents({
+  const { data: result, isLoading } = useGetEvents({
     page,
     take: 9,
     status: filter === "All" ? undefined : (filter.toLowerCase() as "draft" | "active" | "closed"),
@@ -96,8 +92,8 @@ export default function HomePage() {
   const meta = result?.meta;
   const counts = result?.counts;
 
-  const deleteEvent = useMutationDeleteEvent();
-  const updateEvent = useMutationUpdateEvent();
+  const deleteEvent = useDeleteEvent();
+  const updateEvent = useUpdateEvent();
 
   const [ctxMenu, setCtxMenu] = useState<{
     id: string;

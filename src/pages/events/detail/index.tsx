@@ -5,9 +5,9 @@ import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard, ShareDialog } from '@/components/builder'
-import { useQueryEventDetail, useMutationUpdateEvent } from '@/api/events'
-import { useMutationUpdateSection } from '@/api/sections'
-import { useQueryResponses } from '@/api/responses'
+import { useGetEventDetail, useUpdateEvent } from '@/hooks/events'
+import { useUpdateSection } from '@/hooks/sections'
+import { useGetResponses } from '@/hooks/responses'
 import type { FormField, FormSection, FieldType } from '@/types/form'
 import { ResponsesPanel } from '@/components/responses'
 import { SpinnerGapIcon } from '@phosphor-icons/react'
@@ -25,10 +25,10 @@ export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const { data: existing, isLoading } = useQueryEventDetail(id ?? '')
-  const { data: responses = [] } = useQueryResponses(id ?? '')
-  const updateEvent = useMutationUpdateEvent()
-  const updateSection = useMutationUpdateSection(id ?? '')
+  const { data: existing, isLoading } = useGetEventDetail(id ?? '')
+  const { data: responses = [] } = useGetResponses(id ?? '')
+  const updateEvent = useUpdateEvent()
+  const updateSection = useUpdateSection(id ?? '')
   const [formTitle, setFormTitle] = useState('Untitled Form')
   const [formDescription, setFormDescription] = useState('')
   const [bannerColor, setBannerColor] = useState('#0054a5')
