@@ -28,8 +28,8 @@ export default function ResponsesPanel({ responses, allFields }: ResponsesPanelP
         <div className="flex flex-col items-center justify-center gap-3 h-64">
           <ClipboardTextIcon size={44} weight="light" className="text-gray-300" />
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">No responses yet</p>
-            <p className="text-xs text-gray-400 mt-0.5">Share your form to start collecting responses.</p>
+            <p className="text-sm font-bold text-gray-400">No responses yet</p>
+            <p className="text-xs text-gray-300 mt-0.5">Share your form to start collecting responses.</p>
           </div>
         </div>
       </div>
