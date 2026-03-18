@@ -356,7 +356,7 @@ export default function HomePage() {
             event={ctxEvent}
             onClose={() => setCtxMenu(null)}
             onOpen={() => {
-              navigate(`/events/${ctxEvent.id}`);
+              navigate(`/forms/${ctxEvent.id}/edit`);
               setCtxMenu(null);
             }}
             onDelete={() => handleDelete(ctxEvent.id)}

@@ -31,7 +31,7 @@ export default function EventCard({ event, index, onContextMenu }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.07, ease: 'easeOut' }}
       whileHover={{ y: -4, transition: { duration: 0.15 } }}
-      onClick={() => navigate(`/events/${event.id}`)}
+      onClick={() => navigate(`/forms/${event.id}/edit`)}
       onContextMenu={(e) => { e.preventDefault(); openMenu(e) }}
       className="cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
     >

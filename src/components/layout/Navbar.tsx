@@ -83,8 +83,8 @@ export default function Navbar() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={async () => {
-              const event = await createEvent.mutateAsync({});
-              navigate(`/events/${event.id}`);
+              const event = await createEvent.mutateAsync({ name: 'Untitled Form' });
+              navigate(`/forms/${event.id}/edit`);
             }}
             className="flex items-center gap-1.5 bg-white text-primary-900 px-3 sm:px-3.5 py-1.5 text-xs font-bold tracking-widest uppercase border-2 border-primary-900 shadow-[2px_2px_0px_0px_#001d3a] hover:bg-primary-500 hover:text-white hover:border-primary-500 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-150"
           >
