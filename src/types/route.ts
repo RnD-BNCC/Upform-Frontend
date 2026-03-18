@@ -8,5 +8,6 @@ export type Route = {
   component: ComponentType
   isEnabled: boolean
   noLayout?: boolean
+  isPublic?: boolean
   children?: Route[]
 }

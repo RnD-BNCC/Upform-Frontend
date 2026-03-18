@@ -20,6 +20,7 @@ export const publicRoutes: Route[] = [
     component: LoginPage,
     isEnabled: true,
     noLayout: true,
+    isPublic: true,
   },
   {
     key: 'event-detail',
