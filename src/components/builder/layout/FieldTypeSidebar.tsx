@@ -23,6 +23,7 @@ type ToolbarBtn = {
     className?: string;
   }>;
   title: string;
+  mobileLabel: string;
 } & ({ onClick: () => void; htmlFor?: never } | { htmlFor: string; onClick?: never });
 
 const IMG_INPUT_ID = "sidebar-img-upload";
@@ -36,10 +37,10 @@ export default function FieldTypeSidebar({
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const buttons: ToolbarBtn[] = [
-    { Icon: PlusCircleIcon, title: "Add question", onClick: onAddQuestion },
-    { Icon: TextTIcon, title: "Add title & description", onClick: onAddTitleBlock },
-    { Icon: ImageIcon, title: "Add image", htmlFor: IMG_INPUT_ID },
-    { Icon: RowsIcon, title: "Add section", onClick: onAddSection },
+    { Icon: PlusCircleIcon, title: "Add question", mobileLabel: "question", onClick: onAddQuestion },
+    { Icon: TextTIcon, title: "Add title & description", mobileLabel: "title", onClick: onAddTitleBlock },
+    { Icon: ImageIcon, title: "Add image", mobileLabel: "image", htmlFor: IMG_INPUT_ID },
+    { Icon: RowsIcon, title: "Add section", mobileLabel: "section", onClick: onAddSection },
   ];
 
   return (
@@ -106,34 +107,29 @@ export default function FieldTypeSidebar({
       </div>
 
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white shadow-lg border-t border-gray-200 mx-10 rounded-t-2xl">
-        <div className="flex items-center">
-          {buttons.map(({ Icon, title, onClick, htmlFor }) =>
-            htmlFor ? (
-              <label
-                key={title}
-                htmlFor={htmlFor}
-                title={title}
-                className="flex-1 flex flex-col items-center gap-0.5 py-3 text-gray-500 active:text-primary-600 active:bg-primary-50 transition-colors cursor-pointer"
-              >
+        <div className="flex items-stretch">
+          {buttons.map(({ Icon, title, mobileLabel, onClick, htmlFor }) => {
+            const inner = (
+              <>
                 <Icon size={22} weight="regular" />
                 <span className="text-[10px] text-gray-400 leading-none">
-                  {title.replace("Add ", "")}
+                  {mobileLabel}
                 </span>
+              </>
+            );
+            const cls =
+              "flex-1 flex flex-col items-center justify-center gap-1 py-3 text-gray-500 active:text-primary-600 active:bg-primary-50 transition-colors";
+
+            return htmlFor ? (
+              <label key={title} htmlFor={htmlFor} title={title} className={`${cls} cursor-pointer`}>
+                {inner}
               </label>
             ) : (
-              <button
-                key={title}
-                onClick={onClick}
-                title={title}
-                className="flex-1 flex flex-col items-center gap-0.5 py-3 text-gray-500 active:text-primary-600 active:bg-primary-50 transition-colors"
-              >
-                <Icon size={22} weight="regular" />
-                <span className="text-[10px] text-gray-400 leading-none">
-                  {title.replace("Add ", "")}
-                </span>
+              <button key={title} onClick={onClick} title={title} className={cls}>
+                {inner}
               </button>
-            )
-          )}
+            );
+          })}
         </div>
       </div>
     </>
