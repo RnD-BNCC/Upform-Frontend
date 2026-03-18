@@ -1,32 +1,32 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Plus,
-  User,
-  List,
-  X,
-  GearSix,
-  SignOut,
-  UserCircle,
-} from "@phosphor-icons/react";
+import { Plus, List, X, SignOut } from "@phosphor-icons/react";
+import { useAuth } from "@/hooks/useAuth";
+import { authClient } from "@/lib/auth-client";
 
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
   { label: "Templates", path: "/templates" },
 ];
 
-const PROFILE_ITEMS = [
-  { label: "Profile", Icon: UserCircle, onClick: () => {} },
-  { label: "Settings", Icon: GearSix, onClick: () => {} },
-];
-
 export default function Navbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { data: session } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const user = session?.user;
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "?";
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -40,6 +40,12 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const handleSignOut = async () => {
+    setProfileOpen(false);
+    await authClient.signOut();
+    window.location.href = "/login";
+  };
 
   return (
     <header className="sticky top-0 z-20 bg-primary-800">
@@ -81,17 +87,23 @@ export default function Navbar() {
             <span className="hidden sm:inline">Create Form</span>
           </motion.button>
 
-          {/* Profile button + dropdown */}
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setProfileOpen((v) => !v)}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
-                profileOpen
-                  ? "bg-white/25 border-white/40"
-                  : "bg-white/15 border-white/25 hover:bg-white/25"
-              }`}
+              className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/25 hover:border-white/50 transition-colors"
             >
-              <User size={15} weight="bold" className="text-white" />
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user.name ?? "Avatar"}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full bg-white/15 flex items-center justify-center text-[10px] font-bold text-white">
+                  {initials}
+                </div>
+              )}
             </button>
 
             <AnimatePresence>
@@ -103,22 +115,28 @@ export default function Navbar() {
                   transition={{ duration: 0.08, ease: "easeOut" }}
                   className="absolute right-0 top-10 w-52 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden select-none"
                 >
-                  {/* User info header */}
                   <div className="px-3.5 pt-3 pb-2.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                        <User
-                          size={15}
-                          weight="bold"
-                          className="text-primary-600"
-                        />
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center shrink-0">
+                        {user?.image ? (
+                          <img
+                            src={user.image}
+                            alt={user.name ?? "Avatar"}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <span className="text-[10px] font-bold text-primary-600">
+                            {initials}
+                          </span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-gray-800 truncate">
-                          My Account
+                          {user?.name ?? "My Account"}
                         </p>
                         <p className="text-[10px] text-gray-400 truncate">
-                          user@example.com
+                          {user?.email ?? ""}
                         </p>
                       </div>
                     </div>
@@ -126,31 +144,10 @@ export default function Navbar() {
 
                   <div className="h-px bg-gray-100 mx-2" />
 
-                  <div className="p-1.5 space-y-0.5">
-                    {PROFILE_ITEMS.map(({ label, Icon, onClick }) => (
-                      <button
-                        key={label}
-                        onClick={() => {
-                          onClick();
-                          setProfileOpen(false);
-                        }}
-                        className="group w-full flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
-                      >
-                        <Icon
-                          size={14}
-                          className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
-                        />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="h-px bg-gray-100 mx-2" />
-
                   <div className="p-1.5">
                     <button
-                      onClick={() => setProfileOpen(false)}
-                      className="group w-full flex items-center gap-2.5 px-2.5 py-2 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-lg"
+                      onClick={handleSignOut}
+                      className="group w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-lg"
                     >
                       <SignOut
                         size={14}
@@ -178,7 +175,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div

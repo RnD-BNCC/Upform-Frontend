@@ -54,7 +54,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    await authClient.signIn.social({ provider: "google", callbackURL: `${import.meta.env.VITE_APP_URL}/` });
+    await authClient.signIn.social({ provider: "google", callbackURL: `${window.location.origin}/` });
   };
 
   return (
