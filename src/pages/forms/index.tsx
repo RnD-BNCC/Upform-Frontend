@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CheckIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   SpinnerGapIcon,
@@ -174,32 +173,49 @@ export default function PublicFormPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 sm:p-10 max-w-sm w-full text-center"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-            className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4"
-          >
-            <CheckIcon size={24} weight="bold" color="#16a34a" />
-          </motion.div>
-          <h2 className="text-lg font-bold text-gray-900">Response recorded!</h2>
-          <p className="text-sm text-gray-400 mt-1.5">
-            Your response has been submitted successfully.
-          </p>
-          <button
-            onClick={handleSubmitAnother}
-            className="mt-6 text-sm text-primary-500 hover:text-primary-600 font-medium transition-colors cursor-pointer"
-          >
-            Submit another response
-          </button>
-        </motion.div>
+      <div
+        className="min-h-screen bg-gray-50"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-2xl mx-auto px-4 pt-6 pb-12 space-y-3">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div
+              className="h-14 relative overflow-hidden"
+              style={{ backgroundColor: bannerColor }}
+            >
+              <div
+                className="absolute inset-0 opacity-[0.07]"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)',
+                  backgroundSize: '18px 18px',
+                }}
+              />
+              <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-black/20" />
+            </div>
+            <div className="p-6 border-l-4" style={{ borderLeftColor: bannerColor }}>
+              <h1 className="text-xl font-bold text-gray-900">{formTitle}</h1>
+              <p className="text-sm text-gray-600 mt-3">Your response has been recorded.</p>
+              <button
+                onClick={handleSubmitAnother}
+                className="text-sm font-medium mt-4 cursor-pointer hover:underline"
+                style={{ color: bannerColor }}
+              >
+                Submit another response
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center pt-4">
+            <span className="text-[10px] text-gray-300 font-medium">
+              Powered by <span className="font-bold italic">UpForm</span>
+            </span>
+          </div>
+        </div>
       </div>
     )
   }
