@@ -10,4 +10,5 @@ export const Api = {
   responseDetail: (eventId: string, responseId: string) =>
     `/events/${eventId}/responses/${responseId}`,
   publicEventDetail: (id: string) => `/public/events/${id}`,
+  publicResponses: (eventId: string) => `/public/events/${eventId}/responses`,
 } as const

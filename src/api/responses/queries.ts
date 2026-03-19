@@ -43,7 +43,7 @@ export function useMutationSubmitPublicResponse(
 ) {
   return useMutation({
     mutationFn: async (payload: SubmitResponsePayload) => {
-      const { data } = await publicApiClient.post<FormResponse>(Api.responses(eventId), payload)
+      const { data } = await publicApiClient.post<FormResponse>(Api.publicResponses(eventId), payload)
       return data
     },
     onSuccess: options?.onSuccess,
