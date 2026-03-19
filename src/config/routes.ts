@@ -4,6 +4,7 @@ import LoginPage from '@/pages/login'
 import EventDetailPage from '@/pages/events/detail'
 import EventPreviewPage from '@/pages/events/preview'
 import PublicFormPage from '@/pages/forms'
+import NotFoundPage from '@/pages/not-found'
 
 export const publicRoutes: Route[] = [
   {
@@ -44,6 +45,15 @@ export const publicRoutes: Route[] = [
     title: 'Form',
     path: '/forms/:id',
     component: PublicFormPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
+  },
+  {
+    key: 'not-found',
+    title: 'Not Found',
+    path: '*',
+    component: NotFoundPage,
     isEnabled: true,
     noLayout: true,
     isUnguarded: true,
