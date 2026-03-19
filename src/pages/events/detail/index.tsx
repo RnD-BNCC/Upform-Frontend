@@ -5,6 +5,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard, ShareDialog } from '@/components/builder'
+import { ConfirmModal, LoadingModal, StatusModal } from '@/components/ui'
 import { useGetEventDetail, useUpdateEvent } from '@/hooks/events'
 import { useUpdateSection } from '@/hooks/sections'
 import { useGetResponses } from '@/hooks/responses'
@@ -44,6 +45,9 @@ export default function EventDetailPage() {
   const [eventStatus, setEventStatus] = useState<'draft' | 'active' | 'closed'>('draft')
   const [isPublishing, setIsPublishing] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'unpublish' | 'close' | 'publish' | null>(null)
+  const [isChangingStatus, setIsChangingStatus] = useState(false)
+  const [statusResult, setStatusResult] = useState<'unpublish' | 'close' | null>(null)
 
   useEffect(() => {
     if (initialized) return
@@ -66,6 +70,13 @@ export default function EventDetailPage() {
       navigate('/', { replace: true })
     }
   }, [existing, isLoading, initialized, navigate])
+
+  // Keep eventStatus in sync when the query refetches (e.g. after publishing from home page)
+  useEffect(() => {
+    if (initialized && existing) {
+      setEventStatus(existing.status)
+    }
+  }, [initialized, existing?.status])
 
   const sections = history.stack[history.index]
   const setSections = (updater: FormSection[] | ((prev: FormSection[]) => FormSection[])) => {
@@ -119,6 +130,7 @@ export default function EventDetailPage() {
 
   const handlePublish = useCallback(async () => {
     if (!id || isPublishing) return
+    setConfirmAction(null)
     if (isDirty) await handleSave()
     setIsPublishing(true)
     try {
@@ -130,11 +142,19 @@ export default function EventDetailPage() {
     }
   }, [id, isPublishing, isDirty, handleSave, updateEvent])
 
-  const handleStatusChange = useCallback(async (status: 'draft' | 'active' | 'closed') => {
-    if (!id) return
-    await updateEvent.mutateAsync({ eventId: id, status })
-    setEventStatus(status)
-  }, [id, updateEvent])
+  const handleStatusChange = useCallback(async (action: 'unpublish' | 'close') => {
+    if (!id || isChangingStatus) return
+    setConfirmAction(null)
+    setIsChangingStatus(true)
+    try {
+      const status = action === 'unpublish' ? 'draft' : 'closed'
+      await updateEvent.mutateAsync({ eventId: id, status })
+      setEventStatus(status)
+      setStatusResult(action)
+    } finally {
+      setIsChangingStatus(false)
+    }
+  }, [id, isChangingStatus, updateEvent])
 
   const publicFormUrl = `${window.location.origin}/forms/${id}`
 
@@ -323,11 +343,11 @@ export default function EventDetailPage() {
         isSaving={isSaving}
         isDirty={isDirty}
         eventStatus={eventStatus}
-        onPublish={handlePublish}
+        onPublish={() => setConfirmAction('publish')}
         isPublishing={isPublishing}
         onShare={() => setShowShareDialog(true)}
-        onUnpublish={() => handleStatusChange('draft')}
-        onClose={() => handleStatusChange('closed')}
+        onUnpublish={() => setConfirmAction('unpublish')}
+        onClose={() => setConfirmAction('close')}
       />
 
       <div className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex gap-5">
@@ -459,6 +479,54 @@ export default function EventDetailPage() {
           <ShareDialog url={publicFormUrl} onClose={() => setShowShareDialog(false)} />
         )}
       </AnimatePresence>
+
+      {/* Confirm action modal */}
+      <ConfirmModal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (confirmAction === 'publish') handlePublish()
+          else if (confirmAction) handleStatusChange(confirmAction)
+        }}
+        variant="warning"
+        title={
+          confirmAction === 'publish' ? (eventStatus === 'closed' ? 'Reopen Form?' : 'Publish Form?')
+            : confirmAction === 'unpublish' ? 'Unpublish Form?'
+            : 'Close Form?'
+        }
+        description={
+          confirmAction === 'publish'
+            ? (eventStatus === 'closed'
+              ? 'This will reopen your form and make it live again. Anyone with the link can submit responses.'
+              : 'This will make your form live. Anyone with the link can submit responses.')
+            : confirmAction === 'unpublish'
+              ? 'This will take your form offline. It will no longer accept responses until you publish it again.'
+              : 'This will permanently close your form. It will no longer accept any new responses.'
+        }
+        confirmText={
+          confirmAction === 'publish' ? (eventStatus === 'closed' ? 'Reopen' : 'Publish')
+            : confirmAction === 'unpublish' ? 'Unpublish'
+            : 'Close Form'
+        }
+      />
+
+      {/* Loading modal */}
+      <LoadingModal isOpen={isChangingStatus || isPublishing} />
+
+      {/* Status result modal */}
+      <StatusModal
+        isOpen={!!statusResult}
+        onClose={() => setStatusResult(null)}
+        type="success"
+        title={statusResult === 'unpublish' ? 'Form Unpublished!' : 'Form Closed!'}
+        description={
+          statusResult === 'unpublish'
+            ? 'Your form has been unpublished. You can publish it again anytime.'
+            : 'Your form has been closed and will no longer accept responses.'
+        }
+        buttonText="Continue"
+        onButtonClick={() => setStatusResult(null)}
+      />
     </div>
   )
 }

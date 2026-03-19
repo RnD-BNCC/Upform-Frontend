@@ -60,10 +60,16 @@ export function useMutationUpdateEvent(
       const { data } = await apiClient.patch<FormEvent>(Api.eventDetail(eventId), payload)
       return data
     },
-    onSuccess: (_data, variables, ...rest) => {
+    onSuccess: (data, variables, ...rest) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      // Immediately update the detail cache so navigating to the detail page
+      // shows the correct status without waiting for a background refetch.
+      queryClient.setQueryData(
+        [QUERY_KEYS.EVENT_DETAIL, variables.eventId],
+        (old: FormEvent | undefined) => old ? { ...old, ...data } : data,
+      )
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, variables.eventId] })
-      options?.onSuccess?.(_data, variables, ...rest)
+      options?.onSuccess?.(data, variables, ...rest)
     },
     onError: options?.onError,
   })

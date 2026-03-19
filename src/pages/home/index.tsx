@@ -4,9 +4,10 @@ import { gsap } from "gsap";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar, Footer } from "@/components/layout";
 import { EventCard, ContextMenu } from "@/components/events";
-import { NoFormsIllustration } from "@/components/ui";
+import { ConfirmModal, LoadingModal, NoFormsIllustration, StatusModal } from "@/components/ui";
 import { useGetEvents, useDeleteEvent, useUpdateEvent } from "@/hooks/events";
 import type { FormEvent } from "@/types/form";
+import type { StatusType } from "@/components/ui/StatusModal";
 import { MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
 
 type Filter = "All" | "Active" | "Draft" | "Closed";
@@ -101,24 +102,86 @@ export default function HomePage() {
     y: number;
   } | null>(null);
 
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "delete" | "publish" | "unpublish" | "reopen";
+    eventId: string;
+    eventName: string;
+  } | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [statusResult, setStatusResult] = useState<{
+    type: StatusType;
+    title: string;
+    description: string;
+  } | null>(null);
+
   const handleDelete = (id: string) => {
-    deleteEvent.mutate(id);
+    const event = events.find((e) => e.id === id);
     setCtxMenu(null);
+    setConfirmAction({
+      type: "delete",
+      eventId: id,
+      eventName: event?.name ?? "this form",
+    });
   };
 
   const handleToggleStatus = (id: string) => {
     const event = events.find((e) => e.id === id);
     if (!event) return;
-    const next: Record<string, FormEvent["status"]> = {
-      active: "draft",
-      draft: "active",
-      closed: "active",
-    };
-    updateEvent.mutate({
-      eventId: id,
-      status: next[event.status] ?? event.status,
-    });
     setCtxMenu(null);
+    const actionMap: Record<string, "publish" | "unpublish" | "reopen"> = {
+      draft: "publish",
+      active: "unpublish",
+      closed: "reopen",
+    };
+    setConfirmAction({
+      type: actionMap[event.status] ?? "publish",
+      eventId: id,
+      eventName: event.name,
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmAction) return;
+    const action = confirmAction;
+    setConfirmAction(null);
+    setIsActionLoading(true);
+    try {
+      if (action.type === "delete") {
+        await deleteEvent.mutateAsync(action.eventId);
+        setStatusResult({
+          type: "success",
+          title: "Form Deleted",
+          description: `"${action.eventName}" has been deleted.`,
+        });
+      } else {
+        const statusMap: Record<string, FormEvent["status"]> = {
+          publish: "active",
+          unpublish: "draft",
+          reopen: "active",
+        };
+        await updateEvent.mutateAsync({
+          eventId: action.eventId,
+          status: statusMap[action.type],
+        });
+        const successMessages: Record<string, { title: string; description: string }> = {
+          publish: { title: "Form Published", description: `"${action.eventName}" is now live and accepting responses.` },
+          unpublish: { title: "Form Unpublished", description: `"${action.eventName}" has been moved back to draft.` },
+          reopen: { title: "Form Reopened", description: `"${action.eventName}" is now live again.` },
+        };
+        setStatusResult({
+          type: "success",
+          ...successMessages[action.type],
+        });
+      }
+    } catch {
+      setStatusResult({
+        type: "error",
+        title: "Action Failed",
+        description: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const ctxEvent = ctxMenu
@@ -360,6 +423,47 @@ export default function HomePage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Confirm action modal */}
+      <ConfirmModal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleConfirm}
+        variant={confirmAction?.type === "delete" ? "danger" : "warning"}
+        title={
+          confirmAction?.type === "delete" ? "Delete Form?"
+            : confirmAction?.type === "publish" ? "Publish Form?"
+            : confirmAction?.type === "unpublish" ? "Unpublish Form?"
+            : "Reopen Form?"
+        }
+        description={
+          confirmAction?.type === "delete"
+            ? `"${confirmAction.eventName}" will be permanently deleted. This cannot be undone.`
+            : confirmAction?.type === "publish"
+              ? `"${confirmAction?.eventName}" will go live and start accepting responses.`
+              : confirmAction?.type === "unpublish"
+                ? `"${confirmAction?.eventName}" will be moved back to draft and stop accepting responses.`
+                : `"${confirmAction?.eventName}" will go live again and start accepting responses.`
+        }
+        confirmText={
+          confirmAction?.type === "delete" ? "Delete"
+            : confirmAction?.type === "publish" ? "Publish"
+            : confirmAction?.type === "unpublish" ? "Unpublish"
+            : "Reopen"
+        }
+      />
+
+      {/* Loading modal */}
+      <LoadingModal isOpen={isActionLoading} />
+
+      {/* Status result modal */}
+      <StatusModal
+        isOpen={!!statusResult}
+        onClose={() => setStatusResult(null)}
+        type={statusResult?.type ?? "success"}
+        title={statusResult?.title ?? ""}
+        description={statusResult?.description ?? ""}
+      />
     </div>
   );
 }
