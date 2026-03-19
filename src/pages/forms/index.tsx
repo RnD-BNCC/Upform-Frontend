@@ -26,6 +26,7 @@ export default function PublicFormPage() {
   const [direction, setDirection] = useState(1)
   const [shakeIds, setShakeIds] = useState<Set<string>>(new Set())
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const submittingRef = useRef(false)
 
   const sections = event?.sections ?? []
   const formTitle = event?.name ?? 'Untitled Form'
@@ -121,14 +122,17 @@ export default function PublicFormPage() {
   }
 
   const handleSubmit = async () => {
+    if (submittingRef.current) return
     const errs = validate(section)
     if (Object.keys(errs).length > 0) { showErrors(errs); return }
+    submittingRef.current = true
     setIsSubmitting(true)
     try {
       await submitResponse.mutateAsync({ answers })
       setSubmitted(true)
     } finally {
       setIsSubmitting(false)
+      submittingRef.current = false
     }
   }
 
@@ -154,11 +158,14 @@ export default function PublicFormPage() {
 
   if (isError || (!isLoading && !event)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold text-gray-900">Form not found</h2>
-          <p className="text-sm text-gray-400 mt-1.5">
-            This form may have been closed or doesn't exist.
+      <div className="min-h-screen flex flex-col justify-center items-center">
+        <div className="flex items-center justify-center flex-col">
+          <p className="text-lg font-black mb-4 text-primary-500">404</p>
+          <p className="text-2xl font-extrabold text-black">
+            Oops! This form does not exist :(
+          </p>
+          <p className="text-gray-400 text-lg mb-16 font-semibold">
+            This form may have been closed or deleted by the owner
           </p>
         </div>
       </div>
@@ -301,7 +308,7 @@ export default function PublicFormPage() {
             whileTap={{ scale: 0.97 }}
             onClick={isLast ? handleSubmit : handleNext}
             disabled={isSubmitting}
-            className="flex items-center gap-1.5 bg-primary-500 text-white px-5 py-2.5 text-sm font-medium hover:bg-primary-600 transition-colors duration-150 rounded cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-primary-500 text-white px-5 py-2.5 text-sm font-medium hover:bg-primary-600 transition-colors duration-150 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <SpinnerGapIcon size={15} className="animate-spin" />
