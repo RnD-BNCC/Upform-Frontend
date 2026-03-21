@@ -12,10 +12,7 @@ export function useSocket(pollId: string | undefined) {
     const socket = getSocket()
     socketRef.current = socket
 
-    const handleConnect = () => {
-      socket.emit('join-poll', pollId)
-      setConnected(true)
-    }
+    const handleConnect = () => setConnected(true)
 
     if (!socket.connected) socket.connect()
     socket.on('connect', handleConnect)
@@ -28,6 +25,11 @@ export function useSocket(pollId: string | undefined) {
       disconnectSocket()
     }
   }, [pollId])
+
+  useEffect(() => {
+    if (!connected || !pollId) return
+    socketRef.current?.emit('join-poll', pollId)
+  }, [connected, pollId])
 
   return { socketRef, connected }
 }
