@@ -95,6 +95,7 @@ export interface FormEvent {
   updatedAt: string
   responseCount: number
   color: string
+  image?: string | null
   sections: FormSection[]
   responses?: FormResponse[]
 }
