@@ -4,6 +4,11 @@ import LoginPage from '@/pages/login'
 import EventDetailPage from '@/pages/events/detail'
 import EventPreviewPage from '@/pages/events/preview'
 import PublicFormPage from '@/pages/forms'
+import PollsPage from '@/pages/polls'
+import PollEditPage from '@/pages/polls/edit'
+import PollPresentPage from '@/pages/polls/present'
+import LiveJoinPage from '@/pages/live'
+import LiveVotePage from '@/pages/live/vote'
 import NotFoundPage from '@/pages/not-found'
 
 export const publicRoutes: Route[] = [
@@ -45,6 +50,48 @@ export const publicRoutes: Route[] = [
     title: 'Form',
     path: '/forms/:id',
     component: PublicFormPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
+  },
+  {
+    key: 'polls',
+    title: 'Polls',
+    path: '/polls',
+    component: PollsPage,
+    isEnabled: true,
+    noLayout: true,
+  },
+  {
+    key: 'poll-editor',
+    title: 'Poll Editor',
+    path: '/polls/:id/edit',
+    component: PollEditPage,
+    isEnabled: true,
+    noLayout: true,
+  },
+  {
+    key: 'poll-present',
+    title: 'Present',
+    path: '/polls/:id/present',
+    component: PollPresentPage,
+    isEnabled: true,
+    noLayout: true,
+  },
+  {
+    key: 'live-join',
+    title: 'Join Poll',
+    path: '/live',
+    component: LiveJoinPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
+  },
+  {
+    key: 'live-vote',
+    title: 'Live Poll',
+    path: '/live/:code',
+    component: LiveVotePage,
     isEnabled: true,
     noLayout: true,
     isUnguarded: true,
