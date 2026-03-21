@@ -4,7 +4,7 @@ import { gsap } from "gsap";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar, Footer } from "@/components/layout";
 import { EventCard, ContextMenu } from "@/components/events";
-import { ConfirmModal, LoadingModal, NoFormsIllustration, StatusModal } from "@/components/ui";
+import { ConfirmModal, LoadingModal, NoFormsIllustration, Pagination, StatusModal } from "@/components/ui";
 import { useGetEvents, useDeleteEvent, useUpdateEvent } from "@/hooks/events";
 import type { FormEvent } from "@/types/form";
 import type { StatusType } from "@/components/ui/StatusModal";
@@ -173,7 +173,8 @@ export default function HomePage() {
           ...successMessages[action.type],
         });
       }
-    } catch {
+    } catch (error) {
+      console.error('[handleConfirm]', error)
       setStatusResult({
         type: "error",
         title: "Action Failed",
@@ -376,27 +377,8 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Pagination */}
-              {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-xs text-gray-500 font-medium px-2">
-                    {page} / {meta.totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
-                    disabled={page >= meta.totalPages}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    Next
-                  </button>
-                </div>
+              {meta && (
+                <Pagination page={page} totalPages={meta.totalPages} onPageChange={setPage} />
               )}
             </motion.div>
           )}
