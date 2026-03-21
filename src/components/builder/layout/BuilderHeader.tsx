@@ -10,7 +10,6 @@ import {
   DotsThreeVerticalIcon,
   ProhibitIcon,
   LockIcon,
-  GaugeIcon,
   ShuffleIcon,
   PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
@@ -126,11 +125,6 @@ export default function BuilderHeader({
             <button onClick={onPreview} className={toolBtn(true)}>
               <EyeIcon size={18} />
               <span className="text-[10px] sm:text-[11px] font-medium leading-none">Preview</span>
-            </button>
-
-            <button disabled className={toolBtn(false)}>
-              <GaugeIcon size={18} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">Miner</span>
             </button>
 
             <button disabled className={toolBtn(false)}>
