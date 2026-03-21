@@ -9,6 +9,7 @@ import { ConfirmModal, LoadingModal, StatusModal } from '@/components/ui'
 import { useGetEventDetail, useUpdateEvent } from '@/hooks/events'
 import { useUpdateSection } from '@/hooks/sections'
 import { useGetResponses } from '@/hooks/responses'
+import { useMutationUploadImage } from '@/api/upload/queries'
 import type { FormField, FormSection, FieldType } from '@/types/form'
 import { ResponsesPanel } from '@/components/responses'
 import { SpinnerGapIcon } from '@phosphor-icons/react'
@@ -19,6 +20,7 @@ type SavedSnapshot = {
   title: string
   description: string
   color: string
+  image: string | null
   sections: FormSection[]
 }
 
@@ -30,6 +32,7 @@ export default function EventDetailPage() {
   const { data: responses = [] } = useGetResponses(id ?? '')
   const updateEvent = useUpdateEvent()
   const updateSection = useUpdateSection(id ?? '')
+  const uploadImage = useMutationUploadImage()
   const [formTitle, setFormTitle] = useState('Untitled Form')
   const [formDescription, setFormDescription] = useState('')
   const [bannerColor, setBannerColor] = useState('#0054a5')
@@ -59,11 +62,13 @@ export default function EventDetailPage() {
       const secs = existing.sections?.length
         ? existing.sections
         : [{ id: crypto.randomUUID(), title: '', fields: [] }]
+      const img = existing.image ?? null
       setFormTitle(title)
       setFormDescription(desc)
       setBannerColor(color)
+      setBannerImage(img)
       setHistory({ stack: [secs], index: 0 })
-      setSavedSnapshot({ title, description: desc, color, sections: secs })
+      setSavedSnapshot({ title, description: desc, color, image: img, sections: secs })
       setEventStatus(existing.status)
       setInitialized(true)
     } else {
@@ -71,7 +76,7 @@ export default function EventDetailPage() {
     }
   }, [existing, isLoading, initialized, navigate])
 
-  // Keep eventStatus in sync when the query refetches (e.g. after publishing from home page)
+  // Sync eventStatus on query refetch
   useEffect(() => {
     if (initialized && existing) {
       setEventStatus(existing.status)
@@ -94,8 +99,18 @@ export default function EventDetailPage() {
     if (formTitle !== savedSnapshot.title) return true
     if (formDescription !== savedSnapshot.description) return true
     if (bannerColor !== savedSnapshot.color) return true
+    if (bannerImage !== savedSnapshot.image) return true
     return JSON.stringify(sections) !== JSON.stringify(savedSnapshot.sections)
-  }, [formTitle, formDescription, bannerColor, sections, savedSnapshot])
+  }, [formTitle, formDescription, bannerColor, bannerImage, sections, savedSnapshot])
+
+  const handleBannerFileSelect = useCallback(async (file: File) => {
+    try {
+      const { url } = await uploadImage.mutateAsync(file)
+      setBannerImage(url)
+    } catch (err) {
+      console.error('[handleBannerFileSelect]', err)
+    }
+  }, [uploadImage])
 
   const handleSave = useCallback(async () => {
     if (!id || isSaving) return
@@ -106,6 +121,7 @@ export default function EventDetailPage() {
         name: formTitle,
         description: formDescription,
         color: bannerColor,
+        image: bannerImage,
       })
       await Promise.all(
         sections.map((s) =>
@@ -121,12 +137,15 @@ export default function EventDetailPage() {
         title: formTitle,
         description: formDescription,
         color: bannerColor,
+        image: bannerImage,
         sections: JSON.parse(JSON.stringify(sections)),
       })
+    } catch (err) {
+      console.error('[handleSave]', err)
     } finally {
       setIsSaving(false)
     }
-  }, [id, isSaving, formTitle, formDescription, bannerColor, sections, updateEvent, updateSection])
+  }, [id, isSaving, formTitle, formDescription, bannerColor, bannerImage, sections, updateEvent, updateSection])
 
   const handlePublish = useCallback(async () => {
     if (!id || isPublishing) return
@@ -137,6 +156,8 @@ export default function EventDetailPage() {
       await updateEvent.mutateAsync({ eventId: id, status: 'active' })
       setEventStatus('active')
       setShowShareDialog(true)
+    } catch (err) {
+      console.error('[handlePublish]', err)
     } finally {
       setIsPublishing(false)
     }
@@ -151,6 +172,8 @@ export default function EventDetailPage() {
       await updateEvent.mutateAsync({ eventId: id, status })
       setEventStatus(status)
       setStatusResult(action)
+    } catch (err) {
+      console.error('[handleStatusChange]', err)
     } finally {
       setIsChangingStatus(false)
     }
@@ -158,7 +181,7 @@ export default function EventDetailPage() {
 
   const publicFormUrl = `${window.location.origin}/forms/${id}`
 
-  // Ctrl+S + undo/redo
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -181,7 +204,7 @@ export default function EventDetailPage() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleSave])
 
-  // Browser refresh/close guard
+  // Beforeunload guard
   useEffect(() => {
     if (!isDirty) return
     const handler = (e: BeforeUnloadEvent) => {
@@ -359,6 +382,7 @@ export default function EventDetailPage() {
                 bannerImage={bannerImage}
                 onBannerColorChange={setBannerColor}
                 onBannerImageChange={setBannerImage}
+                onBannerFileSelect={handleBannerFileSelect}
                 formTitle={formTitle}
                 onTitleChange={setFormTitle}
                 formDescription={formDescription}
@@ -432,7 +456,6 @@ export default function EventDetailPage() {
         )}
       </div>
 
-      {/* Unsaved changes navigation dialog */}
       <AnimatePresence>
         {showLeaveDialog && (
           <motion.div
@@ -473,14 +496,12 @@ export default function EventDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* Share dialog */}
       <AnimatePresence>
         {showShareDialog && (
           <ShareDialog url={publicFormUrl} onClose={() => setShowShareDialog(false)} />
         )}
       </AnimatePresence>
 
-      {/* Confirm action modal */}
       <ConfirmModal
         isOpen={!!confirmAction}
         onClose={() => setConfirmAction(null)}
@@ -510,10 +531,8 @@ export default function EventDetailPage() {
         }
       />
 
-      {/* Loading modal */}
       <LoadingModal isOpen={isChangingStatus || isPublishing} />
 
-      {/* Status result modal */}
       <StatusModal
         isOpen={!!statusResult}
         onClose={() => setStatusResult(null)}
