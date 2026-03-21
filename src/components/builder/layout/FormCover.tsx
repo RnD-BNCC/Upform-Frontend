@@ -18,6 +18,7 @@ type FormCoverProps = {
   bannerImage: string | null;
   onBannerColorChange: (c: string) => void;
   onBannerImageChange: (url: string | null) => void;
+  onBannerFileSelect?: (file: File) => void;
   formTitle: string;
   onTitleChange: (v: string) => void;
   formDescription: string;
@@ -29,6 +30,7 @@ export default function FormCover({
   bannerImage,
   onBannerColorChange,
   onBannerImageChange,
+  onBannerFileSelect,
   formTitle,
   onTitleChange,
   formDescription,
@@ -40,6 +42,7 @@ export default function FormCover({
     const file = e.target.files?.[0];
     if (!file) return;
     onBannerImageChange(URL.createObjectURL(file));
+    onBannerFileSelect?.(file);
   };
 
   return (
