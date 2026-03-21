@@ -55,6 +55,11 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
       setScoreUpdate(data)
     }
 
+    const onLeaderboardHidden = () => {
+      setShowLeaderboard(false)
+      setLeaderboardScores([])
+    }
+
     socket.on('slide-change', onSlideChange)
     socket.on('poll-state', onPollState)
     socket.on('participant-count', onParticipantCount)
@@ -62,6 +67,7 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
     socket.on('countdown', onCountdown)
     socket.on('show-leaderboard', onShowLeaderboard)
     socket.on('score-update', onScoreUpdate)
+    socket.on('leaderboard-hidden', onLeaderboardHidden)
 
     return () => {
       if (goTimer) clearTimeout(goTimer)
@@ -72,6 +78,7 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
       socket.off('countdown', onCountdown)
       socket.off('show-leaderboard', onShowLeaderboard)
       socket.off('score-update', onScoreUpdate)
+      socket.off('leaderboard-hidden', onLeaderboardHidden)
     }
   }, [socketRef, connected])
 
