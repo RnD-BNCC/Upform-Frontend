@@ -36,6 +36,7 @@ export type UpdateEventPayload = {
   description?: string
   status?: 'draft' | 'active' | 'closed'
   color?: string
+  image?: string | null
 }
 
 // Section payloads
