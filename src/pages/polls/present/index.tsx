@@ -172,7 +172,7 @@ export default function PollPresentPage() {
           break
         case 'Escape':
           if (restarting) break
-          if (showLeaderboard) { setShowLeaderboard(false); break }
+          if (showLeaderboard) { socketRef.current?.emit('hide-leaderboard', { pollId }); setShowLeaderboard(false); break }
           if (showHotkeys) { setShowHotkeys(false); break }
           if (showSlideGrid) { setShowSlideGrid(false); break }
           if (showBlankScreen) { setShowBlankScreen(false); break }
@@ -241,7 +241,7 @@ export default function PollPresentPage() {
 
       <AnimatePresence>
         {showLeaderboard && leaderboardScores.length > 0 && (
-          <Leaderboard scores={leaderboardScores} onClose={() => setShowLeaderboard(false)} />
+          <Leaderboard scores={leaderboardScores} onClose={() => { socketRef.current?.emit('hide-leaderboard', { pollId }); setShowLeaderboard(false) }} />
         )}
       </AnimatePresence>
 
