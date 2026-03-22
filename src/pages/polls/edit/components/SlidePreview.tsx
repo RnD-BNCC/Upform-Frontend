@@ -6,6 +6,8 @@ import {
   TextItalic,
   TextUnderline,
   TextStrikethrough,
+  ThumbsUp,
+  ArrowDown,
 } from '@phosphor-icons/react'
 
 const TOOLBAR_COLORS = [
@@ -155,7 +157,7 @@ export default function SlidePreview({
           onInput={handleInput}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="w-full text-xl font-bold bg-transparent outline-none min-h-12 empty:before:content-[attr(data-placeholder)] empty:before:text-gray-300 empty:before:italic empty:before:font-medium"
+          className="w-full text-xl font-bold bg-transparent outline-none min-h-12 text-center empty:before:content-[attr(data-placeholder)] empty:before:text-gray-300 empty:before:italic empty:before:font-medium"
           data-placeholder="Type your question here..."
           style={{ color: settings.textColor ?? '#111827' }}
         />
@@ -271,10 +273,20 @@ export default function SlidePreview({
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Add options to preview ranking</div>
       )}
       {type === 'qa' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-2">
-          <div className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-400">What's your question?</div>
-          <div className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-400">Another question...</div>
-          <p className="text-[10px] text-gray-300 mt-1">Audience questions will appear here</p>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4">
+          <p className="text-[9px] font-semibold text-gray-400 tabular-nums">0/0 answered</p>
+          <p className="text-sm font-bold text-center leading-snug" style={{ color: settings.textColor ?? '#111827' }}>Sample question from audience</p>
+          <div className="flex items-center gap-1" style={{ color: settings.textColor ?? '#111827', opacity: 0.35 }}>
+            <ThumbsUp size={10} weight="fill" />
+            <span className="text-[9px] font-medium">0</span>
+          </div>
+          <div className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center mt-2">
+            <ArrowDown size={8} weight="bold" className="text-gray-400" />
+          </div>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="px-1.5 py-0.5 rounded text-[7px] font-bold bg-gray-800 text-white">ENTER</span>
+            <span className="text-[7px] text-gray-400">to mark as answered</span>
+          </div>
         </div>
       )}
       {type === 'guess_number' && (
@@ -329,7 +341,7 @@ export default function SlidePreview({
             </div>
             <span className="absolute bottom-1 right-1.5 text-[8px] text-gray-300">{settings.axisXLabel || 'X'} →</span>
             <span className="absolute top-1 left-1.5 text-[8px] text-gray-300">↑ {settings.axisYLabel || 'Y'}</span>
-            {options.slice(0, 4).map((opt, i) => {
+            {options.slice(0, 4).map((_opt, i) => {
               const positions = [{ x: 70, y: 30 }, { x: 30, y: 70 }, { x: 65, y: 65 }, { x: 35, y: 35 }]
               const pos = positions[i]
               return (

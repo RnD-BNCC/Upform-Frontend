@@ -46,12 +46,18 @@ export function useQASocket({
       }
     }
 
+    const handleResetScores = () => {
+      onQuestionsChange(() => [])
+    }
+
     socket.on('question:new', handleQuestionNew)
     socket.on('question:like_updated', handleLikeUpdated)
+    socket.on('reset-scores', handleResetScores)
 
     return () => {
       socket.off('question:new', handleQuestionNew)
       socket.off('question:like_updated', handleLikeUpdated)
+      socket.off('reset-scores', handleResetScores)
     }
   }, [socketRef.current, pollId])
 

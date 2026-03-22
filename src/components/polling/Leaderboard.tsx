@@ -4,11 +4,11 @@ import { Trophy, Crown } from '@phosphor-icons/react'
 import type { LeaderboardEntry } from '@/types/polling'
 
 const RANK_COLORS = [
-  'from-amber-400 to-yellow-500',   // #1 gold
-  'from-gray-300 to-gray-400',      // #2 silver
-  'from-amber-600 to-amber-700',    // #3 bronze
-  'from-primary-400 to-primary-500', // #4
-  'from-primary-300 to-primary-400', // #5
+  'from-amber-400 to-yellow-500',
+  'from-gray-300 to-gray-400',
+  'from-amber-600 to-amber-700',
+  'from-primary-400 to-primary-500',
+  'from-primary-300 to-primary-400',
 ]
 
 const BAR_BG = [
@@ -26,7 +26,7 @@ export default function Leaderboard({
 }) {
   const [phase, setPhase] = useState<'runners' | 'winner'>('runners')
   const top5 = scores.slice(0, 5)
-  const runners = top5.slice(1).reverse() // #5, #4, #3, #2
+  const runners = top5.slice(1)
 
   useEffect(() => {
     const timer = setTimeout(() => setPhase('winner'), runners.length * 1000 + 1500)
@@ -38,7 +38,7 @@ export default function Leaderboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="w-full h-full bg-gradient-to-b from-primary-900 via-primary-800 to-primary-900 flex flex-col items-center justify-center overflow-hidden"
+      className="w-full min-h-full flex-1 bg-gradient-to-b from-primary-900 via-primary-800 to-primary-900 flex flex-col items-center justify-center overflow-hidden"
     >
 
       <AnimatePresence mode="wait">
@@ -67,7 +67,7 @@ export default function Leaderboard({
                     key={entry.id}
                     initial={{ x: 300, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: i * 0.8, type: 'spring', stiffness: 80, damping: 15 }}
+                    transition={{ delay: (runners.length - 1 - i) * 0.8, type: 'spring', stiffness: 80, damping: 15 }}
                     className={`flex items-center gap-2.5 sm:gap-4 rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-4 ${BAR_BG[rank - 1]}`}
                   >
                     <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br ${RANK_COLORS[rank - 1]} flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-lg shrink-0`}>
@@ -137,7 +137,6 @@ export default function Leaderboard({
               </p>
             </motion.div>
 
-            {/* Other participants below */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

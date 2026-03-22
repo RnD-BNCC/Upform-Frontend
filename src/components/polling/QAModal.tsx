@@ -1,73 +1,47 @@
-import { useState, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { X, Heart, PaperPlaneTilt, ChatTeardropText } from '@phosphor-icons/react'
-import type { RefObject } from 'react'
-import type { Socket } from 'socket.io-client'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { X, ThumbsUp, ArrowLeft, ChatTeardropText, CheckCircle } from '@phosphor-icons/react'
 import type { QAQuestion } from '@/types/polling'
-import { useQASocket } from '@/hooks/useQASocket'
 
 const MAX_LENGTH = 200
 
 interface QAModalProps {
-  pollId: string
   myUserId: string
   myName: string
-  socketRef: RefObject<Socket | null>
   questions: QAQuestion[]
   onQuestionsChange: (updater: (prev: QAQuestion[]) => QAQuestion[]) => void
+  submitQuestion: (text: string, authorName: string, authorId: string) => void
+  toggleLike: (questionId: string, currentlyLiked: boolean, onRollback: () => void) => void
   onClose: () => void
 }
 
+type ModalView = 'list' | 'form' | 'thankyou'
+
 export default function QAModal({
-  pollId,
   myUserId,
   myName,
-  socketRef,
   questions,
   onQuestionsChange,
+  submitQuestion,
+  toggleLike,
   onClose,
 }: QAModalProps) {
-  const [showForm, setShowForm] = useState(false)
+  const [view, setView] = useState<ModalView>('list')
   const [text, setText] = useState('')
-  const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'recent' | 'popular'>('recent')
 
-  const { submitQuestion, toggleLike } = useQASocket({
-    socketRef,
-    pollId,
-    myUserId,
-    questions,
-    onQuestionsChange,
-  })
+  useEffect(() => {
+    if (view !== 'thankyou') return
+    const timer = setTimeout(() => setView('list'), 2000)
+    return () => clearTimeout(timer)
+  }, [view])
 
   const handleSubmit = useCallback(() => {
     if (!text.trim() || text.length > MAX_LENGTH) return
-
-    setSubmitError(null)
-
-    const socket = socketRef.current
-    if (socket) {
-      const onError = (err: { code: string; message: string }) => {
-        if (err.code === 'LIMIT_EXCEEDED') {
-          setSubmitError('Kamu sudah submit 5 pertanyaan')
-        } else {
-          setSubmitError(err.message ?? 'Terjadi kesalahan')
-        }
-        socket.off('question:error', onError)
-      }
-      socket.once('question:error', onError)
-
-      setTimeout(() => {
-        socket.off('question:error', onError)
-      }, 5000)
-    }
-
     submitQuestion(text.trim(), myName, myUserId)
     setText('')
-    setShowForm(false)
-    setSubmitSuccess(true)
-    setTimeout(() => setSubmitSuccess(false), 3000)
-  }, [text, myName, myUserId, submitQuestion, socketRef])
+    setView('thankyou')
+  }, [text, myName, myUserId, submitQuestion])
 
   const handleToggleLike = useCallback(
     (question: QAQuestion) => {
@@ -75,7 +49,6 @@ export default function QAModal({
 
       const isLiked = question.likedByIds.includes(myUserId)
 
-      // Optimistic update
       onQuestionsChange((prev) =>
         prev.map((q) =>
           q.id === question.id
@@ -111,6 +84,14 @@ export default function QAModal({
     [myUserId, onQuestionsChange, toggleLike],
   )
 
+  const sortedQuestions = useMemo(() => {
+    return [...questions].sort((a, b) =>
+      sortBy === 'popular'
+        ? b.likeCount - a.likeCount
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+  }, [questions, sortBy])
+
   const remaining = MAX_LENGTH - text.length
   const isOverLimit = remaining < 0
 
@@ -119,162 +100,183 @@ export default function QAModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center"
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: '20%', opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '20%', opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-        className="w-full max-w-sm bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh]"
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="w-full max-w-md bg-white rounded-t-2xl shadow-2xl flex flex-col h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100 shrink-0">
-          <div className="flex items-center gap-2">
-            <ChatTeardropText size={16} weight="bold" className="text-primary-500" />
-            <h3 className="text-sm font-bold text-gray-800">Q&amp;A</h3>
-            <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
-              {questions.length}
-            </span>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
-          >
-            <X size={14} weight="bold" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
-          {questions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <ChatTeardropText size={32} className="text-gray-200 mb-2" weight="bold" />
-              <p className="text-sm text-gray-400 font-medium">
-                Jadilah yang pertama bertanya!
-              </p>
+        {view === 'thankyou' ? (
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Q&amp;A</h3>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 cursor-pointer transition-colors"
+              >
+                <X size={16} weight="bold" />
+              </button>
             </div>
-          ) : (
-            questions.map((q) => {
-              const isLiked = q.likedByIds.includes(myUserId)
-              const isOwn = q.authorId === myUserId
-              return (
-                <div
-                  key={q.id}
-                  className="flex flex-col gap-1.5 p-3 rounded-xl border border-gray-100 bg-gray-50"
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <CheckCircle size={40} className="text-gray-300" weight="light" />
+              <p className="text-base font-semibold text-gray-500">Thank you!</p>
+            </div>
+          </div>
+        ) : view === 'form' ? (
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Q&amp;A</h3>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 cursor-pointer transition-colors"
+              >
+                <X size={16} weight="bold" />
+              </button>
+            </div>
+
+            <div className="p-5 flex flex-col gap-4">
+              <button
+                onClick={() => { setView('list'); setText('') }}
+                className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-700 cursor-pointer transition-colors self-start"
+              >
+                <ArrowLeft size={14} weight="bold" />
+                Back
+              </button>
+
+              <h4 className="text-lg font-bold text-gray-900">New question</h4>
+
+              <div className="relative">
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Your question to the presenter..."
+                  rows={4}
+                  autoFocus
+                  className="w-full text-sm border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-100 resize-none pr-12 transition-all"
+                />
+                <span
+                  className={`absolute bottom-3 right-3 text-[10px] font-semibold ${
+                    isOverLimit ? 'text-red-500' : 'text-gray-300'
+                  }`}
                 >
-                  <p className="text-sm text-gray-700 leading-snug">{q.text}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-gray-400 font-medium">{q.authorName}</p>
-                    {!isOwn && (
-                      <button
-                        onClick={() => handleToggleLike(q)}
-                        className={`flex items-center gap-1 text-[11px] font-semibold transition-colors cursor-pointer ${
-                          isLiked
-                            ? 'text-red-500'
-                            : 'text-gray-400 hover:text-red-400'
-                        }`}
-                      >
-                        <Heart
-                          size={13}
-                          weight={isLiked ? 'fill' : 'regular'}
-                        />
-                        {q.likeCount}
-                      </button>
-                    )}
-                    {isOwn && (
-                      <div className="flex items-center gap-1 text-[11px] font-semibold text-gray-300">
-                        <Heart size={13} weight="fill" />
-                        {q.likeCount}
+                  {remaining}
+                </span>
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={!text.trim() || isOverLimit}
+                className="w-full py-3 text-sm font-bold text-white bg-primary-500 rounded-full hover:bg-primary-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col h-[80vh]">
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Q&amp;A</h3>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 cursor-pointer transition-colors"
+              >
+                <X size={16} weight="bold" />
+              </button>
+            </div>
+
+            <div className="px-5 pt-3 shrink-0 flex gap-2">
+              <button
+                onClick={() => setSortBy('recent')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors cursor-pointer ${
+                  sortBy === 'recent'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                Recent
+              </button>
+              <button
+                onClick={() => setSortBy('popular')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors cursor-pointer ${
+                  sortBy === 'popular'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                Popular
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-2">
+              {sortedQuestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <ChatTeardropText size={36} className="text-gray-200 mb-3" weight="bold" />
+                  <p className="text-sm text-gray-400 font-medium">
+                    Be the first to ask!
+                  </p>
+                </div>
+              ) : (
+                sortedQuestions.map((q) => {
+                  const isLiked = q.likedByIds.includes(myUserId)
+                  const isOwn = q.authorId === myUserId
+                  return (
+                    <div
+                      key={q.id}
+                      className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="flex-1 pr-3">
+                        <p className="text-sm text-gray-800 leading-snug font-medium">{q.text}</p>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
+                      {!isOwn ? (
+                        <button
+                          onClick={() => handleToggleLike(q)}
+                          className="flex flex-col items-center gap-0.5 shrink-0 cursor-pointer transition-all"
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                              isLiked
+                                ? 'bg-gray-100 text-gray-900'
+                                : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                            }`}
+                          >
+                            <ThumbsUp
+                              size={15}
+                              weight={isLiked ? 'fill' : 'regular'}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-bold ${isLiked ? 'text-gray-900' : 'text-gray-400'}`}>
+                            {q.likeCount}
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="flex flex-col items-center gap-0.5 shrink-0">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-gray-300">
+                            <ThumbsUp size={15} weight="fill" />
+                          </div>
+                          <span className="text-[10px] font-bold text-gray-300">{q.likeCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
 
-        <div className="p-3 border-t border-gray-100 shrink-0 flex flex-col gap-2">
-          <AnimatePresence>
-            {submitSuccess && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-xs text-emerald-600 font-semibold text-center"
+            <div className="p-4 border-t border-gray-100 shrink-0">
+              <button
+                onClick={() => setView('form')}
+                className="w-full py-3 text-sm font-bold text-white bg-primary-500 rounded-full hover:bg-primary-600 transition-colors cursor-pointer"
               >
-                Pertanyaan terkirim!
-              </motion.p>
-            )}
-            {submitError && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-xs text-red-500 font-semibold text-center"
-              >
-                {submitError}
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showForm && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-col gap-2 pb-1">
-                  <div className="relative">
-                    <textarea
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      placeholder="Tulis pertanyaanmu..."
-                      rows={3}
-                      autoFocus
-                      className="w-full text-sm border-2 border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-primary-500 resize-none pr-10"
-                    />
-                    <span
-                      className={`absolute bottom-3 right-3 text-[10px] font-semibold ${
-                        isOverLimit ? 'text-red-500' : 'text-gray-400'
-                      }`}
-                    >
-                      {remaining}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => { setShowForm(false); setText('') }}
-                      className="flex-1 py-2 text-xs font-semibold text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors cursor-pointer"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={!text.trim() || isOverLimit}
-                      className="flex-1 py-2 text-xs font-bold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <PaperPlaneTilt size={13} weight="bold" />
-                      Kirim
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full py-2.5 text-xs font-bold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors cursor-pointer"
-            >
-              Ask New Question
-            </button>
-          )}
-        </div>
+                Ask new question
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )

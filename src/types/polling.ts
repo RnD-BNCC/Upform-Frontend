@@ -111,7 +111,7 @@ export type MCResult = { option: string; count: number }[]
 export type OpenEndedResult = { text: string; count: number; createdAt: string }[]
 export type RankingResult = { option: string; avgRank: number }[]
 export type ScaleResult = { value: number; count: number }[]
-export type QAResult = { text: string; participantName: string; createdAt: string; isAnswered?: boolean; voteId?: string }[]
+export type QAResult = { text: string; participantName: string; createdAt: string; isAnswered?: boolean; voteId?: string; likeCount?: number }[]
 export type GuessNumberResult = { value: number; count: number }[]
 export type HundredPointsResult = { option: string; totalPoints: number }[]
 export type PinOnImageResult = { x: number; y: number; participantName: string }[]
@@ -144,4 +144,5 @@ export interface QAQuestion {
   likeCount: number
   createdAt: string
   likedByIds: string[]
+  pollVoteId?: string
 }

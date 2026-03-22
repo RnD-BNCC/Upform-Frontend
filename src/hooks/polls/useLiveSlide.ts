@@ -19,6 +19,7 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
 
     const onSlideChange = (data: { currentSlide: number }) => {
       setCurrentSlide(data.currentSlide)
+      setPollStatus('waiting')
       setCountdown(null)
     }
 
