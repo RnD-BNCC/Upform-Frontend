@@ -1,14 +1,19 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import { useGetPollDetail, useSocket, useLiveResults, useLiveSlide } from '@/hooks/polls'
 import { useMutationUpdatePoll, useQuerySlideResults } from '@/api/polls'
+import { useQAQuestions } from '@/api/questions'
+import { useQASocket } from '@/hooks/useQASocket'
 import { apiClient } from '@/config/api-client'
 import { Api } from '@/constants/api'
 import SlideVisualization from '@/components/polling/visualizations'
 import Leaderboard from '@/components/polling/Leaderboard'
-import type { SlideType, SlideSettings, ImageLayout, Participant, PollStatus, LeaderboardEntry } from '@/types/polling'
+import QAPanel from './components/QAPanel'
+import QABadge from './components/QABadge'
+import type { SlideType, SlideSettings, ImageLayout, Participant, PollStatus, QAResult, QAQuestion } from '@/types/polling'
+import { publicApiClient } from '@/config/api-client'
 import {
   CaretLeft,
   ArrowRight,
@@ -24,6 +29,8 @@ import {
   Keyboard,
   ArrowsClockwise,
   Trophy,
+  ChatTeardropText,
+  Check,
 } from '@phosphor-icons/react'
 
 const PASTEL_COLORS = [
@@ -37,7 +44,23 @@ export default function PollPresentPage() {
   const { data: poll, isLoading, refetch } = useGetPollDetail(pollId ?? '')
   const updatePoll = useMutationUpdatePoll()
   const { socketRef, connected } = useSocket(pollId)
-  const { participantCount, participantList } = useLiveSlide(socketRef, connected)
+  const { participantCount, participantList, leaderboardScores } = useLiveSlide(socketRef, connected)
+
+  // Q&A Mentimeter-style state
+  const [showQAMentimeterPanel, setShowQAMentimeterPanel] = useState(false)
+  const [qaNavigateIndex, setQaNavigateIndex] = useState<number | null>(null)
+  const [qaQuestions, setQaQuestions] = useState<QAQuestion[]>([])
+  const { data: initialQuestions } = useQAQuestions(pollId)
+  useEffect(() => {
+    if (initialQuestions) setQaQuestions(initialQuestions)
+  }, [initialQuestions])
+  useQASocket({
+    socketRef,
+    pollId,
+    myUserId: 'presenter',
+    questions: qaQuestions,
+    onQuestionsChange: setQaQuestions,
+  })
 
   const [ready, setReady] = useState(false)
   useEffect(() => { refetch().finally(() => setReady(true)) }, [])
@@ -52,19 +75,12 @@ export default function PollPresentPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [restarting, setRestarting] = useState(false)
   const [statusOverride, setStatusOverride] = useState<PollStatus | null>(null)
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [leaderboardScores, setLeaderboardScores] = useState<LeaderboardEntry[]>([])
 
-  useEffect(() => {
-    const socket = socketRef.current
-    if (!socket) return
-    const onScoresUpdate = (data: { scores: LeaderboardEntry[] }) => {
-      setLeaderboardScores(data.scores)
-      setShowLeaderboard(true)
-    }
-    socket.on('scores-update', onScoresUpdate)
-    return () => { socket.off('scores-update', onScoresUpdate) }
-  }, [socketRef, connected])
+  // Q&A sidebar state
+  const [showQASidebar, setShowQASidebar] = useState(false)
+  const [qaHighlightedVoteId, setQaHighlightedVoteId] = useState<string | null>(null)
+  const [qaTab, setQaTab] = useState<'questions' | 'answered'>('questions')
+  const qaStateRef = useRef({ showQASidebar: false, qaHighlightedVoteId: null as string | null, unansweredQA: [] as QAResult, pollId: '' as string | undefined, activeSlideId: '' as string | undefined, isQASlide: false })
 
   useEffect(() => {
     if (poll) setCurrentSlide(poll.currentSlide)
@@ -73,24 +89,85 @@ export default function PollPresentPage() {
   const slides = poll?.slides ?? []
   const activeSlide = slides[currentSlide]
   const slideSettings = (activeSlide?.settings as SlideSettings) ?? {}
+  const isQASlide = activeSlide?.type === 'qa'
 
   const { results: liveResults } = useLiveResults(socketRef, activeSlide?.id, connected)
   const { data: fetchedResults } = useQuerySlideResults(pollId ?? '', activeSlide?.id ?? '')
   const displayResults = liveResults ?? fetchedResults ?? null
 
+  const qaResults = isQASlide && displayResults ? (displayResults as QAResult) : null
+  const unansweredQA = qaResults?.filter((q) => !q.isAnswered) ?? []
+  const answeredQA = qaResults?.filter((q) => q.isAnswered) ?? []
+
+  // Keep ref current for keyboard handler
+  qaStateRef.current = { showQASidebar, qaHighlightedVoteId, unansweredQA, pollId, activeSlideId: activeSlide?.id, isQASlide }
+
+  // Auto-show Q&A sidebar when navigating to a QA slide
+  useEffect(() => {
+    if (isQASlide) {
+      setShowQASidebar(true)
+      setQaTab('questions')
+    } else {
+      setShowQASidebar(false)
+    }
+    setQaHighlightedVoteId(null)
+  }, [activeSlide?.id, isQASlide])
+
+  // When highlighted voteId gets answered, advance to next unanswered
+  useEffect(() => {
+    if (!qaHighlightedVoteId) return
+    const stillUnAnswered = unansweredQA.find((q) => q.voteId === qaHighlightedVoteId)
+    if (!stillUnAnswered && unansweredQA.length > 0) {
+      setQaHighlightedVoteId(unansweredQA[0].voteId ?? null)
+    }
+  }, [unansweredQA])
+
+  const handleMarkQAAnswered = useCallback(async (voteId: string) => {
+    if (!pollId || !activeSlide) return
+    try {
+      await publicApiClient.patch(Api.publicPollVoteAnswer(pollId, activeSlide.id, voteId))
+    } catch { /* ignore */ }
+  }, [pollId, activeSlide])
+
+  const handleQANext = useCallback(() => {
+    const { unansweredQA: list, qaHighlightedVoteId: hlId } = qaStateRef.current
+    if (list.length === 0) return
+    const idx = list.findIndex((q) => q.voteId === hlId)
+    const newIdx = idx < 0 || idx >= list.length - 1 ? 0 : idx + 1
+    setQaHighlightedVoteId(list[newIdx]?.voteId ?? null)
+  }, [])
+
+  const handleQAPrev = useCallback(() => {
+    const { unansweredQA: list, qaHighlightedVoteId: hlId } = qaStateRef.current
+    if (list.length === 0) return
+    const idx = list.findIndex((q) => q.voteId === hlId)
+    const newIdx = idx <= 0 ? list.length - 1 : idx - 1
+    setQaHighlightedVoteId(list[newIdx]?.voteId ?? null)
+  }, [])
+
   const effectiveStatus = statusOverride ?? poll?.status
   const isWaitingRoom = effectiveStatus === 'waiting'
-  const isLastSlide = currentSlide >= slides.length - 1
+  const isLeaderboardSlide = currentSlide === slides.length
+  const isLastQuestionSlide = currentSlide >= slides.length - 1 && !isLeaderboardSlide
   const isFirstSlide = currentSlide <= 0
 
   const goToSlide = useCallback((index: number) => {
     if (!pollId) return
+    const isLeaderboard = index === slides.length
     setCurrentSlide(index)
-    setStatusOverride('waiting')
-    updatePoll.mutate({ pollId, currentSlide: index, status: 'waiting' })
-    socketRef.current?.emit('broadcast-poll-state', { pollId, currentSlide: index, status: 'waiting' })
     setShowSlideGrid(false)
-  }, [pollId, updatePoll, socketRef])
+
+    if (isLeaderboard) {
+      updatePoll.mutate({ pollId, currentSlide: index })
+      socketRef.current?.emit('broadcast-poll-state', { pollId, currentSlide: index })
+      socketRef.current?.emit('broadcast-leaderboard', { pollId })
+    } else {
+      setStatusOverride('waiting')
+      updatePoll.mutate({ pollId, currentSlide: index, status: 'waiting' })
+      socketRef.current?.emit('broadcast-poll-state', { pollId, currentSlide: index, status: 'waiting' })
+      socketRef.current?.emit('hide-leaderboard', { pollId })
+    }
+  }, [pollId, slides.length, updatePoll, socketRef])
 
   useEffect(() => {
     if (countdown === null) return
@@ -114,12 +191,6 @@ export default function PollPresentPage() {
     setCountdown(5)
   }, [])
 
-  const handleShowLeaderboard = useCallback(() => {
-    if (!pollId) return
-    socketRef.current?.emit('request-scores', { pollId })
-    socketRef.current?.emit('broadcast-leaderboard', { pollId })
-  }, [pollId, socketRef])
-
   const handleRestart = useCallback(async () => {
     if (!pollId || restarting) return
     setRestarting(true)
@@ -135,8 +206,6 @@ export default function PollPresentPage() {
     setCurrentSlide(0)
     setCountdown(null)
     setStatusOverride('waiting')
-    setShowLeaderboard(false)
-    setLeaderboardScores([])
   }, [pollId, restarting, updatePoll, socketRef])
 
   const handleEnd = useCallback(() => {
@@ -160,22 +229,48 @@ export default function PollPresentPage() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT') return
+      const { showQASidebar: qaSidebarOpen, qaHighlightedVoteId: qaHlId, unansweredQA: qaList, pollId: qaPollId, activeSlideId: qaSlideId } = qaStateRef.current
+
       switch (e.key) {
         case 'f': case 'F': toggleFullscreen(); break
         case 'ArrowRight':
+          if (isLeaderboardSlide) break
           if (isWaitingRoom && countdown === null) handleStartQuiz()
-          else if (!isWaitingRoom && isLastSlide) handleShowLeaderboard()
+          else if (!isWaitingRoom && isLastQuestionSlide) goToSlide(slides.length)
           else if (!isWaitingRoom && currentSlide < slides.length - 1) goToSlide(currentSlide + 1)
           break
         case 'ArrowLeft':
+          if (isLeaderboardSlide) { goToSlide(slides.length - 1); break }
           if (!isWaitingRoom && currentSlide > 0) goToSlide(currentSlide - 1)
+          break
+        case 'ArrowUp':
+          if (qaStateRef.current.isQASlide && qaList.length > 0) {
+            e.preventDefault()
+            const idx = qaList.findIndex((q) => q.voteId === qaHlId)
+            const newIdx = idx <= 0 ? qaList.length - 1 : idx - 1
+            setQaHighlightedVoteId(qaList[newIdx]?.voteId ?? null)
+          }
+          break
+        case 'ArrowDown':
+          if (qaStateRef.current.isQASlide && qaList.length > 0) {
+            e.preventDefault()
+            const idx = qaList.findIndex((q) => q.voteId === qaHlId)
+            const newIdx = idx < 0 || idx >= qaList.length - 1 ? 0 : idx + 1
+            setQaHighlightedVoteId(qaList[newIdx]?.voteId ?? null)
+          }
+          break
+        case 'Enter':
+          if (qaStateRef.current.isQASlide && qaHlId && qaPollId && qaSlideId) {
+            e.preventDefault()
+            publicApiClient.patch(Api.publicPollVoteAnswer(qaPollId, qaSlideId, qaHlId)).catch(() => {})
+          }
           break
         case 'Escape':
           if (restarting) break
-          if (showLeaderboard) { socketRef.current?.emit('hide-leaderboard', { pollId }); setShowLeaderboard(false); break }
           if (showHotkeys) { setShowHotkeys(false); break }
           if (showSlideGrid) { setShowSlideGrid(false); break }
           if (showBlankScreen) { setShowBlankScreen(false); break }
+          if (qaSidebarOpen) { setShowQASidebar(false); break }
           navigate('/polls')
           break
         case 's': case 'S':
@@ -186,15 +281,18 @@ export default function PollPresentPage() {
         case 'b': case 'B': setShowBlankScreen((p) => !p); break
         case 'h': case 'H': setHideResponses((p) => !p); break
         case 'l': case 'L': setShowJoinOverlay((p) => !p); break
+        case 'q': case 'Q':
+          if (isQASlide) setShowQASidebar((p) => !p)
+          break
         case 't': case 'T':
-          if (isLastSlide && !isWaitingRoom) handleShowLeaderboard()
+          if (isLastQuestionSlide && !isWaitingRoom) goToSlide(slides.length)
           break
         case '?': setShowHotkeys((p) => !p); break
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [toggleFullscreen, currentSlide, slides.length, goToSlide, showSlideGrid, showHotkeys, showBlankScreen, showLeaderboard, restarting, handleRestart, handleStartQuiz, handleShowLeaderboard, isWaitingRoom, isLastSlide, countdown, navigate])
+  }, [toggleFullscreen, currentSlide, slides.length, goToSlide, showSlideGrid, showHotkeys, showBlankScreen, restarting, handleRestart, handleStartQuiz, isWaitingRoom, isLastQuestionSlide, isLeaderboardSlide, countdown, navigate, isQASlide])
 
   if (!ready || isLoading || !poll) {
     return (
@@ -239,12 +337,6 @@ export default function PollPresentPage() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showLeaderboard && leaderboardScores.length > 0 && (
-          <Leaderboard scores={leaderboardScores} onClose={() => { socketRef.current?.emit('hide-leaderboard', { pollId }); setShowLeaderboard(false) }} />
-        )}
-      </AnimatePresence>
-
       {showBlankScreen && (
         <div
           className="absolute inset-0 z-[60] bg-black flex items-center justify-center cursor-pointer"
@@ -256,16 +348,16 @@ export default function PollPresentPage() {
 
       <div className="flex items-center justify-between px-5 py-3 z-10 relative">
         <div className="flex items-center gap-3">
-          <h1 className="text-sm font-bold truncate max-w-48 opacity-60" style={{ color: textColor }}>
+          <h1 className="text-sm font-bold truncate max-w-48 opacity-60" style={{ color: isLeaderboardSlide ? '#FFFFFF' : textColor }}>
             {poll.title || 'Untitled Poll'}
           </h1>
           <span
             className="text-[11px] font-semibold px-2 py-0.5 rounded-full opacity-50"
-            style={{ color: textColor, backgroundColor: textColor === '#FFFFFF' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }}
+            style={{ color: isLeaderboardSlide ? '#FFFFFF' : textColor, backgroundColor: isLeaderboardSlide ? 'rgba(255,255,255,0.15)' : textColor === '#FFFFFF' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }}
           >
-            {currentSlide + 1}/{slides.length}
+            {isLeaderboardSlide ? 'Leaderboard' : `${currentSlide + 1}/${slides.length}`}
           </span>
-          <div className="flex items-center gap-1 opacity-50" style={{ color: textColor }}>
+          <div className="flex items-center gap-1 opacity-50" style={{ color: isLeaderboardSlide ? '#FFFFFF' : textColor }}>
             <Users size={13} weight="bold" />
             <span className="text-[11px] font-semibold tabular-nums">{participantCount}</span>
           </div>
@@ -280,10 +372,25 @@ export default function PollPresentPage() {
           </div>
         </div>
 
-        <span className="text-[11px] font-bold italic text-primary-500">UpForm</span>
+        <div className="flex items-center gap-2">
+          <QABadge
+            questions={qaQuestions}
+            showPanel={showQAMentimeterPanel}
+            onOpenPanel={() => setShowQAMentimeterPanel((p) => !p)}
+            onNavigateToQuestion={(index) => {
+              setQaNavigateIndex(index)
+              setShowQAMentimeterPanel(true)
+            }}
+          />
+          <span className="text-[11px] font-bold italic text-primary-500">UpForm</span>
+        </div>
       </div>
 
-      {isWaitingRoom ? (
+      {isLeaderboardSlide ? (
+        <div className="flex-1 flex">
+          <Leaderboard scores={leaderboardScores} />
+        </div>
+      ) : isWaitingRoom ? (
         <div className="flex-1 flex flex-col items-center justify-center px-8 pb-20 relative">
           <p className="text-base font-medium opacity-50 mb-2" style={{ color: textColor }}>
             Question <span className="text-2xl font-black">{currentSlide + 1}</span> of <span className="text-2xl font-black">{slides.length}</span>
@@ -327,7 +434,7 @@ export default function PollPresentPage() {
                   </div>
                   {!hideResponses && (
                     <div className="w-full flex-1 flex items-center justify-center">
-                      {activeSlide && <SlideVisualization type={activeSlide.type as SlideType} results={displayResults} textColor={textColor} bgColor={bgColor} correctAnswer={slideSettings.correctAnswer} />}
+                      {activeSlide && <SlideVisualization type={activeSlide.type as SlideType} results={displayResults} textColor={textColor} bgColor={bgColor} correctAnswer={slideSettings.correctAnswer} correctNumber={slideSettings.correctNumber} highlightedVoteId={qaHighlightedVoteId} settings={slideSettings} onQANext={handleQANext} onQAPrev={handleQAPrev} onMarkQAAnswered={handleMarkQAAnswered} />}
                     </div>
                   )}
                 </div>
@@ -346,7 +453,7 @@ export default function PollPresentPage() {
                 </p>
                 {!hideResponses ? (
                   <div className="w-full max-w-4xl flex-1 flex items-center justify-center">
-                    {activeSlide && <SlideVisualization type={activeSlide.type as SlideType} results={displayResults} textColor={textColor} bgColor={bgColor} correctAnswer={slideSettings.correctAnswer} />}
+                    {activeSlide && <SlideVisualization type={activeSlide.type as SlideType} results={displayResults} textColor={textColor} bgColor={bgColor} correctAnswer={slideSettings.correctAnswer} correctNumber={slideSettings.correctNumber} highlightedVoteId={qaHighlightedVoteId} settings={slideSettings} onQANext={handleQANext} onQAPrev={handleQAPrev} onMarkQAAnswered={handleMarkQAAnswered} />}
                   </div>
                 ) : (
                   <div className="flex-1 flex items-center justify-center">
@@ -443,6 +550,94 @@ export default function PollPresentPage() {
       <HotkeysModal open={showHotkeys} onClose={() => setShowHotkeys(false)} />
 
       <AnimatePresence>
+        {showQAMentimeterPanel && (
+          <QAPanel
+            questions={qaQuestions}
+            navigateToIndex={qaNavigateIndex}
+            onClose={() => { setShowQAMentimeterPanel(false); setQaNavigateIndex(null) }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isQASlide && showQASidebar && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+            className="absolute right-0 top-0 bottom-0 w-72 bg-white/95 backdrop-blur-md shadow-2xl z-30 flex flex-col overflow-hidden border-l border-gray-100"
+          >
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100 shrink-0">
+              <h3 className="text-sm font-bold text-gray-800">Q&A</h3>
+              <button onClick={() => setShowQASidebar(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                <X size={14} weight="bold" />
+              </button>
+            </div>
+            <div className="flex border-b border-gray-100 shrink-0">
+              <button
+                onClick={() => setQaTab('questions')}
+                className={`flex-1 py-2 text-xs font-semibold transition-colors ${qaTab === 'questions' ? 'text-primary-600 border-b-2 border-primary-500' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                Questions ({unansweredQA.length})
+              </button>
+              <button
+                onClick={() => setQaTab('answered')}
+                className={`flex-1 py-2 text-xs font-semibold transition-colors ${qaTab === 'answered' ? 'text-primary-600 border-b-2 border-primary-500' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                Answered ({answeredQA.length})
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+              {(qaTab === 'questions' ? unansweredQA : answeredQA).map((item) => {
+                const isActive = item.voteId === qaHighlightedVoteId
+                return (
+                  <div
+                    key={item.voteId ?? item.text}
+                    onClick={() => setQaHighlightedVoteId(isActive ? null : (item.voteId ?? null))}
+                    className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      isActive
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                    }`}
+                  >
+                    <p className={`text-sm text-gray-700 leading-snug ${item.isAnswered ? 'line-through opacity-50' : ''}`}>
+                      {item.text}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1 font-medium">{item.participantName}</p>
+                  </div>
+                )
+              })}
+              {qaTab === 'questions' && unansweredQA.length === 0 && (
+                <p className="text-xs text-gray-300 text-center py-8">No questions yet</p>
+              )}
+              {qaTab === 'answered' && answeredQA.length === 0 && (
+                <p className="text-xs text-gray-300 text-center py-8">No answered questions yet</p>
+              )}
+            </div>
+            {qaTab === 'questions' && unansweredQA.length > 0 && (
+              <div className="p-3 border-t border-gray-100 shrink-0 flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    const voteId = qaHighlightedVoteId ?? unansweredQA[0]?.voteId
+                    if (voteId && pollId && activeSlide) {
+                      handleMarkQAAnswered(voteId)
+                    }
+                  }}
+                  disabled={!qaHighlightedVoteId && !unansweredQA[0]?.voteId}
+                  className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1.5 hover:bg-emerald-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Check size={14} weight="bold" />
+                  Mark as Answered
+                </button>
+                <p className="text-[10px] text-gray-400 text-center">↑/↓ navigate · Enter mark answered</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {restarting && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -466,7 +661,7 @@ export default function PollPresentPage() {
       <div className="fixed bottom-0 left-0 right-0 h-24 z-20 flex items-end justify-center pb-5 group">
         <div className="flex items-center justify-between gap-4 bg-white rounded-full shadow-xl border border-gray-200 px-2.5 py-1.5 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
           <div className="flex items-center gap-1">
-            <ToolbarButton onClick={() => goToSlide(currentSlide - 1)} disabled={isFirstSlide || isWaitingRoom} title="Previous slide (←)">
+            <ToolbarButton onClick={() => isLeaderboardSlide ? goToSlide(slides.length - 1) : goToSlide(currentSlide - 1)} disabled={(isFirstSlide && !isLeaderboardSlide) || (isWaitingRoom && !isLeaderboardSlide)} title="Previous slide (←)">
               <CaretLeft size={18} weight="bold" />
             </ToolbarButton>
             <ToolbarButton onClick={() => setShowSlideGrid(!showSlideGrid)} title="Slide overview">
@@ -474,24 +669,32 @@ export default function PollPresentPage() {
             </ToolbarButton>
             <button
               onClick={() => {
-                if (isWaitingRoom) handleStartQuiz()
-                else if (isLastSlide) handleShowLeaderboard()
+                if (isLeaderboardSlide) handleEnd()
+                else if (isWaitingRoom) handleStartQuiz()
+                else if (isLastQuestionSlide) goToSlide(slides.length)
                 else goToSlide(currentSlide + 1)
               }}
               className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full transition-colors cursor-pointer ml-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
-                isWaitingRoom
-                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                  : isLastSlide
-                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                isLeaderboardSlide
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : isWaitingRoom
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    : isLastQuestionSlide
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
               }`}
             >
-              {isLastSlide && !isWaitingRoom ? <Trophy size={14} weight="fill" /> : <ArrowRight size={14} weight="bold" />}
-              {isWaitingRoom ? 'Start quiz' : isLastSlide ? 'Leaderboard' : 'Next slide'}
+              {isLeaderboardSlide ? <X size={14} weight="bold" /> : isLastQuestionSlide && !isWaitingRoom ? <Trophy size={14} weight="fill" /> : <ArrowRight size={14} weight="bold" />}
+              {isLeaderboardSlide ? 'End poll' : isWaitingRoom ? 'Start quiz' : isLastQuestionSlide ? 'Leaderboard' : 'Next slide'}
             </button>
           </div>
 
           <div className="flex items-center gap-1">
+            {isQASlide && (
+              <ToolbarButton onClick={() => setShowQASidebar(!showQASidebar)} active={showQASidebar} title="Q&A sidebar (Q)">
+                <ChatTeardropText size={18} weight="bold" />
+              </ToolbarButton>
+            )}
             <ToolbarButton onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen (F)' : 'Fullscreen (F)'}>
               {isFullscreen ? <ArrowsIn size={18} weight="bold" /> : <ArrowsOut size={18} weight="bold" />}
             </ToolbarButton>
@@ -610,6 +813,9 @@ function HotkeysModal({ open, onClose }: { open: boolean; onClose: () => void })
                   <HotkeyRow keyLabel="H" description="Hide or show responses" />
                   <HotkeyRow keyLabel="L" description="Show joining code" />
                   <HotkeyRow keyLabel="?" description="Show keyboard shortcuts" />
+                  <HotkeyRow keyLabel="Q" description="Toggle Q&A sidebar" />
+                  <HotkeyRow keyLabel="↑/↓" description="Navigate Q&A questions" />
+                  <HotkeyRow keyLabel="Enter" description="Mark Q&A as answered" />
                 </div>
               </div>
             </div>

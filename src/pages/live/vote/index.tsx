@@ -2,16 +2,20 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQueryPublicPoll, useMutationSubmitVote } from '@/api/polls'
+import { useQAQuestions } from '@/api/questions'
 import { useSocket, useLiveSlide } from '@/hooks/polls'
 import Leaderboard from '@/components/polling/Leaderboard'
+import QAModal from '@/components/polling/QAModal'
 import { getParticipantId, getParticipantName, setParticipantName, getAvatarSeed, randomizeAvatarSeed } from '@/utils/participant'
-import type { SlideType, PollSlide } from '@/types/polling'
+import type { SlideType, PollSlide, QAQuestion } from '@/types/polling'
 import {
   SpinnerGap,
   Presentation,
   ArrowsClockwise,
   CheckCircle,
   XCircle,
+  MapPin,
+  ChatTeardropText,
 } from '@phosphor-icons/react'
 import { SuccessIcon } from '@/components/ui/icons'
 
@@ -117,7 +121,7 @@ function NameEntryScreen({ onSubmit }: { onSubmit: (name: string) => void }) {
   )
 }
 
-function WaitingScreen({ name, title, questionNumber, totalQuestions }: { name: string; title: string; questionNumber?: number; totalQuestions?: number }) {
+function WaitingScreen({ name, questionNumber, totalQuestions }: { name: string; questionNumber?: number; totalQuestions?: number }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-5 p-8 text-center">
       <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center">
@@ -135,14 +139,19 @@ function WaitingScreen({ name, title, questionNumber, totalQuestions }: { name: 
           </>
         ) : (
           <h2 className="text-lg font-bold text-gray-900 mb-1">
-            Get ready to play {title || 'the quiz'}!
+            Wait for the host to start the quiz.
           </h2>
         )}
         <p className="text-sm text-gray-400">
-          Hi <span className="font-semibold text-gray-600">{name}</span>! Waiting for presenter to start...
+          Hi <span className="font-semibold text-gray-600">{name}</span>!
         </p>
       </div>
       <SpinnerGap size={24} className="text-primary-400 animate-spin mt-2" />
+      <p className="text-xs text-gray-300 mt-2 max-w-xs">
+        Please reload your browser or contact us at{' '}
+        <span className="font-semibold text-gray-400">contact@bncc.net</span>{' '}
+        if the quiz won't load.
+      </p>
     </div>
   )
 }
@@ -374,16 +383,20 @@ function RankingInput({
 function ScaleInput({
   onSubmit,
   isPending,
+  min = 1,
+  max = 10,
 }: {
   onSubmit: (value: unknown) => void
   isPending: boolean
+  min?: number
+  max?: number
 }) {
   const [scale, setScale] = useState<number | null>(null)
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex items-center gap-2 flex-wrap justify-center">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+        {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((n) => (
           <button
             key={n}
             onClick={() => setScale(n)}
@@ -408,15 +421,359 @@ function ScaleInput({
   )
 }
 
+function QAInput({
+  onSubmit,
+  isPending,
+  participantName,
+}: {
+  onSubmit: (value: unknown) => void
+  isPending: boolean
+  participantName: string
+}) {
+  const [text, setText] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+
+  const handleSubmit = () => {
+    if (!text.trim()) return
+    onSubmit({ text: text.trim(), participantName })
+    setText('')
+    setSubmitted(true)
+    setTimeout(() => setSubmitted(false), 2000)
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <AnimatePresence>
+        {submitted && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="text-center text-sm font-semibold text-emerald-500"
+          >
+            Question submitted!
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ask a question..."
+        rows={3}
+        className="text-sm border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 resize-none"
+        autoFocus
+      />
+      <button
+        onClick={handleSubmit}
+        disabled={!text.trim() || isPending}
+        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+      >
+        {isPending ? <span className="flex items-center justify-center gap-2"><SpinnerGap size={16} className="animate-spin" /> Submitting...</span> : 'Ask'}
+      </button>
+    </div>
+  )
+}
+
+function GuessNumberInput({
+  onSubmit,
+  isPending,
+  min,
+  max,
+}: {
+  onSubmit: (value: unknown) => void
+  isPending: boolean
+  min: number
+  max: number
+}) {
+  const mid = Math.round((min + max) / 2)
+  const [value, setValue] = useState(mid)
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 50
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="text-center">
+        <span className="text-4xl font-black text-primary-600 tabular-nums">{value}</span>
+      </div>
+      <div className="relative px-1">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => setValue(Number(e.target.value))}
+          className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-200 accent-primary-500
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white
+            [&::-moz-range-thumb]:w-7 [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary-500 [&::-moz-range-thumb]:shadow-lg [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white"
+          style={{ background: `linear-gradient(to right, #0054a5 0%, #0054a5 ${pct}%, #e5e7eb ${pct}%, #e5e7eb 100%)` }}
+        />
+        <div className="flex justify-between mt-1">
+          <span className="text-xs font-semibold text-gray-400">{min}</span>
+          <span className="text-xs font-semibold text-gray-400">{max}</span>
+        </div>
+      </div>
+      <button
+        onClick={() => onSubmit({ value })}
+        disabled={isPending}
+        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+      >
+        {isPending ? <span className="flex items-center justify-center gap-2"><SpinnerGap size={16} className="animate-spin" /> Submitting...</span> : 'Submit Guess'}
+      </button>
+    </div>
+  )
+}
+
+function HundredPointsInput({
+  options,
+  onSubmit,
+  isPending,
+}: {
+  options: string[]
+  onSubmit: (value: unknown) => void
+  isPending: boolean
+}) {
+  const [allocations, setAllocations] = useState<Record<string, number>>(() =>
+    Object.fromEntries(options.map((o) => [o, 0]))
+  )
+
+  const total = Object.values(allocations).reduce((s, v) => s + v, 0)
+  const remaining = 100 - total
+  const maxAlloc = Math.max(...Object.values(allocations), 1)
+
+  const adjust = (option: string, delta: number) => {
+    setAllocations((prev) => {
+      const current = prev[option] ?? 0
+      const newVal = Math.max(0, Math.min(100, current + delta))
+      return { ...prev, [option]: newVal }
+    })
+  }
+
+  const BAR_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-purple-500', 'bg-cyan-500', 'bg-orange-500', 'bg-pink-500']
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-center">
+        <span className={`text-2xl font-black tabular-nums ${remaining === 0 ? 'text-emerald-500' : remaining < 0 ? 'text-red-500' : 'text-gray-800'}`}>
+          {remaining}
+        </span>
+        <p className="text-xs text-gray-400 font-medium">points remaining</p>
+      </div>
+      {options.map((opt, i) => {
+        const pts = allocations[opt] ?? 0
+        const barWidth = maxAlloc > 0 ? (pts / maxAlloc) * 100 : 0
+        return (
+          <div key={opt} className="flex flex-col gap-1.5 bg-white border border-gray-200 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">{opt}</span>
+              <span className="text-sm font-bold text-gray-800 tabular-nums w-8 text-right">{pts}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => adjust(opt, -10)}
+                className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center hover:bg-gray-200 active:scale-95 transition-all cursor-pointer shrink-0"
+              >
+                -10
+              </button>
+              <div className="flex-1 h-6 rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${BAR_COLORS[i % BAR_COLORS.length]} transition-all duration-200`}
+                  style={{ width: `${barWidth}%` }}
+                />
+              </div>
+              <button
+                onClick={() => adjust(opt, 10)}
+                disabled={remaining <= 0}
+                className="w-8 h-8 rounded-lg bg-primary-50 text-primary-600 font-bold text-xs flex items-center justify-center hover:bg-primary-100 active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                +10
+              </button>
+            </div>
+          </div>
+        )
+      })}
+      <button
+        onClick={() => remaining === 0 && onSubmit({ allocations })}
+        disabled={remaining !== 0 || isPending}
+        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 mt-1 cursor-pointer disabled:cursor-not-allowed"
+      >
+        {isPending ? <span className="flex items-center justify-center gap-2"><SpinnerGap size={16} className="animate-spin" /> Submitting...</span> : 'Submit'}
+      </button>
+    </div>
+  )
+}
+
+function PinOnImageInput({
+  imageUrl,
+  onSubmit,
+  isPending,
+}: {
+  imageUrl?: string
+  onSubmit: (value: unknown) => void
+  isPending: boolean
+}) {
+  const [pinned, setPinned] = useState<{ x: number; y: number } | null>(null)
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setPinned({ x, y })
+  }
+
+  if (!imageUrl) {
+    return (
+      <div className="text-center text-sm text-gray-400 py-8 rounded-xl border-2 border-dashed border-gray-200">
+        No image set for this slide yet.
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-gray-500 text-center font-medium">Tap on the image to place your pin</p>
+      <div
+        className="relative rounded-xl overflow-hidden cursor-crosshair border-2 border-gray-200 active:border-primary-400 transition-colors"
+        onClick={handleClick}
+      >
+        <img src={imageUrl} alt="" className="w-full" draggable={false} />
+        {pinned && (
+          <div
+            className="absolute pointer-events-none"
+            style={{ left: `${pinned.x}%`, top: `${pinned.y}%`, transform: 'translate(-50%, -100%)' }}
+          >
+            <MapPin size={28} weight="fill" className="text-red-500 drop-shadow-md" />
+          </div>
+        )}
+      </div>
+      <button
+        onClick={() => pinned && onSubmit({ x: pinned.x, y: pinned.y })}
+        disabled={!pinned || isPending}
+        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+      >
+        {isPending ? <span className="flex items-center justify-center gap-2"><SpinnerGap size={16} className="animate-spin" /> Submitting...</span> : 'Pin it!'}
+      </button>
+    </div>
+  )
+}
+
+const GRID_DOT_COLORS = ['#3B82F6', '#EF4444', '#22C55E', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#EAB308']
+
+function Grid2x2Input({
+  options,
+  axisXLabel,
+  axisYLabel,
+  onSubmit,
+  isPending,
+}: {
+  options: string[]
+  axisXLabel?: string
+  axisYLabel?: string
+  onSubmit: (value: unknown) => void
+  isPending: boolean
+}) {
+  const [placements, setPlacements] = useState<Record<string, { x: number; y: number }>>({})
+  const [selectedOption, setSelectedOption] = useState<string | null>(options[0] || null)
+  const allPlaced = options.every((o) => placements[o])
+
+  const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!selectedOption) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const next = { ...placements, [selectedOption]: { x, y } }
+    setPlacements(next)
+    const remaining = options.filter((o) => o !== selectedOption && !next[o])
+    setSelectedOption(remaining[0] || null)
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt, i) => (
+          <button
+            key={opt}
+            onClick={() => setSelectedOption(opt)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all cursor-pointer ${
+              selectedOption === opt
+                ? 'border-primary-500 bg-primary-50 text-primary-700'
+                : placements[opt]
+                  ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                  : 'border-gray-200 bg-white text-gray-600'
+            }`}
+          >
+            <span
+              className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
+              style={{ backgroundColor: GRID_DOT_COLORS[i % GRID_DOT_COLORS.length] }}
+            />
+            {opt}
+          </button>
+        ))}
+      </div>
+
+      <div
+        className={`relative aspect-square rounded-xl border-2 cursor-crosshair transition-colors ${
+          selectedOption ? 'border-primary-300 bg-primary-50/30' : 'border-gray-200 bg-gray-50'
+        }`}
+        onClick={handleGridClick}
+      >
+        <div className="absolute inset-0 flex items-center pointer-events-none">
+          <div className="w-full h-px bg-gray-200" />
+        </div>
+        <div className="absolute inset-0 flex justify-center pointer-events-none">
+          <div className="h-full w-px bg-gray-200" />
+        </div>
+        <span className="absolute bottom-1.5 right-2 text-[9px] font-medium text-gray-400">{axisXLabel || 'X'} →</span>
+        <span className="absolute top-1.5 left-2 text-[9px] font-medium text-gray-400">↑ {axisYLabel || 'Y'}</span>
+
+        {Object.entries(placements).map(([opt, pos]) => {
+          const idx = options.indexOf(opt)
+          return (
+            <div
+              key={opt}
+              className="absolute pointer-events-none flex flex-col items-center"
+              style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)' }}
+            >
+              <div
+                className="w-4 h-4 rounded-full shadow-md border-2 border-white"
+                style={{ backgroundColor: GRID_DOT_COLORS[idx % GRID_DOT_COLORS.length] }}
+              />
+              <span className="text-[9px] font-bold text-gray-600 bg-white/90 rounded px-1 mt-0.5 whitespace-nowrap">
+                {opt}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {selectedOption && !allPlaced && (
+        <p className="text-xs text-center text-primary-600 font-medium">
+          Placing: <span className="font-bold">{selectedOption}</span> — tap the grid
+        </p>
+      )}
+
+      <button
+        onClick={() => allPlaced && onSubmit({ placements })}
+        disabled={!allPlaced || isPending}
+        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+      >
+        {isPending ? <span className="flex items-center justify-center gap-2"><SpinnerGap size={16} className="animate-spin" /> Submitting...</span> : 'Submit'}
+      </button>
+    </div>
+  )
+}
+
 function AudienceSlideInput({
   slide,
   onSubmit,
   isPending,
+  participantName,
 }: {
   slide: PollSlide
   onSubmit: (value: unknown) => void
   isPending: boolean
+  participantName: string
 }) {
+  const settings = (slide.settings ?? {}) as Record<string, unknown>
+
   switch (slide.type as SlideType) {
     case 'word_cloud':
       return <WordCloudInput onSubmit={onSubmit} isPending={isPending} />
@@ -439,7 +796,51 @@ function AudienceSlideInput({
         />
       )
     case 'scales':
-      return <ScaleInput onSubmit={onSubmit} isPending={isPending} />
+      return (
+        <ScaleInput
+          onSubmit={onSubmit}
+          isPending={isPending}
+          min={(settings.maxSelections as number) ?? 1}
+          max={(settings.maxWords as number) ?? 10}
+        />
+      )
+    case 'pin_on_image':
+      return (
+        <PinOnImageInput
+          imageUrl={settings.imageUrl as string | undefined}
+          onSubmit={onSubmit}
+          isPending={isPending}
+        />
+      )
+    case 'grid_2x2':
+      return (
+        <Grid2x2Input
+          options={slide.options}
+          axisXLabel={settings.axisXLabel as string | undefined}
+          axisYLabel={settings.axisYLabel as string | undefined}
+          onSubmit={onSubmit}
+          isPending={isPending}
+        />
+      )
+    case 'qa':
+      return <QAInput onSubmit={onSubmit} isPending={isPending} participantName={participantName} />
+    case 'guess_number':
+      return (
+        <GuessNumberInput
+          onSubmit={onSubmit}
+          isPending={isPending}
+          min={(settings.numberMin as number) ?? 0}
+          max={(settings.numberMax as number) ?? 10}
+        />
+      )
+    case 'hundred_points':
+      return (
+        <HundredPointsInput
+          options={slide.options}
+          onSubmit={onSubmit}
+          isPending={isPending}
+        />
+      )
     default:
       return null
   }
@@ -449,7 +850,7 @@ export default function LiveVotePage() {
   const { code } = useParams<{ code: string }>()
   const { data: poll, isLoading, error } = useQueryPublicPoll(code ?? '')
   const { socketRef, connected } = useSocket(poll?.id)
-  const { currentSlide: liveSlide, pollStatus: liveStatus, countdown, showLeaderboard, leaderboardScores, scoreUpdate } =
+  const { currentSlide: liveSlide, pollStatus: liveStatus, countdown, leaderboardScores, scoreUpdate } =
     useLiveSlide(socketRef, connected)
 
   const [voted, setVoted] = useState(false)
@@ -458,6 +859,14 @@ export default function LiveVotePage() {
   const [participantNameState, setParticipantNameState] = useState<string | null>(getParticipantName())
   const [nameConfirmed, setNameConfirmed] = useState(false)
   const showCountdown = countdown !== null
+
+  // Q&A Mentimeter-style
+  const [showQAModal, setShowQAModal] = useState(false)
+  const [qaQuestions, setQaQuestions] = useState<QAQuestion[]>([])
+  const { data: initialQAQuestions } = useQAQuestions(poll?.id)
+  useEffect(() => {
+    if (initialQAQuestions) setQaQuestions(initialQAQuestions)
+  }, [initialQAQuestions])
 
   useEffect(() => {
     setNameConfirmed(false)
@@ -517,17 +926,19 @@ export default function LiveVotePage() {
   const activeSlide =
     currentSlideIndex !== null ? slides[currentSlideIndex] : undefined
 
+  const isQASlide = activeSlide?.type === 'qa'
+
   const submitVote = useMutationSubmitVote(
     poll?.id ?? '',
     activeSlide?.id ?? '',
     {
-      onSuccess: () => setVoted(true),
+      onSuccess: () => { if (!isQASlide) setVoted(true) },
     },
   )
 
   const handleSubmit = (value: unknown) => {
     submitVote.mutate({
-      participantId: getParticipantId(),
+      participantId: isQASlide ? `${getParticipantId()}_qa_${Date.now()}` : getParticipantId(),
       value,
     })
   }
@@ -562,10 +973,10 @@ export default function LiveVotePage() {
     )
   }
 
-  if (showLeaderboard && leaderboardScores.length > 0) {
+  if (currentSlideIndex !== null && currentSlideIndex === slides.length && leaderboardScores.length > 0) {
     return (
-      <div className="min-h-screen relative">
-        <Leaderboard scores={leaderboardScores} onClose={() => {}} />
+      <div className="min-h-screen flex">
+        <Leaderboard scores={leaderboardScores} />
       </div>
     )
   }
@@ -612,7 +1023,6 @@ export default function LiveVotePage() {
       <AudienceShell>
         <WaitingScreen
           name={participantNameState}
-          title={poll.title}
           questionNumber={currentSlideIndex !== null ? currentSlideIndex + 1 : undefined}
           totalQuestions={slides.length}
         />
@@ -621,29 +1031,59 @@ export default function LiveVotePage() {
   }
 
   return (
-    <AudienceShell>
-      {activeSlide && (
-        <div className="flex flex-col gap-6">
-          <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-              Question {(currentSlideIndex ?? 0) + 1}
-            </p>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug"
-              dangerouslySetInnerHTML={{ __html: activeSlide.question || 'No question' }}
-            />
-          </div>
+    <>
+      <AudienceShell>
+        {activeSlide && (
+          <div className="flex flex-col gap-6">
+            <div>
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                Question {(currentSlideIndex ?? 0) + 1}
+              </p>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug"
+                dangerouslySetInnerHTML={{ __html: activeSlide.question || 'No question' }}
+              />
+            </div>
 
-          {voted ? (
-            <ThankYouScreen scoreFeedback={lastScoreFeedback} />
-          ) : (
-            <AudienceSlideInput
-              slide={activeSlide}
-              onSubmit={handleSubmit}
-              isPending={submitVote.isPending}
-            />
+            {voted && !isQASlide ? (
+              <ThankYouScreen scoreFeedback={lastScoreFeedback} />
+            ) : (
+              <AudienceSlideInput
+                slide={activeSlide}
+                onSubmit={handleSubmit}
+                isPending={submitVote.isPending}
+                participantName={participantNameState ?? ''}
+              />
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={() => setShowQAModal(true)}
+          className="fixed bottom-5 right-5 flex items-center gap-1.5 bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg transition-colors cursor-pointer z-40"
+        >
+          <ChatTeardropText size={15} weight="bold" />
+          Open Q&amp;A
+          {qaQuestions.length > 0 && (
+            <span className="bg-white text-primary-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-black">
+              {qaQuestions.length}
+            </span>
           )}
-        </div>
-      )}
-    </AudienceShell>
+        </button>
+      </AudienceShell>
+
+      <AnimatePresence>
+        {showQAModal && poll && participantNameState && (
+          <QAModal
+            pollId={poll.id}
+            myUserId={getParticipantId()}
+            myName={participantNameState}
+            socketRef={socketRef}
+            questions={qaQuestions}
+            onQuestionsChange={setQaQuestions}
+            onClose={() => setShowQAModal(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   )
 }

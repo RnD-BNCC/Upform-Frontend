@@ -6,6 +6,11 @@ export type SlideType =
   | 'open_ended'
   | 'ranking'
   | 'scales'
+  | 'qa'
+  | 'guess_number'
+  | 'hundred_points'
+  | 'grid_2x2'
+  | 'pin_on_image'
 
 export type Participant = {
   id: string
@@ -34,6 +39,12 @@ export type SlideSettings = {
   imageLayout?: ImageLayout
   correctAnswer?: string
   correctAnswers?: string[]
+  correctNumber?: number
+  numberMin?: number
+  numberMax?: number
+  pointsTotal?: number
+  axisXLabel?: string
+  axisYLabel?: string
 }
 
 export type PollSlide = {
@@ -100,6 +111,11 @@ export type MCResult = { option: string; count: number }[]
 export type OpenEndedResult = { text: string; count: number; createdAt: string }[]
 export type RankingResult = { option: string; avgRank: number }[]
 export type ScaleResult = { value: number; count: number }[]
+export type QAResult = { text: string; participantName: string; createdAt: string; isAnswered?: boolean; voteId?: string }[]
+export type GuessNumberResult = { value: number; count: number }[]
+export type HundredPointsResult = { option: string; totalPoints: number }[]
+export type PinOnImageResult = { x: number; y: number; participantName: string }[]
+export type Grid2x2Result = { option: string; avgX: number; avgY: number }[]
 
 export type SlideResults =
   | WordCloudResult
@@ -107,10 +123,25 @@ export type SlideResults =
   | OpenEndedResult
   | RankingResult
   | ScaleResult
+  | QAResult
+  | GuessNumberResult
+  | HundredPointsResult
+  | PinOnImageResult
+  | Grid2x2Result
 
 export type LeaderboardEntry = {
   id: string
   name: string
   avatarSeed?: string
   score: number
+}
+
+export interface QAQuestion {
+  id: string
+  text: string
+  authorName: string
+  authorId?: string
+  likeCount: number
+  createdAt: string
+  likedByIds: string[]
 }

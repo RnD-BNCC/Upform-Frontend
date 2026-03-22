@@ -28,6 +28,11 @@ export const Api = {
     `/public/polls/${pollId}/slides/${slideId}/vote`,
   publicPollResults: (pollId: string, slideId: string) =>
     `/public/polls/${pollId}/slides/${slideId}/results`,
+  publicPollVoteAnswer: (pollId: string, slideId: string, voteId: string) =>
+    `/public/polls/${pollId}/slides/${slideId}/votes/${voteId}/answer`,
+
+  // Q&A Questions
+  pollQuestions: (pollId: string) => `/polls/${pollId}/questions`,
 
   // Upload
   upload: '/upload',
