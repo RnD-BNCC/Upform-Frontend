@@ -9,7 +9,6 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
   const [participantCount, setParticipantCount] = useState(0)
   const [participantList, setParticipantList] = useState<Participant[]>([])
   const [countdown, setCountdown] = useState<number | null>(null)
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [leaderboardScores, setLeaderboardScores] = useState<LeaderboardEntry[]>([])
   const [scoreUpdate, setScoreUpdate] = useState<{ participantId: string; points: number; isCorrect: boolean } | null>(null)
 
@@ -48,16 +47,10 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
 
     const onShowLeaderboard = (data: { scores: LeaderboardEntry[] }) => {
       setLeaderboardScores(data.scores)
-      setShowLeaderboard(true)
     }
 
     const onScoreUpdate = (data: { participantId: string; points: number; isCorrect: boolean }) => {
       setScoreUpdate(data)
-    }
-
-    const onLeaderboardHidden = () => {
-      setShowLeaderboard(false)
-      setLeaderboardScores([])
     }
 
     socket.on('slide-change', onSlideChange)
@@ -67,7 +60,6 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
     socket.on('countdown', onCountdown)
     socket.on('show-leaderboard', onShowLeaderboard)
     socket.on('score-update', onScoreUpdate)
-    socket.on('leaderboard-hidden', onLeaderboardHidden)
 
     return () => {
       if (goTimer) clearTimeout(goTimer)
@@ -78,9 +70,8 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
       socket.off('countdown', onCountdown)
       socket.off('show-leaderboard', onShowLeaderboard)
       socket.off('score-update', onScoreUpdate)
-      socket.off('leaderboard-hidden', onLeaderboardHidden)
     }
   }, [socketRef, connected])
 
-  return { currentSlide, pollStatus, participantCount, participantList, countdown, showLeaderboard, leaderboardScores, scoreUpdate }
+  return { currentSlide, pollStatus, participantCount, participantList, countdown, leaderboardScores, scoreUpdate }
 }

@@ -15,6 +15,7 @@ import SlidePreview from './components/SlidePreview'
 import SettingsPanel from './components/SettingsPanel'
 import {
   ArrowLeft,
+  CaretDown,
   Plus,
   Trash,
   Presentation,
@@ -26,7 +27,60 @@ import {
   TextAa,
   SortAscending,
   ChartBar,
+  Question,
+  NumberCircleOne,
+  Coins,
+  GridFour,
+  MapPin,
 } from '@phosphor-icons/react'
+
+function NumberDropdown({ value, options, onChange }: { value: number; options: number[]; onChange: (v: number) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
+      >
+        <span className="text-sm font-semibold text-gray-800">{value}</span>
+        <CaretDown size={11} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-50 overflow-hidden max-h-40 overflow-y-auto"
+          >
+            {options.map((n) => (
+              <button
+                key={n}
+                onClick={() => { onChange(n); setOpen(false) }}
+                className={`w-full px-2.5 py-1.5 text-sm text-left transition-colors cursor-pointer ${
+                  value === n ? 'bg-primary-50 text-primary-600 font-semibold' : 'hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 const SLIDE_TYPES: { value: SlideType; label: string }[] = [
   { value: 'word_cloud', label: 'Word Cloud' },
@@ -34,6 +88,11 @@ const SLIDE_TYPES: { value: SlideType; label: string }[] = [
   { value: 'open_ended', label: 'Open Ended' },
   { value: 'ranking', label: 'Ranking' },
   { value: 'scales', label: 'Scales' },
+  { value: 'qa', label: 'Q&A' },
+  { value: 'guess_number', label: 'Guess Number' },
+  { value: 'hundred_points', label: '100 Points' },
+  { value: 'grid_2x2', label: '2x2 Grid' },
+  { value: 'pin_on_image', label: 'Pin on Image' },
 ]
 
 const TYPE_ICONS: Record<SlideType, React.ReactNode> = {
@@ -42,43 +101,71 @@ const TYPE_ICONS: Record<SlideType, React.ReactNode> = {
   open_ended: <TextAa size={12} weight="bold" />,
   ranking: <SortAscending size={12} weight="bold" />,
   scales: <ChartBar size={12} weight="bold" />,
+  qa: <Question size={12} weight="bold" />,
+  guess_number: <NumberCircleOne size={12} weight="bold" />,
+  hundred_points: <Coins size={12} weight="bold" />,
+  grid_2x2: <GridFour size={12} weight="bold" />,
+  pin_on_image: <MapPin size={12} weight="bold" />,
 }
 
 function useSlideState(slide: PollSlide, pollId: string, onSaved?: () => void) {
   const updateSlide = useMutationUpdateSlide(pollId)
 
-  const [question, setQuestion] = useState(slide.question)
-  const [type, setType] = useState<SlideType>(slide.type as SlideType)
-  const [options, setOptions] = useState<string[]>(slide.options ?? [])
-  const [settings, setSettings] = useState<SlideSettings>(
+  const [question, setQuestionState] = useState(slide.question)
+  const [type, setTypeState] = useState<SlideType>(slide.type as SlideType)
+  const [options, setOptionsState] = useState<string[]>(slide.options ?? [])
+  const [settings, setSettingsState] = useState<SlideSettings>(
     (slide.settings as SlideSettings) ?? {},
   )
 
+  const pendingRef = useRef({ question, type, options, settings })
+
   useEffect(() => {
-    setQuestion(slide.question)
-    setType(slide.type as SlideType)
-    setOptions(slide.options ?? [])
-    setSettings((slide.settings as SlideSettings) ?? {})
+    const q = slide.question
+    const t = slide.type as SlideType
+    const o = slide.options ?? []
+    const s = (slide.settings as SlideSettings) ?? {}
+    pendingRef.current = { question: q, type: t, options: o, settings: s }
+    setQuestionState(q)
+    setTypeState(t)
+    setOptionsState(o)
+    setSettingsState(s)
   }, [slide.id])
+
+  const setQuestion = useCallback((q: string) => {
+    pendingRef.current.question = q
+    setQuestionState(q)
+  }, [])
+
+  const setOptions = useCallback((o: string[]) => {
+    pendingRef.current.options = o
+    setOptionsState(o)
+  }, [])
+
+  const setSettings = useCallback((s: SlideSettings) => {
+    pendingRef.current.settings = s
+    setSettingsState(s)
+  }, [])
 
   const doSave = useCallback(
     (overrides?: Partial<{ question: string; type: SlideType; options: string[]; settings: SlideSettings }>) => {
       updateSlide.mutate(
         {
           slideId: slide.id,
-          question: overrides?.question ?? question,
-          type: overrides?.type ?? type,
-          options: overrides?.options ?? options,
-          settings: overrides?.settings ?? settings,
+          question: overrides?.question ?? pendingRef.current.question,
+          type: overrides?.type ?? pendingRef.current.type,
+          options: overrides?.options ?? pendingRef.current.options,
+          settings: overrides?.settings ?? pendingRef.current.settings,
         },
         { onSuccess: () => onSaved?.() },
       )
     },
-    [slide.id, question, type, options, settings, updateSlide, onSaved],
+    [slide.id, updateSlide, onSaved],
   )
 
   const handleTypeChange = (newType: SlideType) => {
-    setType(newType)
+    pendingRef.current.type = newType
+    setTypeState(newType)
     doSave({ type: newType })
   }
 
@@ -314,7 +401,7 @@ export default function PollEditPage() {
 
         <div className="flex flex-col gap-1.5 px-3 flex-1">
           {slides.map((slide, i) => (
-            <motion.button
+            <motion.div
               key={slide.id}
               layout
               onClick={() => setSelectedIndex(i)}
@@ -349,7 +436,7 @@ export default function PollEditPage() {
                   <Trash size={12} weight="bold" />
                 </button>
               )}
-            </motion.button>
+            </motion.div>
           ))}
         </div>
 
@@ -507,7 +594,7 @@ function MobileSettings({
   onSettingsChange: (settings: SlideSettings) => void
   onBlur: () => void
 }) {
-  const needsOptions = ['multiple_choice', 'ranking'].includes(type)
+  const needsOptions = ['multiple_choice', 'ranking', 'hundred_points'].includes(type)
 
   return (
     <div className="flex flex-col gap-4">
@@ -573,10 +660,43 @@ function MobileSettings({
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
+              <NumberDropdown
+                value={settings.maxSelections ?? 1}
+                options={Array.from({ length: 10 }, (_, i) => i)}
+                onChange={(min) => { onSettingsChange({ ...settings, maxSelections: min, maxWords: Math.max(settings.maxWords ?? 10, min + 1) }); onBlur() }}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
+              <NumberDropdown
+                value={settings.maxWords ?? 10}
+                options={Array.from({ length: 10 - (settings.maxSelections ?? 1) }, (_, i) => (settings.maxSelections ?? 1) + 1 + i)}
+                onChange={(max) => { onSettingsChange({ ...settings, maxWords: max }); onBlur() }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {type === 'guess_number' && (
+        <div>
+          <label className="text-xs font-semibold text-gray-500 mb-2 block">Correct number</label>
+          <input
+            type="number"
+            value={settings.correctNumber ?? ''}
+            onChange={(e) => onSettingsChange({ ...settings, correctNumber: e.target.value ? Number(e.target.value) : undefined })}
+            onBlur={onBlur}
+            className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white mb-3"
+            placeholder="Enter the correct number"
+          />
+          <label className="text-xs font-semibold text-gray-500 mb-2 block">Number range</label>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
               <input
                 type="number"
-                value={settings.maxSelections ?? 1}
-                onChange={(e) => onSettingsChange({ ...settings, maxSelections: Number(e.target.value) })}
+                value={settings.numberMin ?? 1}
+                onChange={(e) => onSettingsChange({ ...settings, numberMin: Number(e.target.value) })}
                 onBlur={onBlur}
                 className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
               />
@@ -585,8 +705,8 @@ function MobileSettings({
               <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
               <input
                 type="number"
-                value={settings.maxWords ?? 10}
-                onChange={(e) => onSettingsChange({ ...settings, maxWords: Number(e.target.value) })}
+                value={settings.numberMax ?? 100}
+                onChange={(e) => onSettingsChange({ ...settings, numberMax: Number(e.target.value) })}
                 onBlur={onBlur}
                 className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
               />

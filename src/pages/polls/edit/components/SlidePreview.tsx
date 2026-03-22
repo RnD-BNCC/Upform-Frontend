@@ -270,6 +270,77 @@ export default function SlidePreview({
       {type === 'ranking' && options.length === 0 && (
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Add options to preview ranking</div>
       )}
+      {type === 'qa' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-2">
+          <div className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-400">What's your question?</div>
+          <div className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-400">Another question...</div>
+          <p className="text-[10px] text-gray-300 mt-1">Audience questions will appear here</p>
+        </div>
+      )}
+      {type === 'guess_number' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4">
+          <div className="text-2xl font-black text-primary-400 tabular-nums">{settings.correctNumber ?? '?'}</div>
+          <div className="w-full h-2 rounded-full bg-gray-100 relative overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-1/2 rounded-full bg-primary-200" />
+          </div>
+          <div className="flex justify-between w-full">
+            <span className="text-[10px] text-gray-300">{settings.numberMin ?? 0}</span>
+            <span className="text-[10px] text-gray-300">{settings.numberMax ?? 10}</span>
+          </div>
+        </div>
+      )}
+      {type === 'hundred_points' && options.length > 0 && (
+        <div className="flex flex-col gap-2 mt-auto px-2">
+          {options.slice(0, 4).map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 w-16 truncate">{opt || `Option ${i + 1}`}</span>
+              <div className="flex-1 h-4 rounded-full bg-gray-100 overflow-hidden">
+                <div className="h-full rounded-full bg-primary-200" style={{ width: `${(4 - i) * 20}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {type === 'hundred_points' && options.length === 0 && (
+        <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Add options to preview</div>
+      )}
+      {type === 'pin_on_image' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+          {settings.imageUrl ? (
+            <div className="relative w-full max-h-40 overflow-hidden rounded-lg">
+              <img src={settings.imageUrl} alt="" className="w-full object-cover rounded-lg" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-white/80 rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">Audience will pin here</div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-gray-300 text-sm text-center">Upload an image above<br />to enable pinning</div>
+          )}
+        </div>
+      )}
+      {type === 'grid_2x2' && (
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="relative aspect-square w-full max-w-36 border border-gray-200 rounded-lg bg-gray-50">
+            <div className="absolute inset-0 flex items-center pointer-events-none">
+              <div className="w-full h-px bg-gray-200" />
+            </div>
+            <div className="absolute inset-0 flex justify-center pointer-events-none">
+              <div className="h-full w-px bg-gray-200" />
+            </div>
+            <span className="absolute bottom-1 right-1.5 text-[8px] text-gray-300">{settings.axisXLabel || 'X'} →</span>
+            <span className="absolute top-1 left-1.5 text-[8px] text-gray-300">↑ {settings.axisYLabel || 'Y'}</span>
+            {options.slice(0, 4).map((opt, i) => {
+              const positions = [{ x: 70, y: 30 }, { x: 30, y: 70 }, { x: 65, y: 65 }, { x: 35, y: 35 }]
+              const pos = positions[i]
+              return (
+                <div key={i} className="absolute" style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                  <div className="w-3 h-3 rounded-full bg-primary-400 border border-white shadow-sm" />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </>
   )
 

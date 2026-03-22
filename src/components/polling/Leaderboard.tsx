@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Crown, X } from '@phosphor-icons/react'
+import { Trophy, Crown } from '@phosphor-icons/react'
 import type { LeaderboardEntry } from '@/types/polling'
 
 const RANK_COLORS = [
@@ -21,10 +21,8 @@ const BAR_BG = [
 
 export default function Leaderboard({
   scores,
-  onClose,
 }: {
   scores: LeaderboardEntry[]
-  onClose: () => void
 }) {
   const [phase, setPhase] = useState<'runners' | 'winner'>('runners')
   const top5 = scores.slice(0, 5)
@@ -40,14 +38,8 @@ export default function Leaderboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[80] bg-gradient-to-b from-primary-900 via-primary-800 to-primary-900 flex flex-col items-center justify-center overflow-hidden"
+      className="w-full h-full bg-gradient-to-b from-primary-900 via-primary-800 to-primary-900 flex flex-col items-center justify-center overflow-hidden"
     >
-      <button
-        onClick={onClose}
-        className="absolute top-5 right-5 text-white/30 hover:text-white/60 cursor-pointer transition-colors z-10"
-      >
-        <X size={24} weight="bold" />
-      </button>
 
       <AnimatePresence mode="wait">
         {phase === 'runners' && (

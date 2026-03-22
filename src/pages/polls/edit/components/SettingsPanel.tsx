@@ -15,14 +15,24 @@ import {
   Check,
   SpinnerGap,
   PencilSimple,
+  Question,
+  NumberCircleOne,
+  Coins,
+  GridFour,
+  MapPin,
 } from '@phosphor-icons/react'
 
 const SLIDE_TYPES: { value: SlideType; label: string; icon: React.ReactNode }[] = [
-  { value: 'word_cloud', label: 'Word Cloud', icon: <ChatTeardropText size={16} weight="bold" /> },
-  { value: 'multiple_choice', label: 'Multiple Choice', icon: <ListBullets size={16} weight="bold" /> },
-  { value: 'open_ended', label: 'Open Ended', icon: <TextAa size={16} weight="bold" /> },
-  { value: 'ranking', label: 'Ranking', icon: <SortAscending size={16} weight="bold" /> },
-  { value: 'scales', label: 'Scales', icon: <ChartBar size={16} weight="bold" /> },
+  { value: 'word_cloud', label: 'Word Cloud', icon: <ChatTeardropText size={14} weight="bold" /> },
+  { value: 'multiple_choice', label: 'Multiple Choice', icon: <ListBullets size={14} weight="bold" /> },
+  { value: 'open_ended', label: 'Open Ended', icon: <TextAa size={14} weight="bold" /> },
+  { value: 'ranking', label: 'Ranking', icon: <SortAscending size={14} weight="bold" /> },
+  { value: 'scales', label: 'Scales', icon: <ChartBar size={14} weight="bold" /> },
+  { value: 'qa', label: 'Q&A', icon: <Question size={14} weight="bold" /> },
+  { value: 'guess_number', label: 'Guess Number', icon: <NumberCircleOne size={14} weight="bold" /> },
+  { value: 'hundred_points', label: '100 Points', icon: <Coins size={14} weight="bold" /> },
+  { value: 'grid_2x2', label: '2x2 Grid', icon: <GridFour size={14} weight="bold" /> },
+  { value: 'pin_on_image', label: 'Pin on Image', icon: <MapPin size={14} weight="bold" /> },
 ]
 
 const COLOR_PRESETS = [
@@ -113,6 +123,54 @@ function LayoutIcon({ layout, active }: { layout: ImageLayout; active: boolean }
   )
 }
 
+function NumberDropdown({ value, options, onChange }: { value: number; options: number[]; onChange: (v: number) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
+      >
+        <span className="text-sm font-semibold text-gray-800">{value}</span>
+        <CaretDown size={12} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-50 overflow-hidden max-h-48 overflow-y-auto"
+          >
+            {options.map((n) => (
+              <button
+                key={n}
+                onClick={() => { onChange(n); setOpen(false) }}
+                className={`w-full px-3 py-1.5 text-sm text-left transition-colors cursor-pointer ${
+                  value === n ? 'bg-primary-50 text-primary-600 font-semibold' : 'hover:bg-gray-50 text-gray-700'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 function TypeDropdown({ value, onChange }: { value: SlideType; onChange: (v: SlideType) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -131,11 +189,11 @@ function TypeDropdown({ value, onChange }: { value: SlideType; onChange: (v: Sli
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
       >
         <span className="text-primary-500">{selected.icon}</span>
-        <span className="text-sm font-semibold text-gray-800 flex-1 text-left">{selected.label}</span>
-        <CaretDown size={14} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className="text-xs font-semibold text-gray-800 flex-1 text-left">{selected.label}</span>
+        <CaretDown size={12} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
         {open && (
@@ -150,13 +208,12 @@ function TypeDropdown({ value, onChange }: { value: SlideType; onChange: (v: Sli
               <button
                 key={t.value}
                 onClick={() => { onChange(t.value); setOpen(false) }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer ${
+                className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors cursor-pointer ${
                   value === t.value ? 'bg-primary-50 text-primary-600' : 'hover:bg-gray-50 text-gray-700'
                 }`}
               >
                 <span className={value === t.value ? 'text-primary-500' : 'text-gray-400'}>{t.icon}</span>
-                <span className="text-sm font-medium">{t.label}</span>
-                {value === t.value && <span className="ml-auto text-primary-500 text-xs font-bold">&#10003;</span>}
+                <span className="text-xs font-medium">{t.label}</span>
               </button>
             ))}
           </motion.div>
@@ -502,7 +559,7 @@ export default function SettingsPanel({
   onSettingsChange: (settings: SlideSettings) => void
   onBlur: () => void
 }) {
-  const needsOptions = ['multiple_choice', 'ranking'].includes(type)
+  const needsOptions = ['multiple_choice', 'ranking', 'hundred_points'].includes(type)
 
   const handleSettingsField = <K extends keyof SlideSettings>(key: K, value: SlideSettings[K]) => {
     onSettingsChange({ ...settings, [key]: value })
@@ -559,20 +616,94 @@ export default function SettingsPanel({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
-                <select value={settings.maxSelections ?? 1} onChange={(e) => { const min = Number(e.target.value); onSettingsChange({ ...settings, maxSelections: min, maxWords: Math.max(settings.maxWords ?? 10, min + 1) }) }} onBlur={onBlur} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 bg-white cursor-pointer">
-                  {Array.from({ length: 10 }, (_, i) => (
-                    <option key={i} value={i}>{i}</option>
-                  ))}
-                </select>
+                <NumberDropdown
+                  value={settings.maxSelections ?? 1}
+                  options={Array.from({ length: 10 }, (_, i) => i)}
+                  onChange={(min) => { onSettingsChange({ ...settings, maxSelections: min, maxWords: Math.max(settings.maxWords ?? 10, min + 1) }); onBlur() }}
+                />
               </div>
               <div className="flex-1">
                 <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
-                <select value={settings.maxWords ?? 10} onChange={(e) => onSettingsChange({ ...settings, maxWords: Number(e.target.value) })} onBlur={onBlur} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 bg-white cursor-pointer">
-                  {Array.from({ length: 10 - (settings.maxSelections ?? 1) }, (_, i) => {
-                    const val = (settings.maxSelections ?? 1) + 1 + i
-                    return <option key={val} value={val}>{val}</option>
-                  })}
-                </select>
+                <NumberDropdown
+                  value={settings.maxWords ?? 10}
+                  options={Array.from({ length: 10 - (settings.maxSelections ?? 1) }, (_, i) => (settings.maxSelections ?? 1) + 1 + i)}
+                  onChange={(max) => { onSettingsChange({ ...settings, maxWords: max }); onBlur() }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === 'grid_2x2' && (
+          <div className="mb-5">
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Axis labels</label>
+            <div className="flex flex-col gap-2">
+              <div>
+                <label className="text-[11px] text-gray-400 font-medium mb-1 block">X Axis (horizontal)</label>
+                <input
+                  type="text"
+                  value={settings.axisXLabel ?? ''}
+                  onChange={(e) => onSettingsChange({ ...settings, axisXLabel: e.target.value || undefined })}
+                  onBlur={onBlur}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+                  placeholder="e.g. Effort"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Y Axis (vertical)</label>
+                <input
+                  type="text"
+                  value={settings.axisYLabel ?? ''}
+                  onChange={(e) => onSettingsChange({ ...settings, axisYLabel: e.target.value || undefined })}
+                  onBlur={onBlur}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+                  placeholder="e.g. Impact"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === 'pin_on_image' && (
+          <div className="mb-5">
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Background image</label>
+            <p className="text-[10px] text-gray-400 mb-2">Upload an image below. Audience members will tap on it to pin their answer.</p>
+          </div>
+        )}
+
+        {type === 'guess_number' && (
+          <div className="mb-5">
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Correct number</label>
+            <p className="text-[10px] text-gray-400 mb-2">Set the correct answer for scoring.</p>
+            <input
+              type="number"
+              value={settings.correctNumber ?? ''}
+              onChange={(e) => onSettingsChange({ ...settings, correctNumber: e.target.value ? Number(e.target.value) : undefined })}
+              onBlur={onBlur}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white mb-3"
+              placeholder="Enter the correct number"
+            />
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Number range</label>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
+                <input
+                  type="number"
+                  value={settings.numberMin ?? 0}
+                  onChange={(e) => onSettingsChange({ ...settings, numberMin: Number(e.target.value) })}
+                  onBlur={onBlur}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 bg-white"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
+                <input
+                  type="number"
+                  value={settings.numberMax ?? 10}
+                  onChange={(e) => onSettingsChange({ ...settings, numberMax: Number(e.target.value) })}
+                  onBlur={onBlur}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 bg-white"
+                />
               </div>
             </div>
           </div>
