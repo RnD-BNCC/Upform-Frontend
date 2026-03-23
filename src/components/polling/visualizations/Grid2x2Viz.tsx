@@ -1,6 +1,5 @@
 import type { Grid2x2Result, SlideSettings } from '@/types/polling'
-
-const DOT_COLORS = ['#3B82F6', '#EF4444', '#22C55E', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#EAB308']
+import { DOT_COLORS } from '@/config/polling'
 
 export default function Grid2x2Viz({
   data,

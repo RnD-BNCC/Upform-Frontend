@@ -2,22 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Crown } from '@phosphor-icons/react'
 import type { LeaderboardEntry } from '@/types/polling'
-
-const RANK_COLORS = [
-  'from-amber-400 to-yellow-500',
-  'from-gray-300 to-gray-400',
-  'from-amber-600 to-amber-700',
-  'from-primary-400 to-primary-500',
-  'from-primary-300 to-primary-400',
-]
-
-const BAR_BG = [
-  'bg-amber-400/20',
-  'bg-gray-300/20',
-  'bg-amber-600/20',
-  'bg-primary-400/15',
-  'bg-primary-300/15',
-]
+import { RANK_COLORS, LEADERBOARD_BAR_BG as BAR_BG } from '@/config/polling'
 
 export default function Leaderboard({
   scores,

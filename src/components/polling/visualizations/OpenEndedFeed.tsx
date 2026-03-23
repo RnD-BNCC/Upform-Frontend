@@ -1,11 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import type { OpenEndedResult } from '@/types/polling'
-
-const COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#06b6d4', '#f97316', '#ec4899',
-  '#14b8a6', '#84cc16', '#d946ef', '#eab308',
-]
+import { OPEN_ENDED_COLORS as COLORS } from '@/config/polling'
 
 export default function OpenEndedFeed({ data, textColor = '#111827' }: { data: OpenEndedResult; textColor?: string }) {
   if (!data || data.length === 0) {

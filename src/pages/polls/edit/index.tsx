@@ -13,6 +13,7 @@ import type { StatusType } from '@/components/ui/StatusModal'
 import type { PollSlide, SlideType, SlideSettings } from '@/types/polling'
 import SlidePreview from './components/SlidePreview'
 import SettingsPanel from './components/SettingsPanel'
+import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
 import {
   ArrowLeft,
   CaretDown,
@@ -22,16 +23,6 @@ import {
   SpinnerGap,
   Copy,
   FloppyDisk,
-  ChatTeardropText,
-  ListBullets,
-  TextAa,
-  SortAscending,
-  ChartBar,
-  Question,
-  NumberCircleOne,
-  Coins,
-  GridFour,
-  MapPin,
 } from '@phosphor-icons/react'
 
 function NumberDropdown({ value, options, onChange }: { value: number; options: number[]; onChange: (v: number) => void }) {
@@ -52,7 +43,7 @@ function NumberDropdown({ value, options, onChange }: { value: number; options: 
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
       >
-        <span className="text-sm font-semibold text-gray-800">{value}</span>
+        <span className="text-xs font-semibold text-gray-800">{value}</span>
         <CaretDown size={11} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
@@ -68,7 +59,7 @@ function NumberDropdown({ value, options, onChange }: { value: number; options: 
               <button
                 key={n}
                 onClick={() => { onChange(n); setOpen(false) }}
-                className={`w-full px-2.5 py-1.5 text-sm text-left transition-colors cursor-pointer ${
+                className={`w-full px-2.5 py-1.5 text-xs text-left transition-colors cursor-pointer ${
                   value === n ? 'bg-primary-50 text-primary-600 font-semibold' : 'hover:bg-gray-50 text-gray-700'
                 }`}
               >
@@ -80,32 +71,6 @@ function NumberDropdown({ value, options, onChange }: { value: number; options: 
       </AnimatePresence>
     </div>
   )
-}
-
-const SLIDE_TYPES: { value: SlideType; label: string }[] = [
-  { value: 'word_cloud', label: 'Word Cloud' },
-  { value: 'multiple_choice', label: 'Multiple Choice' },
-  { value: 'open_ended', label: 'Open Ended' },
-  { value: 'ranking', label: 'Ranking' },
-  { value: 'scales', label: 'Scales' },
-  { value: 'qa', label: 'Q&A' },
-  { value: 'guess_number', label: 'Guess Number' },
-  { value: 'hundred_points', label: '100 Points' },
-  { value: 'grid_2x2', label: '2x2 Grid' },
-  { value: 'pin_on_image', label: 'Pin on Image' },
-]
-
-const TYPE_ICONS: Record<SlideType, React.ReactNode> = {
-  word_cloud: <ChatTeardropText size={12} weight="bold" />,
-  multiple_choice: <ListBullets size={12} weight="bold" />,
-  open_ended: <TextAa size={12} weight="bold" />,
-  ranking: <SortAscending size={12} weight="bold" />,
-  scales: <ChartBar size={12} weight="bold" />,
-  qa: <Question size={12} weight="bold" />,
-  guess_number: <NumberCircleOne size={12} weight="bold" />,
-  hundred_points: <Coins size={12} weight="bold" />,
-  grid_2x2: <GridFour size={12} weight="bold" />,
-  pin_on_image: <MapPin size={12} weight="bold" />,
 }
 
 function useSlideState(slide: PollSlide, pollId: string, onSaved?: () => void) {
@@ -633,7 +598,7 @@ function MobileSettings({
                     const next = [...options]; next[i] = e.target.value; onOptionsChange(next)
                   }}
                   onBlur={onBlur}
-                  className="flex-1 text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
+                  className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
                   placeholder={`Option ${i + 1}`}
                 />
                 {options.length > 1 && (
@@ -686,7 +651,7 @@ function MobileSettings({
             value={settings.correctNumber ?? ''}
             onChange={(e) => onSettingsChange({ ...settings, correctNumber: e.target.value ? Number(e.target.value) : undefined })}
             onBlur={onBlur}
-            className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white mb-3"
+            className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white mb-3"
             placeholder="Enter the correct number"
           />
           <label className="text-xs font-semibold text-gray-500 mb-2 block">Number range</label>
@@ -698,7 +663,7 @@ function MobileSettings({
                 value={settings.numberMin ?? 1}
                 onChange={(e) => onSettingsChange({ ...settings, numberMin: Number(e.target.value) })}
                 onBlur={onBlur}
-                className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
+                className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
               />
             </div>
             <div className="flex-1">
@@ -708,7 +673,7 @@ function MobileSettings({
                 value={settings.numberMax ?? 100}
                 onChange={(e) => onSettingsChange({ ...settings, numberMax: Number(e.target.value) })}
                 onBlur={onBlur}
-                className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
+                className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
               />
             </div>
           </div>

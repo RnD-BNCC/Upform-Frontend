@@ -3,125 +3,27 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { SlideType, SlideSettings, ImageLayout } from '@/types/polling'
 import { useMutationUploadImage } from '@/api/polls'
 import {
+  SLIDE_TYPES,
+  COLOR_PRESETS,
+  THEME_PRESETS,
+  IMAGE_LAYOUTS,
+  SCALE_COLORS,
+} from '@/config/polling'
+import type { ThemePreset } from '@/config/polling'
+import LayoutIcon from '@/components/ui/LayoutIcon'
+import {
   CaretDown,
-  ChatTeardropText,
-  ListBullets,
-  TextAa,
-  SortAscending,
-  ChartBar,
   Trash,
   Plus,
   Image as ImageIcon,
   Check,
   SpinnerGap,
   PencilSimple,
-  Question,
-  NumberCircleOne,
-  Coins,
-  GridFour,
-  MapPin,
+  DotsSixVertical,
 } from '@phosphor-icons/react'
-
-const SLIDE_TYPES: { value: SlideType; label: string; icon: React.ReactNode }[] = [
-  { value: 'word_cloud', label: 'Word Cloud', icon: <ChatTeardropText size={14} weight="bold" /> },
-  { value: 'multiple_choice', label: 'Multiple Choice', icon: <ListBullets size={14} weight="bold" /> },
-  { value: 'open_ended', label: 'Open Ended', icon: <TextAa size={14} weight="bold" /> },
-  { value: 'ranking', label: 'Ranking', icon: <SortAscending size={14} weight="bold" /> },
-  { value: 'scales', label: 'Scales', icon: <ChartBar size={14} weight="bold" /> },
-  { value: 'qa', label: 'Q&A', icon: <Question size={14} weight="bold" /> },
-  { value: 'guess_number', label: 'Guess Number', icon: <NumberCircleOne size={14} weight="bold" /> },
-  { value: 'hundred_points', label: '100 Points', icon: <Coins size={14} weight="bold" /> },
-  { value: 'grid_2x2', label: '2x2 Grid', icon: <GridFour size={14} weight="bold" /> },
-  { value: 'pin_on_image', label: 'Pin on Image', icon: <MapPin size={14} weight="bold" /> },
-]
-
-const COLOR_PRESETS = [
-  '#374151', '#6B7280', '#EF4444', '#F97316', '#EAB308',
-  '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#FFFFFF',
-]
-
-type ThemePreset = {
-  id: string
-  name: string
-  bgColor: string
-  textColor: string
-  barColors: string[]
-}
-
-const THEME_PRESETS: ThemePreset[] = [
-  { id: 'upform-dark', name: 'UpForm Dark', bgColor: '#0a1628', textColor: '#FFFFFF', barColors: ['#3B82F6', '#60A5FA', '#93C5FD'] },
-  { id: 'upform-light', name: 'UpForm Light', bgColor: '#FFFFFF', textColor: '#111827', barColors: ['#0054a5', '#3B82F6', '#93C5FD'] },
-  { id: 'ocean', name: 'Ocean', bgColor: '#0F172A', textColor: '#E0F2FE', barColors: ['#06B6D4', '#22D3EE', '#67E8F9'] },
-  { id: 'sunset', name: 'Sunset', bgColor: '#1C1917', textColor: '#FEF3C7', barColors: ['#F97316', '#FB923C', '#FDBA74'] },
-  { id: 'forest', name: 'Forest', bgColor: '#14532D', textColor: '#DCFCE7', barColors: ['#22C55E', '#4ADE80', '#86EFAC'] },
-  { id: 'lavender', name: 'Lavender', bgColor: '#2E1065', textColor: '#F3E8FF', barColors: ['#A855F7', '#C084FC', '#D8B4FE'] },
-  { id: 'midnight', name: 'Midnight', bgColor: '#0F172A', textColor: '#F8FAFC', barColors: ['#6366F1', '#818CF8', '#A5B4FC'] },
-  { id: 'minimal', name: 'Minimal', bgColor: '#F9FAFB', textColor: '#374151', barColors: ['#6B7280', '#9CA3AF', '#D1D5DB'] },
-]
-
-const IMAGE_LAYOUTS: { value: ImageLayout; label: string }[] = [
-  { value: 'above', label: 'Above' },
-  { value: 'full', label: 'Full BG' },
-  { value: 'left', label: 'Left' },
-  { value: 'right', label: 'Right' },
-  { value: 'left-large', label: 'Left Lg' },
-  { value: 'right-large', label: 'Right Lg' },
-]
-
-function LayoutIcon({ layout, active }: { layout: ImageLayout; active: boolean }) {
-  const fill = active ? '#0054a5' : '#9CA3AF'
-  const textFill = active ? '#6B7280' : '#D1D5DB'
-  return (
-    <svg width="36" height="24" viewBox="0 0 36 24" fill="none">
-      {layout === 'above' && (
-        <>
-          <rect x="8" y="2" width="20" height="10" rx="2" fill={fill} />
-          <rect x="4" y="14" width="28" height="2" rx="1" fill={textFill} />
-          <rect x="8" y="18" width="20" height="2" rx="1" fill={textFill} />
-        </>
-      )}
-      {layout === 'full' && (
-        <>
-          <rect x="2" y="2" width="32" height="20" rx="2" fill={fill} opacity={0.3} />
-          <rect x="6" y="8" width="24" height="2" rx="1" fill={textFill} />
-          <rect x="10" y="12" width="16" height="2" rx="1" fill={textFill} />
-        </>
-      )}
-      {layout === 'left' && (
-        <>
-          <rect x="2" y="4" width="12" height="16" rx="2" fill={fill} />
-          <rect x="17" y="6" width="16" height="2" rx="1" fill={textFill} />
-          <rect x="17" y="10" width="12" height="2" rx="1" fill={textFill} />
-          <rect x="17" y="14" width="14" height="2" rx="1" fill={textFill} />
-        </>
-      )}
-      {layout === 'right' && (
-        <>
-          <rect x="22" y="4" width="12" height="16" rx="2" fill={fill} />
-          <rect x="2" y="6" width="16" height="2" rx="1" fill={textFill} />
-          <rect x="2" y="10" width="12" height="2" rx="1" fill={textFill} />
-          <rect x="2" y="14" width="14" height="2" rx="1" fill={textFill} />
-        </>
-      )}
-      {layout === 'left-large' && (
-        <>
-          <rect x="2" y="2" width="20" height="20" rx="2" fill={fill} />
-          <rect x="24" y="6" width="10" height="2" rx="1" fill={textFill} />
-          <rect x="24" y="10" width="8" height="2" rx="1" fill={textFill} />
-          <rect x="24" y="14" width="10" height="2" rx="1" fill={textFill} />
-        </>
-      )}
-      {layout === 'right-large' && (
-        <>
-          <rect x="14" y="2" width="20" height="20" rx="2" fill={fill} />
-          <rect x="2" y="6" width="10" height="2" rx="1" fill={textFill} />
-          <rect x="2" y="10" width="8" height="2" rx="1" fill={textFill} />
-          <rect x="2" y="14" width="10" height="2" rx="1" fill={textFill} />
-        </>
-      )}
-    </svg>
-  )
-}
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 function NumberDropdown({ value, options, onChange }: { value: number; options: number[]; onChange: (v: number) => void }) {
   const [open, setOpen] = useState(false)
@@ -139,9 +41,9 @@ function NumberDropdown({ value, options, onChange }: { value: number; options: 
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
+        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
       >
-        <span className="text-sm font-semibold text-gray-800">{value}</span>
+        <span className="text-xs font-semibold text-gray-800">{value}</span>
         <CaretDown size={12} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
@@ -157,7 +59,7 @@ function NumberDropdown({ value, options, onChange }: { value: number; options: 
               <button
                 key={n}
                 onClick={() => { onChange(n); setOpen(false) }}
-                className={`w-full px-3 py-1.5 text-sm text-left transition-colors cursor-pointer ${
+                className={`w-full px-2.5 py-1.5 text-xs text-left transition-colors cursor-pointer ${
                   value === n ? 'bg-primary-50 text-primary-600 font-semibold' : 'hover:bg-gray-50 text-gray-700'
                 }`}
               >
@@ -255,7 +157,7 @@ function OptionsEditor({
               }
             }}
             onBlur={onBlur}
-            className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+            className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
             placeholder={`Option ${i + 1}`}
           />
           {onCorrectAnswerChange && (
@@ -334,7 +236,7 @@ function CorrectAnswersEditor({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addAnswer()}
-          className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+          className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
           placeholder="Type an accepted answer..."
         />
         <button
@@ -542,6 +444,144 @@ function LayoutPicker({
   )
 }
 
+function SortableStatement({ id, value, color, onChange, onColorChange, onBlur, onDelete, canDelete }: {
+  id: string
+  value: string
+  color: string
+  onChange: (val: string) => void
+  onColorChange: (color: string) => void
+  onBlur: () => void
+  onDelete: () => void
+  canDelete: boolean
+}) {
+  const [showColors, setShowColors] = useState(false)
+  const colorRef = useRef<HTMLDivElement>(null)
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+
+  useEffect(() => {
+    if (!showColors) return
+    const handler = (e: MouseEvent) => {
+      if (colorRef.current && !colorRef.current.contains(e.target as Node)) setShowColors(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColors])
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} className="flex items-center gap-1.5">
+      <div className="relative" ref={colorRef}>
+        <button
+          onClick={() => setShowColors(!showColors)}
+          className="w-5 h-5 rounded-full shrink-0 cursor-pointer hover:scale-110 transition-transform border-2 border-white shadow-sm"
+          style={{ backgroundColor: color }}
+        />
+        <AnimatePresence>
+          {showColors && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.1 }}
+              className="absolute bottom-full left-0 mb-1 bg-white rounded-lg border border-gray-200 shadow-xl z-[100] p-1.5"
+            >
+              <div className="grid grid-cols-5 gap-1">
+                {SCALE_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => { onColorChange(c); setShowColors(false); onBlur() }}
+                    className={`w-5 h-5 rounded-full cursor-pointer hover:scale-110 transition-transform ${color === c ? 'ring-2 ring-offset-1 ring-primary-400' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      <div {...listeners} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0 p-0.5">
+        <DotsSixVertical size={14} weight="bold" />
+      </div>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+        placeholder="Statement text..."
+      />
+      {canDelete && (
+        <button onClick={onDelete} className="text-gray-300 hover:text-red-500 transition-colors cursor-pointer p-1 shrink-0">
+          <Trash size={14} weight="bold" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function ScaleStatementsEditor({ statements, colors, onChange, onColorsChange, onBlur }: {
+  statements: string[]
+  colors: string[]
+  onChange: (statements: string[]) => void
+  onColorsChange: (colors: string[]) => void
+  onBlur: () => void
+}) {
+  const ids = statements.map((_, i) => `stmt-${i}`)
+  const effectiveColors = statements.map((_, i) => colors[i] || SCALE_COLORS[i % SCALE_COLORS.length])
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = ids.indexOf(active.id as string)
+    const newIndex = ids.indexOf(over.id as string)
+    onChange(arrayMove(statements, oldIndex, newIndex))
+    onColorsChange(arrayMove(effectiveColors, oldIndex, newIndex))
+    onBlur()
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          {statements.map((stmt, i) => (
+            <SortableStatement
+              key={ids[i]}
+              id={ids[i]}
+              value={stmt}
+              color={effectiveColors[i]}
+              onChange={(val) => {
+                const next = [...statements]
+                next[i] = val
+                onChange(next)
+              }}
+              onColorChange={(c) => {
+                const next = [...effectiveColors]
+                next[i] = c
+                onColorsChange(next)
+              }}
+              onBlur={onBlur}
+              onDelete={() => {
+                onChange(statements.filter((_, idx) => idx !== i))
+                onColorsChange(effectiveColors.filter((_, idx) => idx !== i))
+                onBlur()
+              }}
+              canDelete={statements.length > 1}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+      <button
+        onClick={() => {
+          onChange([...statements, ''])
+          onColorsChange([...effectiveColors, SCALE_COLORS[statements.length % SCALE_COLORS.length]])
+        }}
+        className="text-xs text-primary-600 font-bold hover:text-primary-700 self-start mt-1 cursor-pointer flex items-center gap-1"
+      >
+        <Plus size={12} weight="bold" /> Add statement
+      </button>
+    </div>
+  )
+}
+
 export default function SettingsPanel({
   type,
   options,
@@ -611,27 +651,77 @@ export default function SettingsPanel({
         )}
 
         {type === 'scales' && (
-          <div className="mb-5">
-            <label className="text-xs font-semibold text-gray-500 mb-2 block">Scale Range</label>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
-                <NumberDropdown
-                  value={settings.maxSelections ?? 1}
-                  options={Array.from({ length: 10 }, (_, i) => i)}
-                  onChange={(min) => { onSettingsChange({ ...settings, maxSelections: min, maxWords: Math.max(settings.maxWords ?? 10, min + 1) }); onBlur() }}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
-                <NumberDropdown
-                  value={settings.maxWords ?? 10}
-                  options={Array.from({ length: 10 - (settings.maxSelections ?? 1) }, (_, i) => (settings.maxSelections ?? 1) + 1 + i)}
-                  onChange={(max) => { onSettingsChange({ ...settings, maxWords: max }); onBlur() }}
-                />
+          <>
+            <div className="mb-5">
+              <label className="text-xs font-semibold text-gray-500 mb-2 block">Statements</label>
+              <p className="text-[10px] text-gray-400 mb-2">Add statements for audience to rate. Drag to reorder.</p>
+              <ScaleStatementsEditor
+                statements={options}
+                colors={settings.scaleColors ?? []}
+                onChange={onOptionsChange}
+                onColorsChange={(colors) => { onSettingsChange({ ...settings, scaleColors: colors }); onBlur() }}
+                onBlur={onBlur}
+              />
+            </div>
+
+            <div className="mb-5">
+              <label className="text-xs font-semibold text-gray-500 mb-2 block">Dimensions</label>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-[11px] text-gray-400 font-medium mb-1 block">Bottom of the scale</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={settings.scaleMinLabel ?? ''}
+                      onChange={(e) => onSettingsChange({ ...settings, scaleMinLabel: e.target.value || undefined })}
+                      onBlur={onBlur}
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+                      placeholder="Strongly disagree"
+                    />
+                    <div className="w-16">
+                      <input
+                        type="number"
+                        value={settings.scaleMin ?? 1}
+                        onChange={(e) => {
+                          const min = Number(e.target.value)
+                          const max = settings.scaleMax ?? 10
+                          onSettingsChange({ ...settings, scaleMin: min, scaleMax: Math.max(max, min + 1) })
+                        }}
+                        onBlur={onBlur}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] text-gray-400 font-medium mb-1 block">Top of the scale</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={settings.scaleMaxLabel ?? ''}
+                      onChange={(e) => onSettingsChange({ ...settings, scaleMaxLabel: e.target.value || undefined })}
+                      onBlur={onBlur}
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+                      placeholder="Strongly agree"
+                    />
+                    <div className="w-16">
+                      <input
+                        type="number"
+                        value={settings.scaleMax ?? 10}
+                        onChange={(e) => {
+                          const max = Number(e.target.value)
+                          const min = settings.scaleMin ?? 1
+                          onSettingsChange({ ...settings, scaleMax: Math.max(max, min + 1) })
+                        }}
+                        onBlur={onBlur}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {type === 'grid_2x2' && (
@@ -645,7 +735,7 @@ export default function SettingsPanel({
                   value={settings.axisXLabel ?? ''}
                   onChange={(e) => onSettingsChange({ ...settings, axisXLabel: e.target.value || undefined })}
                   onBlur={onBlur}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
                   placeholder="e.g. Effort"
                 />
               </div>
@@ -656,7 +746,7 @@ export default function SettingsPanel({
                   value={settings.axisYLabel ?? ''}
                   onChange={(e) => onSettingsChange({ ...settings, axisYLabel: e.target.value || undefined })}
                   onBlur={onBlur}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
                   placeholder="e.g. Impact"
                 />
               </div>
@@ -680,7 +770,7 @@ export default function SettingsPanel({
               value={settings.correctNumber ?? ''}
               onChange={(e) => onSettingsChange({ ...settings, correctNumber: e.target.value ? Number(e.target.value) : undefined })}
               onBlur={onBlur}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white mb-3"
+              className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white mb-3"
               placeholder="Enter the correct number"
             />
             <label className="text-xs font-semibold text-gray-500 mb-2 block">Number range</label>
@@ -692,7 +782,7 @@ export default function SettingsPanel({
                   value={settings.numberMin ?? 0}
                   onChange={(e) => onSettingsChange({ ...settings, numberMin: Number(e.target.value) })}
                   onBlur={onBlur}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 bg-white"
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
                 />
               </div>
               <div className="flex-1">
@@ -702,7 +792,7 @@ export default function SettingsPanel({
                   value={settings.numberMax ?? 10}
                   onChange={(e) => onSettingsChange({ ...settings, numberMax: Number(e.target.value) })}
                   onBlur={onBlur}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-primary-400 bg-white"
+                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
                 />
               </div>
             </div>
@@ -739,14 +829,14 @@ export default function SettingsPanel({
         <div className="border-t border-gray-100 my-1" />
 
         <div className="py-4">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">Default themes</h4>
+          <h4 className="text-xs font-bold text-gray-700 mb-3">Default themes</h4>
           <ThemeGrid settings={settings} onApply={handleApplyTheme} />
         </div>
 
         <div className="border-t border-gray-100 my-1" />
 
         <div className="py-4">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">Text</h4>
+          <h4 className="text-xs font-bold text-gray-700 mb-3">Text</h4>
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-600 font-medium">Visualization text color</span>
             <ColorPicker value={settings.textColor ?? '#374151'} onChange={(c) => { handleSettingsField('textColor', c); onBlur() }} />
@@ -756,7 +846,7 @@ export default function SettingsPanel({
         <div className="border-t border-gray-100 my-1" />
 
         <div className="py-4">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">Background</h4>
+          <h4 className="text-xs font-bold text-gray-700 mb-3">Background</h4>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-600 font-medium">Background color</span>
@@ -774,7 +864,7 @@ export default function SettingsPanel({
         <div className="border-t border-gray-100 my-1" />
 
         <div className="py-4">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">Joining instructions</h4>
+          <h4 className="text-xs font-bold text-gray-700 mb-3">Joining instructions</h4>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-600 font-medium">Display QR code</span>

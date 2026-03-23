@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { SlideType, SlideSettings, ImageLayout } from '@/types/polling'
+import { TOOLBAR_COLORS, FORMAT_CMDS, SCALE_COLORS, GRID_DOT_POSITIONS } from '@/config/polling'
+import CaretIcon from '@/components/ui/CaretIcon'
 import {
   TextB,
   TextItalic,
@@ -9,13 +11,6 @@ import {
   ThumbsUp,
   ArrowDown,
 } from '@phosphor-icons/react'
-
-const TOOLBAR_COLORS = [
-  '#111827', '#EF4444', '#F97316', '#EAB308',
-  '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#FFFFFF',
-]
-
-const FORMAT_CMDS = ['bold', 'italic', 'underline', 'strikethrough'] as const
 
 export default function SlidePreview({
   code,
@@ -254,20 +249,29 @@ export default function SlidePreview({
       {type === 'open_ended' && (
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Open-ended responses will appear here</div>
       )}
-      {type === 'scales' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <div className="text-gray-400 text-sm">Scale: {settings.maxSelections ?? 1} - {settings.maxWords ?? 10}</div>
-          <div className="flex gap-1.5">
-            {Array.from(
-              { length: Math.min((settings.maxWords ?? 10) - (settings.maxSelections ?? 1) + 1, 10) },
-              (_, i) => (
-                <div key={i} className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-medium border border-gray-200">
-                  {(settings.maxSelections ?? 1) + i}
+      {type === 'scales' && options.length > 0 && (
+        <div className="flex flex-col gap-2.5 mt-auto px-2 w-full">
+          {options.map((stmt, i) => {
+            const color = settings.scaleColors?.[i] || SCALE_COLORS[i % SCALE_COLORS.length]
+            return (
+              <div key={i} className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-semibold truncate" style={{ color: settings.textColor ?? '#111827' }}>
+                  {stmt || `Statement ${i + 1}`}
+                </span>
+                <div className="h-1.5 rounded-full w-full" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}>
+                  <div className="h-full rounded-full" style={{ backgroundColor: color, width: '0%' }} />
                 </div>
-              ),
-            )}
+              </div>
+            )
+          })}
+          <div className="flex justify-between mt-0.5">
+            <span className="text-[8px] text-gray-400">{settings.scaleMinLabel || 'Strongly disagree'}</span>
+            <span className="text-[8px] text-gray-400">{settings.scaleMaxLabel || 'Strongly agree'}</span>
           </div>
         </div>
+      )}
+      {type === 'scales' && options.length === 0 && (
+        <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Add statements to preview</div>
       )}
       {type === 'ranking' && options.length === 0 && (
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Add options to preview ranking</div>
@@ -342,8 +346,7 @@ export default function SlidePreview({
             <span className="absolute bottom-1 right-1.5 text-[8px] text-gray-300">{settings.axisXLabel || 'X'} →</span>
             <span className="absolute top-1 left-1.5 text-[8px] text-gray-300">↑ {settings.axisYLabel || 'Y'}</span>
             {options.slice(0, 4).map((_opt, i) => {
-              const positions = [{ x: 70, y: 30 }, { x: 30, y: 70 }, { x: 65, y: 65 }, { x: 35, y: 35 }]
-              const pos = positions[i]
+              const pos = GRID_DOT_POSITIONS[i]
               return (
                 <div key={i} className="absolute" style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)' }}>
                   <div className="w-3 h-3 rounded-full bg-primary-400 border border-white shadow-sm" />
@@ -431,10 +434,3 @@ export default function SlidePreview({
   )
 }
 
-function CaretIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-gray-400">
-      <path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}

@@ -1,6 +1,6 @@
 import type { PinOnImageResult, SlideSettings } from '@/types/polling'
-
-const PIN_COLORS = ['#EF4444', '#3B82F6', '#22C55E', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#EAB308']
+import { PIN_COLORS } from '@/config/polling'
+import MapPinIcon from '@/components/ui/MapPinIcon'
 
 export default function PinOnImageViz({
   data,
@@ -30,15 +30,7 @@ export default function PinOnImageViz({
             style={{ left: `${pin.x}%`, top: `${pin.y}%`, transform: 'translate(-50%, -100%)' }}
             title={pin.participantName}
           >
-            <svg width="20" height="24" viewBox="0 0 20 24" fill="none">
-              <path
-                d="M10 0C4.477 0 0 4.477 0 10C0 16.5 10 24 10 24C10 24 20 16.5 20 10C20 4.477 15.523 0 10 0Z"
-                fill={PIN_COLORS[i % PIN_COLORS.length]}
-                stroke="white"
-                strokeWidth="1.5"
-              />
-              <circle cx="10" cy="10" r="4" fill="white" fillOpacity="0.6" />
-            </svg>
+            <MapPinIcon color={PIN_COLORS[i % PIN_COLORS.length]} />
           </div>
         ))}
       </div>
