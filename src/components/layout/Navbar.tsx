@@ -10,7 +10,6 @@ import { useCreatePoll } from "@/hooks/polls";
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
   { label: "Live Polls", path: "/polls" },
-  { label: "Templates", path: "/templates" },
 ];
 
 export default function Navbar() {
@@ -59,18 +58,18 @@ export default function Navbar() {
         <div className="flex items-center gap-4 sm:gap-8">
           <button
             onClick={() => navigate("/")}
-            className="text-lg font-bold italic text-white shrink-0"
+            className="text-base font-bold italic text-white shrink-0"
           >
             UpForm
           </button>
-          <nav className="hidden sm:flex items-center gap-0.5">
+          <nav className="hidden sm:flex items-center gap-1">
             {NAV_ITEMS.map(({ label, path }) => {
               const active = pathname === path;
               return (
                 <button
                   key={path}
                   onClick={() => navigate(path)}
-                  className={`px-3 py-1.5 text-sm rounded transition-colors ${
+                  className={`px-2.5 py-1 text-xs rounded transition-colors ${
                     active
                       ? "text-white bg-white/15 font-medium"
                       : "text-white/60 hover:text-white hover:bg-white/10"
@@ -128,11 +127,11 @@ export default function Navbar() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -6 }}
                   transition={{ duration: 0.08, ease: "easeOut" }}
-                  className="absolute right-0 top-10 w-52 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden select-none"
+                  className="absolute right-0 top-10 w-44 bg-white rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden select-none"
                 >
-                  <div className="px-3.5 pt-3 pb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center shrink-0">
+                  <div className="px-2.5 pt-2.5 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center shrink-0">
                         {user?.image ? (
                           <img
                             src={user.image}
@@ -141,31 +140,31 @@ export default function Navbar() {
                             referrerPolicy="no-referrer"
                           />
                         ) : (
-                          <span className="text-[10px] font-bold text-primary-600">
+                          <span className="text-[8px] font-bold text-primary-600">
                             {initials}
                           </span>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 truncate">
+                        <p className="text-[11px] font-semibold text-gray-800 truncate">
                           {user?.name ?? "My Account"}
                         </p>
-                        <p className="text-[10px] text-gray-400 truncate">
+                        <p className="text-[9px] text-gray-400 truncate">
                           {user?.email ?? ""}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="h-px bg-gray-100 mx-2" />
+                  <div className="h-px bg-gray-100 mx-1.5" />
 
-                  <div className="p-1.5">
+                  <div className="p-1">
                     <button
                       onClick={handleSignOut}
-                      className="group w-full flex items-center gap-2.5 px-2.5 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-lg"
+                      className="group w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-md"
                     >
                       <SignOut
-                        size={14}
+                        size={12}
                         className="shrink-0 transition-transform group-hover:scale-110 group-active:scale-95"
                       />
                       Sign Out

@@ -22,10 +22,7 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
   ended: { label: 'Ended', dot: 'bg-gray-400' },
 }
 
-const CARD_COLORS = [
-  '#0054a5', '#7c3aed', '#059669', '#dc2626', '#d97706',
-  '#0891b2', '#7c2d12', '#4338ca', '#be185d', '#065f46',
-]
+const CARD_COLOR = '#0054a5'
 
 function PollCard({
   poll,
@@ -38,7 +35,7 @@ function PollCard({
 }) {
   const navigate = useNavigate()
   const status = STATUS_CONFIG[poll.status] ?? STATUS_CONFIG.waiting
-  const color = CARD_COLORS[index % CARD_COLORS.length]
+  const color = CARD_COLOR
 
   const openMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -54,7 +51,7 @@ function PollCard({
       whileHover={{ y: -4, transition: { duration: 0.15 } }}
       onClick={() => navigate(`/polls/${poll.id}/edit`)}
       onContextMenu={(e) => { e.preventDefault(); openMenu(e) }}
-      className="cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
+      className="cursor-pointer overflow-hidden rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
     >
       <div className="relative h-32 overflow-hidden" style={{ backgroundColor: color }}>
         <div className="absolute inset-0 bg-linear-to-br from-white/8 via-transparent to-black/35" />
@@ -97,12 +94,12 @@ function PollCard({
         </div>
       </div>
 
-      <div className="px-4 pb-4 pt-2 flex items-center justify-between border-t border-gray-100">
+      <div className="px-4 pb-3 pt-1.5 flex items-center justify-between border-t border-gray-100">
         <div className="flex items-baseline gap-1">
-          <span className="text-sm font-bold text-gray-800">{poll.slides.length}</span>
-          <span className="text-xs text-gray-400">slide{poll.slides.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs font-bold text-gray-800">{poll.slides.length}</span>
+          <span className="text-[10px] text-gray-400">slide{poll.slides.length !== 1 ? 's' : ''}</span>
         </div>
-        <span className="text-xs text-gray-400">
+        <span className="text-[10px] text-gray-400">
           {new Date(poll.updatedAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',

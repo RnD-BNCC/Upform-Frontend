@@ -67,7 +67,6 @@ export default function HomePage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -76,7 +75,6 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Reset page when filter changes
   const handleFilterChange = useCallback((f: Filter) => {
     setFilter(f);
     setPage(1);
@@ -217,7 +215,6 @@ export default function HomePage() {
         backgroundSize: "32px 32px",
       }}
     >
-      {/* Navbar + Hero unified block */}
       <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
         <div className="absolute inset-0 overflow-hidden rounded-b-4xl pointer-events-none">
           <div
@@ -246,10 +243,8 @@ export default function HomePage() {
 
         <Navbar />
 
-        {/* Hero */}
         <div ref={heroRef} className="relative">
           <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
-            {/* Text */}
             <div className="hero-text">
               <p className="text-primary-300 text-sm font-bold mb-1">
                 Welcome back
@@ -262,7 +257,6 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Stat bar */}
             <div className="stat-card flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm divide-x divide-white/10 w-full sm:w-auto shrink-0">
               <AnimatedStat value={counts?.total ?? 0} label="Total Forms" />
               <AnimatedStat value={counts?.active ?? 0} label="Active" />
@@ -272,9 +266,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
-        {/* Section header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2.5">
@@ -289,7 +281,6 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            {/* Search */}
             <div className="relative flex-1 sm:flex-none">
               <MagnifyingGlass
                 size={14}
@@ -304,7 +295,6 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Filter pills */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {FILTERS.map((f) => (
                 <button
@@ -323,7 +313,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Grid or empty */}
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -387,7 +376,6 @@ export default function HomePage() {
 
       <Footer />
 
-      {/* Context menu */}
       <AnimatePresence>
         {ctxMenu && ctxEvent && (
           <ContextMenu
@@ -406,7 +394,6 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Confirm action modal */}
       <ConfirmModal
         isOpen={!!confirmAction}
         onClose={() => setConfirmAction(null)}
@@ -435,10 +422,8 @@ export default function HomePage() {
         }
       />
 
-      {/* Loading modal */}
       <LoadingModal isOpen={isActionLoading} />
 
-      {/* Status result modal */}
       <StatusModal
         isOpen={!!statusResult}
         onClose={() => setStatusResult(null)}

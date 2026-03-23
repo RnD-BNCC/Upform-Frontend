@@ -33,9 +33,9 @@ export default function EventCard({ event, index, onContextMenu }: Props) {
       whileHover={{ y: -4, transition: { duration: 0.15 } }}
       onClick={() => navigate(`/forms/${event.id}/edit`)}
       onContextMenu={(e) => { e.preventDefault(); openMenu(e) }}
-      className="cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
+      className="cursor-pointer overflow-hidden rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
     >
-      <div className="relative h-36 overflow-hidden" style={{ backgroundColor: event.color }}>
+      <div className="relative h-32 overflow-hidden" style={{ backgroundColor: '#0054a5' }}>
         {event.image ? (
           <img src={event.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
@@ -77,18 +77,18 @@ export default function EventCard({ event, index, onContextMenu }: Props) {
         </div>
       </div>
 
-      <div className="px-4 py-3.5 min-h-14">
+      <div className="px-4 py-3">
         <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed" title={event.description || undefined}>
           {event.description || 'No description provided.'}
         </p>
       </div>
 
-      <div className="px-4 pb-4 pt-2.5 flex items-center justify-between border-t border-gray-100">
+      <div className="px-4 pb-3 pt-1.5 flex items-center justify-between border-t border-gray-100">
         <div className="flex items-baseline gap-1">
-          <span className="text-sm font-bold text-gray-800">{event.responseCount}</span>
-          <span className="text-xs text-gray-400">responses</span>
+          <span className="text-xs font-bold text-gray-800">{event.responseCount}</span>
+          <span className="text-[10px] text-gray-400">responses</span>
         </div>
-        <span className="text-xs text-gray-400">
+        <span className="text-[10px] text-gray-400">
           {new Date(event.updatedAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
