@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   ArrowSquareOut,
+  PencilSimple,
   Trash,
   CheckCircle,
   XCircle,
@@ -16,6 +17,7 @@ type Props = {
   event: FormEvent
   onClose: () => void
   onOpen: () => void
+  onEdit: () => void
   onDelete: () => void
   onToggleStatus: () => void
 }
@@ -32,6 +34,7 @@ export default function ContextMenu({
   event,
   onClose,
   onOpen,
+  onEdit,
   onDelete,
   onToggleStatus,
 }: Props) {
@@ -85,6 +88,17 @@ export default function ContextMenu({
             className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
           />
           Open
+        </button>
+
+        <button
+          onClick={onEdit}
+          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
+        >
+          <PencilSimple
+            size={12}
+            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
+          />
+          Edit
         </button>
 
         <button

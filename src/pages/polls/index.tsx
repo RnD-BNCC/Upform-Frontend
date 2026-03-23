@@ -1,11 +1,16 @@
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Navbar, Footer } from '@/components/layout'
-import { ConfirmModal, LoadingModal, Pagination, StatusModal } from '@/components/ui'
-import { useGetPolls, useDeletePoll } from '@/hooks/polls'
-import type { StatusType } from '@/components/ui/StatusModal'
-import type { Poll } from '@/types/polling'
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Navbar, Footer } from "@/components/layout";
+import {
+  ConfirmModal,
+  LoadingModal,
+  Pagination,
+  StatusModal,
+} from "@/components/ui";
+import { useGetPolls, useDeletePoll } from "@/hooks/polls";
+import type { StatusType } from "@/components/ui/StatusModal";
+import type { Poll } from "@/types/polling";
 import {
   Presentation,
   PencilSimple,
@@ -14,52 +19,59 @@ import {
   SpinnerGap,
   DotsThree,
   MagnifyingGlass,
-} from '@phosphor-icons/react'
+} from "@phosphor-icons/react";
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
-  waiting: { label: 'Waiting', dot: 'bg-yellow-400' },
-  active: { label: 'Active', dot: 'bg-emerald-400' },
-  ended: { label: 'Ended', dot: 'bg-gray-400' },
-}
+  waiting: { label: "Waiting", dot: "bg-yellow-400" },
+  active: { label: "Active", dot: "bg-emerald-400" },
+  ended: { label: "Ended", dot: "bg-gray-400" },
+};
 
-const CARD_COLOR = '#0054a5'
+const CARD_COLOR = "#0054a5";
 
 function PollCard({
   poll,
   index,
   onContextMenu,
 }: {
-  poll: Poll
-  index: number
-  onContextMenu: (id: string, x: number, y: number) => void
+  poll: Poll;
+  index: number;
+  onContextMenu: (id: string, x: number, y: number) => void;
 }) {
-  const navigate = useNavigate()
-  const status = STATUS_CONFIG[poll.status] ?? STATUS_CONFIG.waiting
-  const color = CARD_COLOR
+  const navigate = useNavigate();
+  const status = STATUS_CONFIG[poll.status] ?? STATUS_CONFIG.waiting;
+  const color = CARD_COLOR;
 
   const openMenu = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    onContextMenu(poll.id, e.clientX, e.clientY)
-  }
+    e.stopPropagation();
+    e.preventDefault();
+    onContextMenu(poll.id, e.clientX, e.clientY);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.07, ease: 'easeOut' }}
+      transition={{ duration: 0.3, delay: index * 0.07, ease: "easeOut" }}
       whileHover={{ y: -4, transition: { duration: 0.15 } }}
       onClick={() => navigate(`/polls/${poll.id}/edit`)}
-      onContextMenu={(e) => { e.preventDefault(); openMenu(e) }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        openMenu(e);
+      }}
       className="cursor-pointer overflow-hidden rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
     >
-      <div className="relative h-32 overflow-hidden" style={{ backgroundColor: color }}>
+      <div
+        className="relative h-32 overflow-hidden"
+        style={{ backgroundColor: color }}
+      >
         <div className="absolute inset-0 bg-linear-to-br from-white/8 via-transparent to-black/35" />
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)',
-            backgroundSize: '18px 18px',
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
+            backgroundSize: "18px 18px",
           }}
         />
         <div className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-white/10" />
@@ -82,7 +94,7 @@ function PollCard({
 
         <div className="absolute inset-x-0 bottom-0 px-4 pt-10 pb-4 bg-linear-to-t from-black/40 to-transparent">
           <h3 className="text-white font-bold text-sm leading-snug line-clamp-1 drop-shadow-sm">
-            {poll.title || 'Untitled Poll'}
+            {poll.title || "Untitled Poll"}
           </h3>
         </div>
       </div>
@@ -90,24 +102,30 @@ function PollCard({
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <span className="font-medium">Code:</span>
-          <span className="font-bold text-gray-600 tracking-wider">{poll.code}</span>
+          <span className="font-bold text-gray-600 tracking-wider">
+            {poll.code}
+          </span>
         </div>
       </div>
 
       <div className="px-4 pb-3 pt-1.5 flex items-center justify-between border-t border-gray-100">
         <div className="flex items-baseline gap-1">
-          <span className="text-xs font-bold text-gray-800">{poll.slides.length}</span>
-          <span className="text-[10px] text-gray-400">slide{poll.slides.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs font-bold text-gray-800">
+            {poll.slides.length}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            slide{poll.slides.length !== 1 ? "s" : ""}
+          </span>
         </div>
         <span className="text-[10px] text-gray-400">
-          {new Date(poll.updatedAt).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
+          {new Date(poll.updatedAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
           })}
         </span>
       </div>
     </motion.div>
-  )
+  );
 }
 
 function PollContextMenu({
@@ -120,33 +138,33 @@ function PollContextMenu({
   onCopyCode,
   onDelete,
 }: {
-  x: number
-  y: number
-  poll: Poll
-  onClose: () => void
-  onEdit: () => void
-  onPresent: () => void
-  onCopyCode: () => void
-  onDelete: () => void
+  x: number;
+  y: number;
+  poll: Poll;
+  onClose: () => void;
+  onEdit: () => void;
+  onPresent: () => void;
+  onCopyCode: () => void;
+  onDelete: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const adjustedX = Math.min(x, window.innerWidth - 204)
-  const adjustedY = Math.min(y, window.innerHeight - 240)
+  const ref = useRef<HTMLDivElement>(null);
+  const adjustedX = Math.min(x, window.innerWidth - 204);
+  const adjustedY = Math.min(y, window.innerHeight - 240);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
-    }
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleKey)
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleKey)
-    }
-  }, [onClose])
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose]);
 
   return (
     <motion.div
@@ -154,7 +172,7 @@ function PollContextMenu({
       initial={{ opacity: 0, scale: 0.95, y: -6 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: -6 }}
-      transition={{ duration: 0.08, ease: 'easeOut' }}
+      transition={{ duration: 0.08, ease: "easeOut" }}
       className="fixed z-[100] bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 w-40 select-none overflow-hidden"
       style={{ left: adjustedX, top: adjustedY }}
     >
@@ -162,8 +180,11 @@ function PollContextMenu({
         <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
           Poll
         </p>
-        <p className="text-[11px] font-semibold text-gray-800 truncate" title={poll.title}>
-          {poll.title || 'Untitled Poll'}
+        <p
+          className="text-[11px] font-semibold text-gray-800 truncate"
+          title={poll.title}
+        >
+          {poll.title || "Untitled Poll"}
         </p>
       </div>
 
@@ -171,24 +192,42 @@ function PollContextMenu({
 
       <div className="p-1 space-y-0.5">
         <button
-          onClick={() => { onClose(); onEdit() }}
+          onClick={() => {
+            onClose();
+            onEdit();
+          }}
           className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
         >
-          <PencilSimple size={12} className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" />
+          <PencilSimple
+            size={12}
+            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
+          />
           Edit
         </button>
         <button
-          onClick={() => { onClose(); onPresent() }}
+          onClick={() => {
+            onClose();
+            onPresent();
+          }}
           className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
         >
-          <Presentation size={12} className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" />
+          <Presentation
+            size={12}
+            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
+          />
           Present
         </button>
         <button
-          onClick={() => { onClose(); onCopyCode() }}
+          onClick={() => {
+            onClose();
+            onCopyCode();
+          }}
           className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
         >
-          <Copy size={12} className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" />
+          <Copy
+            size={12}
+            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
+          />
           Copy Code
         </button>
       </div>
@@ -197,79 +236,103 @@ function PollContextMenu({
 
       <div className="p-1">
         <button
-          onClick={() => { onClose(); onDelete() }}
+          onClick={() => {
+            onClose();
+            onDelete();
+          }}
           className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-lg"
         >
-          <Trash size={12} className="shrink-0 transition-transform group-hover:scale-110 group-active:scale-95" />
+          <Trash
+            size={12}
+            className="shrink-0 transition-transform group-hover:scale-110 group-active:scale-95"
+          />
           Delete
         </button>
       </div>
     </motion.div>
-  )
+  );
 }
 
 export default function PollsPage() {
-  const navigate = useNavigate()
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search)
-      setPage(1)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [search])
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const { data: result, isLoading } = useGetPolls(page, debouncedSearch || undefined)
-  const deletePoll = useDeletePoll()
+  const { data: result, isLoading } = useGetPolls(
+    page,
+    debouncedSearch || undefined,
+  );
+  const deletePoll = useDeletePoll();
 
-  const polls = result?.data ?? []
-  const meta = result?.meta
+  const polls = result?.data ?? [];
+  const meta = result?.meta;
 
-  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
-  const ctxPoll = ctxMenu ? (polls.find((p) => p.id === ctxMenu.id) ?? null) : null
+  const [ctxMenu, setCtxMenu] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const ctxPoll = ctxMenu
+    ? (polls.find((p) => p.id === ctxMenu.id) ?? null)
+    : null;
 
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null)
-  const [isActionLoading, setIsActionLoading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [statusResult, setStatusResult] = useState<{
-    type: StatusType
-    title: string
-    description: string
-  } | null>(null)
+    type: StatusType;
+    title: string;
+    description: string;
+  } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   const handleConfirmDelete = async () => {
-    if (!confirmDelete) return
-    const { id, title } = confirmDelete
-    setConfirmDelete(null)
-    setIsActionLoading(true)
+    if (!confirmDelete) return;
+    const { id, title } = confirmDelete;
+    setConfirmDelete(null);
+    setIsActionLoading(true);
     try {
-      await deletePoll.mutateAsync(id)
+      await deletePoll.mutateAsync(id);
       setStatusResult({
-        type: 'success',
-        title: 'Poll Deleted',
+        type: "success",
+        title: "Poll Deleted",
         description: `"${title}" has been deleted.`,
-      })
+      });
     } catch (error) {
-      console.error('handleConfirmDelete:', error)
+      console.error("handleConfirmDelete:", error);
       setStatusResult({
-        type: 'error',
-        title: 'Delete Failed',
-        description: 'Something went wrong. Please try again.',
-      })
+        type: "error",
+        title: "Delete Failed",
+        description: "Something went wrong. Please try again.",
+      });
     } finally {
-      setIsActionLoading(false)
+      setIsActionLoading(false);
     }
-  }
+  };
 
   return (
     <div
       className="min-h-screen bg-gray-50 flex flex-col"
       style={{
         backgroundImage:
-          'linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
+          "linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)",
+        backgroundSize: "32px 32px",
       }}
     >
       <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
@@ -278,22 +341,22 @@ export default function PollsPage() {
             className="absolute inset-0"
             style={{
               backgroundImage:
-                'radial-gradient(ellipse at 18% 80%, rgba(0,30,70,0.45)] 0%, transparent 55%), radial-gradient(ellipse at 85% 10%, rgba(0,18,42,0.65) 0%, transparent 50%)',
+                "radial-gradient(ellipse at 18% 80%, rgba(0,30,70,0.45)] 0%, transparent 55%), radial-gradient(ellipse at 85% 10%, rgba(0,18,42,0.65) 0%, transparent 50%)",
             }}
           />
           <div
             className="absolute inset-0"
             style={{
               backgroundImage:
-                'radial-gradient(ellipse at 0% 100%, rgba(255,255,255,0.18) 0%, transparent 50%)',
+                "radial-gradient(ellipse at 0% 100%, rgba(255,255,255,0.18) 0%, transparent 50%)",
             }}
           />
           <div
             className="absolute inset-0 opacity-[0.015]"
             style={{
               backgroundImage:
-                'radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)',
-              backgroundSize: '10px 10px',
+                "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
+              backgroundSize: "10px 10px",
             }}
           />
         </div>
@@ -365,12 +428,12 @@ export default function PollsPage() {
               <Presentation size={48} className="text-gray-300" />
               <div className="text-center">
                 <p className="text-sm font-bold text-gray-500">
-                  {debouncedSearch ? 'No polls found' : 'No polls yet'}
+                  {debouncedSearch ? "No polls found" : "No polls yet"}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   {debouncedSearch
                     ? `No results for "${debouncedSearch}". Try a different keyword.`
-                    : 'Create your first live poll to engage your audience.'}
+                    : "Create your first live poll to engage your audience."}
                 </p>
               </div>
             </motion.div>
@@ -393,7 +456,11 @@ export default function PollsPage() {
               </div>
 
               {meta && (
-                <Pagination page={page} totalPages={meta.totalPages} onPageChange={setPage} />
+                <Pagination
+                  page={page}
+                  totalPages={meta.totalPages}
+                  onPageChange={setPage}
+                />
               )}
             </motion.div>
           )}
@@ -412,13 +479,16 @@ export default function PollsPage() {
             onClose={() => setCtxMenu(null)}
             onEdit={() => navigate(`/polls/${ctxPoll.id}/edit`)}
             onPresent={() => navigate(`/polls/${ctxPoll.id}/present`)}
-            onCopyCode={() => navigator.clipboard.writeText(ctxPoll.code)}
+            onCopyCode={() => {
+              navigator.clipboard.writeText(ctxPoll.code);
+              showToast("Code copied");
+            }}
             onDelete={() => {
-              setCtxMenu(null)
+              setCtxMenu(null);
               setConfirmDelete({
                 id: ctxPoll.id,
-                title: ctxPoll.title || 'Untitled Poll',
-              })
+                title: ctxPoll.title || "Untitled Poll",
+              });
             }}
           />
         )}
@@ -437,10 +507,25 @@ export default function PollsPage() {
       <StatusModal
         isOpen={!!statusResult}
         onClose={() => setStatusResult(null)}
-        type={statusResult?.type ?? 'success'}
-        title={statusResult?.title ?? ''}
-        description={statusResult?.description ?? ''}
+        type={statusResult?.type ?? "success"}
+        title={statusResult?.title ?? ""}
+        description={statusResult?.description ?? ""}
       />
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
+          >
+            <Copy size={12} weight="bold" className="text-emerald-400" />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-  )
+  );
 }

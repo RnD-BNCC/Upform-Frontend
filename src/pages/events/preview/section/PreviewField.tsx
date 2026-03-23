@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   UploadSimpleIcon,
@@ -5,8 +6,50 @@ import {
   StarIcon,
   HeartIcon,
   ThumbsUpIcon,
+  SpinnerGapIcon,
+  FileIcon,
 } from "@phosphor-icons/react";
+import { useMutationUploadFile } from "@/api/upload/queries";
 import type { FormField } from "@/types/form";
+
+const FILE_TYPE_MIME_MAP: Record<string, string[]> = {
+  Document: [
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "application/rtf",
+  ],
+  PDF: ["application/pdf"],
+  Spreadsheet: [
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
+  ],
+  Presentation: [
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ],
+  Drawing: ["image/svg+xml", "application/x-drawio"],
+  Image: ["image/"],
+  Video: ["video/"],
+  Audio: ["audio/"],
+};
+
+function isFileTypeAllowed(file: File, allowedTypes?: string[]): boolean {
+  if (!allowedTypes || allowedTypes.length === 0) return true;
+  const mime = file.type.toLowerCase();
+  return allowedTypes.some((type) => {
+    const mimes = FILE_TYPE_MIME_MAP[type];
+    if (!mimes) return false;
+    return mimes.some((m) => (m.endsWith("/") ? mime.startsWith(m) : mime === m));
+  });
+}
+
+function parseFileValue(v: string): { name: string; url: string } {
+  const sep = v.indexOf("::");
+  if (sep === -1) return { name: v, url: "" };
+  return { name: v.slice(0, sep), url: v.slice(sep + 2) };
+}
 
 const shakeVariants = {
   shake: {
@@ -36,6 +79,7 @@ type Props = {
   onOtherTextChange: (text: string) => void;
   onAnimationComplete: () => void;
   setRef: (el: HTMLDivElement | null) => void;
+  pendingFilesRef?: React.RefObject<Record<string, File[]>>;
 };
 
 export default function PreviewField({
@@ -49,6 +93,7 @@ export default function PreviewField({
   onOtherTextChange,
   onAnimationComplete,
   setRef,
+  pendingFilesRef,
 }: Props) {
   if (field.type === "title_block") {
     return (
@@ -517,38 +562,13 @@ export default function PreviewField({
       )}
 
       {field.type === "file_upload" && (
-        <div>
-          <p className={`text-[11px] italic mb-3 ${hasError ? "text-red-400" : "text-gray-400"}`}>
-            Upload {field.maxFileCount ?? 1} file yang didukung. Maks {field.maxFileSizeMb ?? 10} MB.
-            {field.allowedFileTypes && field.allowedFileTypes.length > 0 && (
-              <span> ({field.allowedFileTypes.join(", ")})</span>
-            )}
-          </p>
-          {val ? (
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <span className="truncate">{val as string}</span>
-              <button
-                onClick={() => onAnswer("")}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
-              >
-                <XIcon size={15} weight="bold" />
-              </button>
-            </div>
-          ) : (
-            <label className="inline-flex items-center gap-2 border border-gray-300 hover:border-primary-400 text-gray-700 hover:text-primary-600 rounded-md px-3 py-1.5 text-sm cursor-pointer transition-colors">
-              <UploadSimpleIcon size={15} />
-              Tambahkan file
-              <input
-                type="file"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onAnswer(file.name);
-                }}
-              />
-            </label>
-          )}
-        </div>
+        <FileUploadSection
+          field={field}
+          value={val}
+          hasError={hasError}
+          onAnswer={onAnswer}
+          pendingFilesRef={pendingFilesRef}
+        />
       )}
 
       {hasError && (
@@ -562,5 +582,160 @@ export default function PreviewField({
         </motion.p>
       )}
     </motion.div>
+  );
+}
+
+function FileUploadSection({
+  field,
+  value,
+  hasError,
+  onAnswer,
+  pendingFilesRef,
+}: {
+  field: FormField;
+  value?: string | string[];
+  hasError: boolean;
+  onAnswer: (value: string | string[]) => void;
+  pendingFilesRef?: React.RefObject<Record<string, File[]>>;
+}) {
+  const deferred = !!pendingFilesRef;
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const uploadFile = useMutationUploadFile();
+
+  const maxCount = field.maxFileCount ?? 1;
+  const maxSizeMb = field.maxFileSizeMb ?? 10;
+  const files: string[] = Array.isArray(value) ? value : value ? [value] : [];
+  const canAddMore = files.length < maxCount;
+
+  const acceptTypes = field.allowedFileTypes?.length
+    ? field.allowedFileTypes
+        .flatMap((type) => {
+          const mimes = FILE_TYPE_MIME_MAP[type];
+          if (!mimes) return [];
+          return mimes.map((m) => (m.endsWith("/") ? m + "*" : m));
+        })
+        .join(",")
+    : undefined;
+
+  const handleFiles = async (selectedFiles: FileList) => {
+    setUploadError("");
+
+    const remaining = maxCount - files.length;
+    const toUpload = Array.from(selectedFiles).slice(0, remaining);
+
+    for (const file of toUpload) {
+      if (!isFileTypeAllowed(file, field.allowedFileTypes)) {
+        setUploadError(`"${file.name}" — jenis file tidak diizinkan.`);
+        return;
+      }
+      if (file.size > maxSizeMb * 1024 * 1024) {
+        setUploadError(`"${file.name}" — ukuran file melebihi ${maxSizeMb} MB.`);
+        return;
+      }
+    }
+
+    if (deferred) {
+      const pending = pendingFilesRef.current?.[field.id] ?? [];
+      const newPending = [...pending, ...toUpload];
+      if (pendingFilesRef.current) pendingFilesRef.current[field.id] = newPending;
+      const newFiles = [...files, ...toUpload.map((f) => f.name)];
+      onAnswer(maxCount === 1 ? newFiles[0] : newFiles);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const newFiles = [...files];
+      for (const file of toUpload) {
+        const result = await uploadFile.mutateAsync(file);
+        newFiles.push(`${result.filename}::${result.url}`);
+      }
+      onAnswer(maxCount === 1 ? newFiles[0] : newFiles);
+    } catch {
+      setUploadError("Gagal mengupload file. Silakan coba lagi.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    if (deferred && pendingFilesRef.current?.[field.id]) {
+      pendingFilesRef.current[field.id] = pendingFilesRef.current[field.id].filter(
+        (_, i) => i !== index,
+      );
+    }
+    const newFiles = files.filter((_, i) => i !== index);
+    if (newFiles.length === 0) {
+      onAnswer("");
+    } else {
+      onAnswer(maxCount === 1 ? newFiles[0] : newFiles);
+    }
+  };
+
+  return (
+    <div>
+      <p className={`text-[11px] italic mb-3 ${hasError ? "text-red-400" : "text-gray-400"}`}>
+        Upload maks {maxCount} file. Maks {maxSizeMb} MB per file.
+        {field.allowedFileTypes && field.allowedFileTypes.length > 0 && (
+          <span> ({field.allowedFileTypes.join(", ")})</span>
+        )}
+      </p>
+
+      {files.length > 0 && (
+        <div className="space-y-1.5 mb-3">
+          {files.map((f, i) => {
+            const { name } = parseFileValue(f);
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700 border border-gray-100"
+              >
+                <FileIcon size={16} className="text-gray-400 shrink-0" />
+                <span className="truncate flex-1">{name}</span>
+                <button
+                  onClick={() => removeFile(i)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0"
+                >
+                  <XIcon size={14} weight="bold" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {canAddMore && (
+        <label
+          className={`inline-flex items-center gap-2 border border-gray-300 hover:border-primary-400 text-gray-700 hover:text-primary-600 rounded-md px-3 py-1.5 text-sm transition-colors ${
+            uploading ? "opacity-50 pointer-events-none" : "cursor-pointer"
+          }`}
+        >
+          {uploading ? (
+            <SpinnerGapIcon size={15} className="animate-spin" />
+          ) : (
+            <UploadSimpleIcon size={15} />
+          )}
+          {uploading ? "Mengupload..." : "Tambahkan file"}
+          <input
+            type="file"
+            className="hidden"
+            accept={acceptTypes}
+            multiple={maxCount > 1}
+            disabled={uploading}
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                handleFiles(e.target.files);
+                e.target.value = "";
+              }
+            }}
+          />
+        </label>
+      )}
+
+      {uploadError && (
+        <p className="mt-2 text-xs text-red-500 font-medium">{uploadError}</p>
+      )}
+    </div>
   );
 }

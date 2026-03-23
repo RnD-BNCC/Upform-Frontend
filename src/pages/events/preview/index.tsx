@@ -89,6 +89,11 @@ export default function EventPreviewPage() {
       ) {
         errs[f.id] = "This question is required.";
       }
+      if (f.type === "email" && val && typeof val === "string" && val.length > 0) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          errs[f.id] = "Format email tidak valid.";
+        }
+      }
     });
     return errs;
   };
