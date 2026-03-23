@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   UploadSimpleIcon,
   XIcon,
@@ -8,7 +8,6 @@ import {
   ThumbsUpIcon,
   SpinnerGapIcon,
   FileIcon,
-  CaretDownIcon,
 } from "@phosphor-icons/react";
 import { useMutationUploadFile } from "@/api/upload/queries";
 import type { FormField } from "@/types/form";
@@ -68,86 +67,6 @@ const inputBase = (hasError: boolean) =>
       ? "border-red-400 focus:border-red-500"
       : "border-transparent hover:border-gray-300 focus:border-primary-500"
   }`;
-
-function DropdownSelect({
-  options,
-  value,
-  optionImages,
-  optionImageWidths,
-  hasError,
-  onSelect,
-}: {
-  options: string[];
-  value: string;
-  optionImages?: Record<string, string>;
-  optionImageWidths?: Record<string, number>;
-  hasError: boolean;
-  onSelect: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative w-full max-w-xs">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between border text-sm px-3 py-2 rounded transition-colors bg-white cursor-pointer ${
-          hasError ? "border-red-400" : open ? "border-primary-500" : "border-gray-300"
-        }`}
-      >
-        <span className={value ? "text-gray-800" : "text-gray-400"}>
-          {value || "Choose an option"}
-        </span>
-        <CaretDownIcon
-          size={14}
-          className={`text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.1 }}
-            className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5 max-h-60 overflow-y-auto"
-          >
-            {options.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => { onSelect(opt); setOpen(false); }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                  value === opt ? "bg-primary-50 text-primary-600 font-medium" : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <span>{opt}</span>
-                {optionImages?.[opt] && (
-                  <div className="mt-1.5 inline-block" style={optionImageWidths?.[opt] ? { width: `${optionImageWidths[opt]}%` } : undefined}>
-                    <img
-                      src={optionImages[opt]}
-                      className={`rounded-md object-contain border border-gray-100 ${optionImageWidths?.[opt] ? 'w-full' : 'max-h-36 max-w-full'}`}
-                      alt={opt}
-                    />
-                  </div>
-                )}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 type Props = {
   field: FormField;
@@ -429,13 +348,13 @@ export default function PreviewField({
                       onClick={() => onAnswer(String(n))}
                       className="flex items-center gap-4 w-full py-1.5 cursor-pointer"
                     >
-                      <span className="text-sm text-gray-600 w-5 text-right shrink-0">{n}</span>
-                      <div
-                        className={`w-4 h-4 rounded-full border-2 shrink-0 transition-colors ${
-                          rating === n
-                            ? "border-primary-500 bg-primary-500"
-                            : "border-gray-400 hover:border-primary-400"
-                        }`}
+                      <span className="text-sm text-gray-900 w-5 text-right shrink-0">{n}</span>
+                      <input
+                        type="radio"
+                        name={`${field.id}-scale`}
+                        checked={rating === n}
+                        onChange={() => onAnswer(String(n))}
+                        className="accent-primary-500 w-5 h-5 shrink-0"
                       />
                     </button>
                   ))}
@@ -455,13 +374,13 @@ export default function PreviewField({
                       onClick={() => onAnswer(String(n))}
                       className="flex flex-col items-center gap-1 p-1.5 cursor-pointer group"
                     >
-                      <span className="text-xs text-gray-500">{n}</span>
-                      <div
-                        className={`w-4 h-4 rounded-full border-2 transition-colors ${
-                          rating === n
-                            ? "border-primary-500 bg-primary-500"
-                            : "border-gray-400 group-hover:border-primary-400"
-                        }`}
+                      <span className="text-sm text-gray-900">{n}</span>
+                      <input
+                        type="radio"
+                        name={`${field.id}-scale`}
+                        checked={rating === n}
+                        onChange={() => onAnswer(String(n))}
+                        className="accent-primary-500 w-5 h-5"
                       />
                     </button>
                   ))}
@@ -492,12 +411,12 @@ export default function PreviewField({
                 value={opt}
                 checked={val === opt}
                 onChange={() => onAnswer(opt)}
-                className="accent-primary-500 w-4 h-4 shrink-0 mt-0.5"
+                className="accent-primary-500 w-5 h-5 shrink-0 mt-0.5"
               />
               <div className="flex-1 min-w-0">
-                <span className="text-[15px] text-gray-800">{opt}</span>
+                <span className="text-[15px] text-gray-900 block">{opt}</span>
                 {field.optionImages?.[opt] && (
-                  <div className="mt-1.5 inline-block" style={field.optionImageWidths?.[opt] ? { width: `${field.optionImageWidths[opt]}%` } : undefined}>
+                  <div className="mt-1.5 block" style={field.optionImageWidths?.[opt] ? { width: `${field.optionImageWidths[opt]}%` } : undefined}>
                     <img
                       src={field.optionImages[opt]}
                       className={`rounded-md object-contain border border-gray-100 ${field.optionImageWidths?.[opt] ? 'w-full' : 'max-h-36 max-w-xs'}`}
@@ -517,10 +436,10 @@ export default function PreviewField({
                 value="__other__"
                 checked={typeof val === "string" && val.startsWith("__other__")}
                 onChange={() => onAnswer(`__other__:${otherText}`)}
-                className="accent-primary-500 w-4 h-4 shrink-0 mt-0.5"
+                className="accent-primary-500 w-5 h-5 shrink-0 mt-0.5"
               />
               <div className="flex-1 min-w-0">
-                <span className="text-[15px] text-gray-800">Other:</span>
+                <span className="text-[15px] text-gray-900">Other:</span>
                 <input
                   type="text"
                   value={otherText}
@@ -561,12 +480,12 @@ export default function PreviewField({
                     const prev = Array.isArray(val) ? val : [];
                     onAnswer(checked ? prev.filter((v) => v !== opt) : [...prev, opt]);
                   }}
-                  className="accent-primary-500 w-4 h-4 shrink-0 rounded mt-0.5"
+                  className="accent-primary-500 w-5 h-5 shrink-0 rounded mt-0.5"
                 />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[15px] text-gray-800">{opt}</span>
+                  <span className="text-[15px] text-gray-900 block">{opt}</span>
                   {field.optionImages?.[opt] && (
-                    <div className="mt-1.5 inline-block" style={field.optionImageWidths?.[opt] ? { width: `${field.optionImageWidths[opt]}%` } : undefined}>
+                    <div className="mt-1.5 block" style={field.optionImageWidths?.[opt] ? { width: `${field.optionImageWidths[opt]}%` } : undefined}>
                       <img
                         src={field.optionImages[opt]}
                         className={`rounded-md object-contain border border-gray-100 ${field.optionImageWidths?.[opt] ? 'w-full' : 'max-h-36 max-w-xs'}`}
@@ -593,10 +512,10 @@ export default function PreviewField({
                       : [...prev, `__other__:${otherText}`],
                   );
                 }}
-                className="accent-primary-500 w-4 h-4 shrink-0 rounded mt-0.5"
+                className="accent-primary-500 w-5 h-5 shrink-0 rounded mt-0.5"
               />
               <div className="flex-1 min-w-0">
-                <span className="text-[15px] text-gray-800">Other:</span>
+                <span className="text-[15px] text-gray-900">Other:</span>
                 <input
                   type="text"
                   value={otherText}
@@ -620,14 +539,18 @@ export default function PreviewField({
       )}
 
       {field.type === "dropdown" && (
-        <DropdownSelect
-          options={field.options ?? []}
+        <select
           value={(val as string) ?? ""}
-          optionImages={field.optionImages}
-          optionImageWidths={field.optionImageWidths}
-          hasError={!!hasError}
-          onSelect={onAnswer}
-        />
+          onChange={(e) => onAnswer(e.target.value)}
+          className={`w-full max-w-xs border rounded-lg text-sm px-3 py-2 outline-none transition-colors bg-white cursor-pointer ${
+            hasError ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-primary-500"
+          }`}
+        >
+          <option value="">Choose an option</option>
+          {(field.options ?? []).map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
       )}
 
       {field.type === "email" && (
@@ -731,7 +654,8 @@ function FileUploadSection({
         newFiles.push(`${result.filename}::${result.url}`);
       }
       onAnswer(maxCount === 1 ? newFiles[0] : newFiles);
-    } catch {
+    } catch (err) {
+      console.error("[handleFileUpload]:", err)
       setUploadError("Gagal mengupload file. Silakan coba lagi.");
     } finally {
       setUploading(false);
@@ -786,7 +710,7 @@ function FileUploadSection({
 
       {canAddMore && (
         <label
-          className={`inline-flex items-center gap-2 border border-gray-300 hover:border-primary-400 text-gray-700 hover:text-primary-600 rounded-md px-3 py-1.5 text-sm transition-colors ${
+          className={`inline-flex items-center gap-2 border border-gray-300 hover:border-primary-500 hover:bg-primary-500 hover:text-white text-gray-900 rounded-md px-3 py-1.5 text-sm transition-colors ${
             uploading ? "opacity-50 pointer-events-none" : "cursor-pointer"
           }`}
         >

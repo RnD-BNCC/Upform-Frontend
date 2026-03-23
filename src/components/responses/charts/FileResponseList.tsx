@@ -20,7 +20,7 @@ async function downloadFile(url: string, name: string) {
     document.body.removeChild(a)
     URL.revokeObjectURL(blobUrl)
   } catch (err) {
-    console.error("downloadFile:", err)
+    console.error("[downloadFile]:", err)
     window.open(url, '_blank')
   }
 }

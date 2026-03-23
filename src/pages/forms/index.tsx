@@ -18,7 +18,7 @@ function loadDraft(id?: string) {
     const raw = localStorage.getItem(`upform-draft-${id}`)
     return raw ? JSON.parse(raw) : null
   } catch (err) {
-    console.error("loadDraft:", err)
+    console.error("[loadDraft]:", err)
     return null
   }
 }

@@ -136,6 +136,20 @@ export default function EventDetailPage() {
     }
   }, [uploadImage])
 
+  const uploadBlobUrl = useCallback(async (blobUrl: string) => {
+    try {
+      const res = await fetch(blobUrl)
+      const blob = await res.blob()
+      const file = new File([blob], `image-${Date.now()}.${blob.type.split('/')[1] || 'png'}`, { type: blob.type })
+      const { url } = await uploadImage.mutateAsync(file)
+      URL.revokeObjectURL(blobUrl)
+      return url
+    } catch (err) {
+      console.error('[uploadBlobUrl]:', err)
+      return blobUrl
+    }
+  }, [uploadImage])
+
   const handleSave = useCallback(async () => {
     if (!id || isSaving) return
     setIsSaving(true)
@@ -147,8 +161,35 @@ export default function EventDetailPage() {
         color: bannerColor,
         image: bannerImage,
       })
+
+      const resolvedSections = await Promise.all(
+        sections.map(async (s) => {
+          const fields = await Promise.all(
+            s.fields.map(async (f) => {
+              const updates: Partial<FormField> = {}
+              if (f.headerImage?.startsWith('blob:')) {
+                updates.headerImage = await uploadBlobUrl(f.headerImage)
+              }
+              if (f.optionImages) {
+                const imgs = { ...f.optionImages }
+                let changed = false
+                for (const [key, url] of Object.entries(imgs)) {
+                  if (url.startsWith('blob:')) {
+                    imgs[key] = await uploadBlobUrl(url)
+                    changed = true
+                  }
+                }
+                if (changed) updates.optionImages = imgs
+              }
+              return Object.keys(updates).length ? { ...f, ...updates } : f
+            }),
+          )
+          return { ...s, fields }
+        }),
+      )
+
       await Promise.all(
-        sections.map((s) =>
+        resolvedSections.map((s) =>
           updateSection.mutateAsync({
             sectionId: s.id,
             title: s.title,
@@ -157,20 +198,22 @@ export default function EventDetailPage() {
           }),
         ),
       )
+
+      setSections(resolvedSections)
       setSavedSnapshot({
         title: formTitle,
         description: formDescription,
         color: bannerColor,
         image: bannerImage,
-        sections: JSON.parse(JSON.stringify(sections)),
+        sections: JSON.parse(JSON.stringify(resolvedSections)),
       })
       showToast()
     } catch (err) {
-      console.error('[handleSave]', err)
+      console.error('[handleSave]:', err)
     } finally {
       setIsSaving(false)
     }
-  }, [id, isSaving, formTitle, formDescription, bannerColor, bannerImage, sections, updateEvent, updateSection, showToast])
+  }, [id, isSaving, formTitle, formDescription, bannerColor, bannerImage, sections, updateEvent, updateSection, uploadBlobUrl, showToast])
 
   const handlePublish = useCallback(async () => {
     if (!id || isPublishing) return

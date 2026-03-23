@@ -61,7 +61,9 @@ export function SortableOptionItem({
     (e: React.MouseEvent, direction: "left" | "right") => {
       e.preventDefault();
       e.stopPropagation();
-      resizeRef.current = { startX: e.clientX, startWidth: imageWidth ?? 100 };
+      const cw = imgWrapperRef.current?.parentElement?.offsetWidth ?? 1;
+      const actualWidth = imgWrapperRef.current ? (imgWrapperRef.current.offsetWidth / cw) * 100 : (imageWidth ?? 100);
+      resizeRef.current = { startX: e.clientX, startWidth: actualWidth };
       const onMove = (ev: MouseEvent) => {
         const cw = imgWrapperRef.current?.parentElement?.getBoundingClientRect().width ?? 600;
         const delta =
