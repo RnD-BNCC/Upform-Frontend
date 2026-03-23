@@ -426,39 +426,116 @@ function RankingInput({
 }
 
 function ScaleInput({
+  statements,
   onSubmit,
   isPending,
   min = 1,
   max = 10,
+  minLabel,
+  maxLabel,
 }: {
+  statements: string[];
   onSubmit: (value: unknown) => void;
   isPending: boolean;
   min?: number;
   max?: number;
+  minLabel?: string;
+  maxLabel?: string;
 }) {
-  const [scale, setScale] = useState<number | null>(null);
+  const mid = Math.round((min + max) / 2);
+  const [values, setValues] = useState<Record<number, number>>(
+    () => Object.fromEntries(statements.map((_, i) => [i, mid]))
+  );
+  const [skipped, setSkipped] = useState<Set<number>>(new Set());
+
+  const effectiveStatements = statements.length > 0 ? statements : ["Rating"];
+
+  const handleSubmit = () => {
+    onSubmit({
+      scales: effectiveStatements.map((stmt, i) => ({
+        statement: stmt,
+        value: skipped.has(i) ? null : (values[i] ?? mid),
+      })),
+    });
+  };
+
+  const allSkipped = effectiveStatements.every((_, i) => skipped.has(i));
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex items-center gap-2 flex-wrap justify-center">
-        {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((n) => (
-          <button
-            key={n}
-            onClick={() => setScale(n)}
-            className={`w-12 h-12 rounded-xl font-bold text-sm transition-all cursor-pointer ${
-              scale === n
-                ? "bg-primary-500 text-white shadow-lg scale-110"
-                : "bg-white border-2 border-gray-200 text-gray-600 hover:border-primary-300"
-            }`}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col gap-8">
+      {effectiveStatements.map((stmt, i) => {
+        const isSkipped = skipped.has(i);
+        const currentVal = values[i] ?? mid;
+        const pct = ((currentVal - min) / (max - min)) * 100;
+
+        return (
+          <div key={i} className={`transition-opacity ${isSkipped ? "opacity-40" : ""}`}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-lg text-gray-900">
+                {stmt || `Statement ${i + 1}`}
+              </h3>
+              <button
+                onClick={() => {
+                  const next = new Set(skipped);
+                  if (isSkipped) next.delete(i);
+                  else next.add(i);
+                  setSkipped(next);
+                }}
+                className="text-xs font-semibold px-3.5 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer shrink-0 ml-3"
+              >
+                {isSkipped ? "Undo" : "Skip"}
+              </button>
+            </div>
+
+            {isSkipped ? (
+              <div className="text-sm text-gray-400 italic py-6 text-center">Skipped</div>
+            ) : (
+              <div className="pt-1">
+                <p className="text-gray-700 text-sm mb-3">{currentVal}</p>
+                <div className="relative py-3">
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-gray-200" />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1 rounded-full bg-primary-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-primary-400 border-4 border-primary-100 shadow-md"
+                    style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)' }}
+                  />
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={1}
+                    value={currentVal}
+                    onChange={(e) =>
+                      setValues((prev) => ({ ...prev, [i]: Number(e.target.value) }))
+                    }
+                    className="relative w-full h-7 appearance-none bg-transparent cursor-pointer z-10 opacity-0"
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">{min}</span>
+                  <span className="text-xs text-gray-400">{max}</span>
+                </div>
+                <div className="flex justify-between -mt-0.5">
+                  <span className="text-[11px] text-gray-400 italic">{minLabel || "Strongly disagree"}</span>
+                  <span className="text-[11px] text-gray-400 italic">{maxLabel || "Strongly agree"}</span>
+                </div>
+              </div>
+            )}
+
+            {i < effectiveStatements.length - 1 && (
+              <div className="border-b border-gray-100 mt-4" />
+            )}
+          </div>
+        );
+      })}
+
       <button
-        onClick={() => scale !== null && onSubmit({ scale })}
-        disabled={scale === null || isPending}
-        className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
+        onClick={handleSubmit}
+        disabled={allSkipped || isPending}
+        className="w-full bg-primary-500 text-white font-bold py-3.5 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
         {isPending ? (
           <span className="flex items-center justify-center gap-2">
@@ -938,10 +1015,13 @@ function AudienceSlideInput({
     case "scales":
       return (
         <ScaleInput
+          statements={slide.options}
           onSubmit={onSubmit}
           isPending={isPending}
-          min={(settings.maxSelections as number) ?? 1}
-          max={(settings.maxWords as number) ?? 10}
+          min={(settings.scaleMin as number) ?? (settings.maxSelections as number) ?? 1}
+          max={(settings.scaleMax as number) ?? (settings.maxWords as number) ?? 10}
+          minLabel={settings.scaleMinLabel as string | undefined}
+          maxLabel={settings.scaleMaxLabel as string | undefined}
         />
       );
     case "pin_on_image":

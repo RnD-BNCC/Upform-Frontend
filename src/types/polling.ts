@@ -45,6 +45,11 @@ export type SlideSettings = {
   pointsTotal?: number
   axisXLabel?: string
   axisYLabel?: string
+  scaleMin?: number
+  scaleMax?: number
+  scaleMinLabel?: string
+  scaleMaxLabel?: string
+  scaleColors?: string[]
 }
 
 export type PollSlide = {
@@ -110,7 +115,13 @@ export type WordCloudResult = { word: string; count: number }[]
 export type MCResult = { option: string; count: number }[]
 export type OpenEndedResult = { text: string; count: number; createdAt: string }[]
 export type RankingResult = { option: string; avgRank: number }[]
-export type ScaleResult = { value: number; count: number }[]
+export type ScaleStatementResult = {
+  statement: string
+  distribution: { value: number; count: number }[]
+  average: number
+  responseCount: number
+}
+export type ScaleResult = ScaleStatementResult[]
 export type QAResult = { text: string; participantName: string; createdAt: string; isAnswered?: boolean; voteId?: string; likeCount?: number }[]
 export type GuessNumberResult = { value: number; count: number }[]
 export type HundredPointsResult = { option: string; totalPoints: number }[]

@@ -53,7 +53,7 @@ export default function SlideVisualization({
     case 'ranking':
       return <RankingViz data={results as Parameters<typeof RankingViz>[0]['data']} textColor={textColor} />
     case 'scales':
-      return <ScaleViz data={results as Parameters<typeof ScaleViz>[0]['data']} textColor={textColor} />
+      return <ScaleViz data={results as Parameters<typeof ScaleViz>[0]['data']} textColor={textColor} settings={settings} />
     case 'qa':
       return <QAFeed data={results as Parameters<typeof QAFeed>[0]['data']} textColor={textColor} highlightedVoteId={highlightedVoteId} onNext={onQANext} onPrev={onQAPrev} onMarkAnswered={onMarkQAAnswered} />
     case 'guess_number':

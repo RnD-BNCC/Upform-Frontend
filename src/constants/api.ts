@@ -36,4 +36,5 @@ export const Api = {
 
   // Upload
   upload: '/upload',
+  uploadFile: '/upload/file',
 } as const

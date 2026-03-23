@@ -9,16 +9,37 @@ import {
 import PreviewField from '@/pages/events/preview/section/PreviewField'
 import { useGetPublicEvent } from '@/hooks/events'
 import { useSubmitPublicResponse } from '@/hooks/responses'
+import { useMutationUploadFile } from '@/api/upload/queries'
 import type { FormSection } from '@/types/form'
+
+function loadDraft(id?: string) {
+  if (!id) return null
+  try {
+    const raw = localStorage.getItem(`upform-draft-${id}`)
+    return raw ? JSON.parse(raw) : null
+  } catch (err) {
+    console.error("loadDraft:", err)
+    return null
+  }
+}
 
 export default function PublicFormPage() {
   const { id } = useParams()
   const { data: event, isLoading, isError } = useGetPublicEvent(id ?? '')
   const submitResponse = useSubmitPublicResponse(id ?? '')
+  const uploadFile = useMutationUploadFile()
+  const draftKey = `upform-draft-${id}`
+  const pendingFilesRef = useRef<Record<string, File[]>>({})
 
-  const [sectionHistory, setSectionHistory] = useState<number[]>([0])
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
-  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({})
+  const [sectionHistory, setSectionHistory] = useState<number[]>(
+    () => loadDraft(id)?.sectionHistory ?? [0],
+  )
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>(
+    () => loadDraft(id)?.answers ?? {},
+  )
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>(
+    () => loadDraft(id)?.otherTexts ?? {},
+  )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -36,6 +57,23 @@ export default function PublicFormPage() {
     if (event) document.title = `${event.name || 'Untitled Form'} — UpForm`
     return () => { document.title = 'UpForm' }
   }, [event])
+
+  useEffect(() => {
+    if (!id || submitted) return
+    const hasData = Object.keys(answers).length > 0 || Object.keys(otherTexts).length > 0
+    if (hasData) {
+      localStorage.setItem(draftKey, JSON.stringify({ answers, otherTexts, sectionHistory }))
+    } else {
+      localStorage.removeItem(draftKey)
+    }
+  }, [answers, otherTexts, sectionHistory, id, submitted, draftKey])
+
+  useEffect(() => {
+    if (Object.keys(answers).length === 0 || submitted) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [answers, submitted])
 
   const currentSection = sectionHistory[sectionHistory.length - 1]
   const section = sections[currentSection]
@@ -88,6 +126,11 @@ export default function PublicFormPage() {
       ) {
         errs[f.id] = 'This question is required.'
       }
+      if (f.type === 'email' && val && typeof val === 'string' && val.length > 0) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          errs[f.id] = 'Format email tidak valid.'
+        }
+      }
     })
     return errs
   }
@@ -127,7 +170,19 @@ export default function PublicFormPage() {
     submittingRef.current = true
     setIsSubmitting(true)
     try {
-      await submitResponse.mutateAsync({ answers })
+      const finalAnswers = { ...answers }
+      for (const [fieldId, files] of Object.entries(pendingFilesRef.current)) {
+        if (files.length === 0) continue
+        const uploaded: string[] = []
+        for (const file of files) {
+          const result = await uploadFile.mutateAsync(file)
+          uploaded.push(`${result.filename}::${result.url}`)
+        }
+        finalAnswers[fieldId] = uploaded.length === 1 ? uploaded[0] : uploaded
+      }
+      await submitResponse.mutateAsync({ answers: finalAnswers })
+      pendingFilesRef.current = {}
+      localStorage.removeItem(draftKey)
       setSubmitted(true)
     } finally {
       setIsSubmitting(false)
@@ -136,6 +191,8 @@ export default function PublicFormPage() {
   }
 
   const handleSubmitAnother = () => {
+    localStorage.removeItem(draftKey)
+    pendingFilesRef.current = {}
     setAnswers({})
     setOtherTexts({})
     setErrors({})
@@ -199,7 +256,7 @@ export default function PublicFormPage() {
             </div>
             <div className="p-6 border-l-4" style={{ borderLeftColor: bannerColor }}>
               <h1 className="text-xl font-bold text-gray-900">{formTitle}</h1>
-              <p className="text-sm text-gray-600 mt-3">Your response has been recorded.</p>
+              <p className="text-sm text-gray-600 mt-1">Your response has been recorded.</p>
               <button
                 onClick={handleSubmitAnother}
                 className="text-sm font-medium mt-4 cursor-pointer hover:underline"
@@ -291,6 +348,7 @@ export default function PublicFormPage() {
                 hasError={!!errors[field.id]}
                 errorMessage={errors[field.id]}
                 isShaking={shakeIds.has(field.id)}
+                pendingFilesRef={pendingFilesRef}
                 onAnswer={(value) => setAnswer(field.id, value)}
                 onOtherTextChange={(text) =>
                   setOtherTexts((prev) => ({ ...prev, [field.id]: text }))

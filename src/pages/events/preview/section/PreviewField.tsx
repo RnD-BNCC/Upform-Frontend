@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   UploadSimpleIcon,
   XIcon,
@@ -8,6 +8,7 @@ import {
   ThumbsUpIcon,
   SpinnerGapIcon,
   FileIcon,
+  CaretDownIcon,
 } from "@phosphor-icons/react";
 import { useMutationUploadFile } from "@/api/upload/queries";
 import type { FormField } from "@/types/form";
@@ -67,6 +68,86 @@ const inputBase = (hasError: boolean) =>
       ? "border-red-400 focus:border-red-500"
       : "border-transparent hover:border-gray-300 focus:border-primary-500"
   }`;
+
+function DropdownSelect({
+  options,
+  value,
+  optionImages,
+  optionImageWidths,
+  hasError,
+  onSelect,
+}: {
+  options: string[];
+  value: string;
+  optionImages?: Record<string, string>;
+  optionImageWidths?: Record<string, number>;
+  hasError: boolean;
+  onSelect: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full max-w-xs">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center justify-between border text-sm px-3 py-2 rounded transition-colors bg-white cursor-pointer ${
+          hasError ? "border-red-400" : open ? "border-primary-500" : "border-gray-300"
+        }`}
+      >
+        <span className={value ? "text-gray-800" : "text-gray-400"}>
+          {value || "Choose an option"}
+        </span>
+        <CaretDownIcon
+          size={14}
+          className={`text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.1 }}
+            className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5 max-h-60 overflow-y-auto"
+          >
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { onSelect(opt); setOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                  value === opt ? "bg-primary-50 text-primary-600 font-medium" : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span>{opt}</span>
+                {optionImages?.[opt] && (
+                  <div className="mt-1.5 inline-block" style={optionImageWidths?.[opt] ? { width: `${optionImageWidths[opt]}%` } : undefined}>
+                    <img
+                      src={optionImages[opt]}
+                      className={`rounded-md object-contain border border-gray-100 ${optionImageWidths?.[opt] ? 'w-full' : 'max-h-36 max-w-full'}`}
+                      alt={opt}
+                    />
+                  </div>
+                )}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 type Props = {
   field: FormField;
@@ -404,23 +485,25 @@ export default function PreviewField({
       {field.type === "multiple_choice" && (
         <div className="space-y-2.5 mt-1">
           {(field.options ?? []).map((opt) => (
-            <label key={opt} className="flex items-center gap-3 cursor-pointer group/opt">
+            <label key={opt} className="flex items-start gap-3 cursor-pointer group/opt">
               <input
                 type="radio"
                 name={field.id}
                 value={opt}
                 checked={val === opt}
                 onChange={() => onAnswer(opt)}
-                className="accent-primary-500 w-4 h-4 shrink-0"
+                className="accent-primary-500 w-4 h-4 shrink-0 mt-0.5"
               />
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex-1 min-w-0">
                 <span className="text-[15px] text-gray-800">{opt}</span>
                 {field.optionImages?.[opt] && (
-                  <img
-                    src={field.optionImages[opt]}
-                    className="max-h-10 rounded object-contain"
-                    alt={opt}
-                  />
+                  <div className="mt-1.5 inline-block" style={field.optionImageWidths?.[opt] ? { width: `${field.optionImageWidths[opt]}%` } : undefined}>
+                    <img
+                      src={field.optionImages[opt]}
+                      className={`rounded-md object-contain border border-gray-100 ${field.optionImageWidths?.[opt] ? 'w-full' : 'max-h-36 max-w-xs'}`}
+                      alt={opt}
+                    />
+                  </div>
                 )}
               </div>
             </label>
@@ -470,7 +553,7 @@ export default function PreviewField({
           {(field.options ?? []).map((opt) => {
             const checked = Array.isArray(val) && val.includes(opt);
             return (
-              <label key={opt} className="flex items-center gap-3 cursor-pointer">
+              <label key={opt} className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={checked}
@@ -478,16 +561,18 @@ export default function PreviewField({
                     const prev = Array.isArray(val) ? val : [];
                     onAnswer(checked ? prev.filter((v) => v !== opt) : [...prev, opt]);
                   }}
-                  className="accent-primary-500 w-4 h-4 shrink-0 rounded"
+                  className="accent-primary-500 w-4 h-4 shrink-0 rounded mt-0.5"
                 />
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
                   <span className="text-[15px] text-gray-800">{opt}</span>
                   {field.optionImages?.[opt] && (
-                    <img
-                      src={field.optionImages[opt]}
-                      className="max-h-10 rounded object-contain"
-                      alt={opt}
-                    />
+                    <div className="mt-1.5 inline-block" style={field.optionImageWidths?.[opt] ? { width: `${field.optionImageWidths[opt]}%` } : undefined}>
+                      <img
+                        src={field.optionImages[opt]}
+                        className={`rounded-md object-contain border border-gray-100 ${field.optionImageWidths?.[opt] ? 'w-full' : 'max-h-36 max-w-xs'}`}
+                        alt={opt}
+                      />
+                    </div>
                   )}
                 </div>
               </label>
@@ -535,20 +620,14 @@ export default function PreviewField({
       )}
 
       {field.type === "dropdown" && (
-        <select
+        <DropdownSelect
+          options={field.options ?? []}
           value={(val as string) ?? ""}
-          onChange={(e) => onAnswer(e.target.value)}
-          className={`w-full max-w-xs border text-sm px-2 py-2 outline-none rounded transition-colors bg-white ${
-            hasError ? "border-red-400" : "border-gray-300 focus:border-primary-500"
-          }`}
-        >
-          <option value="">Choose an option</option>
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
+          optionImages={field.optionImages}
+          optionImageWidths={field.optionImageWidths}
+          hasError={!!hasError}
+          onSelect={onAnswer}
+        />
       )}
 
       {field.type === "email" && (

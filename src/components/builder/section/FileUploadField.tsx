@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CaretDownIcon, FileArrowUpIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import type { FormField } from "@/types/form";
 
 const FILE_TYPE_OPTIONS = [
@@ -62,15 +62,21 @@ export default memo(function FileUploadField({
 
   return (
     <div>
-      <div className="border-2 border-dashed border-gray-200 rounded-lg px-4 py-3 flex items-center gap-3">
-        <FileArrowUpIcon size={20} className="text-gray-300" />
-        <span className="text-sm text-gray-400">Click to upload a file</span>
+      <div>
+        <p className="text-[11px] italic mb-3 text-gray-400">
+          Upload maks {count} file. Maks {sizeLabel} per file.
+          {restrictTypes && allowedFileTypes!.length > 0 && (
+            <span> ({allowedFileTypes!.join(", ")})</span>
+          )}
+        </p>
+        <span className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 rounded-md px-3 py-1.5 text-sm">
+          <UploadSimpleIcon size={15} />
+          Tambahkan file
+        </span>
       </div>
 
-      {isSelected && (
-        <div className="mt-3 space-y-3 border-t border-gray-100 pt-3">
-          {/* Toggle: restrict file types */}
-          <div className="flex items-center justify-between gap-3">
+      <div className="mt-3 space-y-3 border-t border-gray-100 pt-3">
+          <div className="flex items-center gap-3">
             <span className="text-sm text-gray-700">
               Izinkan hanya jenis file tertentu
             </span>
@@ -91,7 +97,6 @@ export default memo(function FileUploadField({
             </button>
           </div>
 
-          {/* File type chips */}
           <AnimatePresence>
             {restrictTypes && (
               <motion.div
@@ -99,36 +104,36 @@ export default memo(function FileUploadField({
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.15 }}
-                className="flex flex-wrap gap-1.5 overflow-hidden"
+                className="grid grid-cols-2 gap-x-6 gap-y-1.5 overflow-hidden"
               >
                 {FILE_TYPE_OPTIONS.map((type) => {
                   const selected = allowedFileTypes!.includes(type);
                   return (
-                    <button
+                    <label
                       key={type}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onChange({
-                          allowedFileTypes: selected
-                            ? allowedFileTypes!.filter((t) => t !== type)
-                            : [...allowedFileTypes!, type],
-                        });
-                      }}
-                      className={`px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
-                        selected
-                          ? "bg-primary-50 border-primary-300 text-primary-700"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
-                      }`}
+                      className="flex items-center gap-2.5 cursor-pointer py-0.5"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {type}
-                    </button>
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => {
+                          onChange({
+                            allowedFileTypes: selected
+                              ? allowedFileTypes!.filter((t) => t !== type)
+                              : [...allowedFileTypes!, type],
+                          });
+                        }}
+                        className="accent-primary-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-700">{type}</span>
+                    </label>
                   );
                 })}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Max file count + max file size */}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">
@@ -229,7 +234,7 @@ export default memo(function FileUploadField({
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 });
+
