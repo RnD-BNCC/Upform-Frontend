@@ -300,7 +300,7 @@ export default function HomePage() {
                 <button
                   key={f}
                   onClick={() => handleFilterChange(f)}
-                  className={`text-xs px-3 sm:px-3.5 py-1.5 rounded-md font-medium transition-all ${
+                  className={`text-xs px-3 sm:px-3.5 py-1.5 rounded-sm font-medium transition-all ${
                     filter === f
                       ? "bg-primary-500 text-white shadow-sm"
                       : "text-gray-500 bg-white border border-gray-200 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50"

@@ -91,7 +91,8 @@ export default function FormCover({
                   onClick={(e) => {
                     e.stopPropagation();
                     onBannerImageChange(null);
-                    if (bannerInputRef.current) bannerInputRef.current.value = "";
+                    if (bannerInputRef.current)
+                      bannerInputRef.current.value = "";
                   }}
                   className="flex items-center gap-1.5 bg-white/90 hover:bg-white text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
                 >

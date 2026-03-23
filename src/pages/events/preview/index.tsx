@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import type { FormSection } from "@/types/form";
 import {
@@ -18,6 +18,7 @@ type FormState = {
 };
 
 export default function EventPreviewPage() {
+  const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as FormState | null;
@@ -166,7 +167,7 @@ export default function EventPreviewPage() {
             Your response has been submitted successfully.
           </p>
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/forms/${id}/edit`, { state: { sections, formTitle, formDescription, bannerColor, bannerImage }, replace: true })}
             className="mt-6 text-sm text-primary-500 hover:text-primary-600 font-medium transition-colors cursor-pointer"
           >
             ← Back to builder
@@ -188,15 +189,15 @@ export default function EventPreviewPage() {
       <header className="bg-primary-800 sticky top-0 z-60">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-sm shrink-0 font-medium cursor-pointer"
+            onClick={() => navigate(`/forms/${id}/edit`, { state: { sections, formTitle, formDescription, bannerColor, bannerImage }, replace: true })}
+            className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-xs shrink-0 font-medium cursor-pointer"
           >
-            <ArrowLeftIcon size={15} weight="bold" />
+            <ArrowLeftIcon size={13} weight="bold" />
             <span className="hidden sm:inline">Back to editor</span>
           </button>
-          <div className="h-5 w-px bg-white/20 shrink-0" />
-          <span className="flex-1 text-sm font-semibold text-white/60 truncate">
-            Preview mode responses won't be saved
+          <div className="h-4 w-px bg-white/20 shrink-0" />
+          <span className="flex-1 text-xs font-medium text-white/50 truncate">
+            Preview mode — responses won't be saved
           </span>
         </div>
       </header>

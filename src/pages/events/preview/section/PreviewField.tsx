@@ -168,10 +168,14 @@ export default function PreviewField({
       {field.type === "paragraph" && (
         <textarea
           value={(val as string) ?? ""}
-          onChange={(e) => onAnswer(e.target.value)}
+          onChange={(e) => {
+            onAnswer(e.target.value)
+            e.target.style.height = 'auto'
+            e.target.style.height = `${e.target.scrollHeight}px`
+          }}
           placeholder={field.placeholder || "Your answer"}
-          rows={4}
-          className={`${inputBase(hasError)} resize-none`}
+          rows={Math.max(3, (field.placeholder?.split('\n').length ?? 0) + 1)}
+          className={`${inputBase(hasError)} resize-none overflow-hidden`}
         />
       )}
 

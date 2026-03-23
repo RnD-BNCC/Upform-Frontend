@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useLocation } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
@@ -12,7 +12,7 @@ import { useGetResponses } from '@/hooks/responses'
 import { useMutationUploadImage } from '@/api/upload/queries'
 import type { FormField, FormSection, FieldType } from '@/types/form'
 import { ResponsesPanel } from '@/components/responses'
-import { SpinnerGapIcon } from '@phosphor-icons/react'
+import { SpinnerGapIcon, FloppyDiskIcon } from '@phosphor-icons/react'
 
 type Tab = 'questions' | 'responses'
 
@@ -27,6 +27,7 @@ type SavedSnapshot = {
 export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const { data: existing, isLoading } = useGetEventDetail(id ?? '')
   const { data: responses = [] } = useGetResponses(id ?? '')
@@ -51,9 +52,32 @@ export default function EventDetailPage() {
   const [confirmAction, setConfirmAction] = useState<'unpublish' | 'close' | 'publish' | null>(null)
   const [isChangingStatus, setIsChangingStatus] = useState(false)
   const [statusResult, setStatusResult] = useState<'unpublish' | 'close' | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const showToast = useCallback((msg = 'Saved successfully') => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2500)
+  }, [])
 
   useEffect(() => {
     if (initialized) return
+
+    const nav = location.state as { sections?: FormSection[]; formTitle?: string; formDescription?: string; bannerColor?: string; bannerImage?: string | null } | null
+    if (nav?.sections) {
+      setFormTitle(nav.formTitle ?? 'Untitled Form')
+      setFormDescription(nav.formDescription ?? '')
+      setBannerColor(nav.bannerColor ?? '#0054a5')
+      setBannerImage(nav.bannerImage ?? null)
+      setHistory({ stack: [nav.sections], index: 0 })
+      if (existing) {
+        setSavedSnapshot({ title: existing.name || 'Untitled Form', description: existing.description || '', color: existing.color || '#0054a5', image: existing.image ?? null, sections: existing.sections ?? [] })
+        setEventStatus(existing.status)
+      }
+      setInitialized(true)
+      window.history.replaceState({}, '')
+      return
+    }
+
     if (isLoading) return
     if (existing) {
       const title = existing.name || 'Untitled Form'
@@ -74,7 +98,7 @@ export default function EventDetailPage() {
     } else {
       navigate('/', { replace: true })
     }
-  }, [existing, isLoading, initialized, navigate])
+  }, [existing, isLoading, initialized, navigate, location.state])
 
   // Sync eventStatus on query refetch
   useEffect(() => {
@@ -140,12 +164,13 @@ export default function EventDetailPage() {
         image: bannerImage,
         sections: JSON.parse(JSON.stringify(sections)),
       })
+      showToast()
     } catch (err) {
       console.error('[handleSave]', err)
     } finally {
       setIsSaving(false)
     }
-  }, [id, isSaving, formTitle, formDescription, bannerColor, bannerImage, sections, updateEvent, updateSection])
+  }, [id, isSaving, formTitle, formDescription, bannerColor, bannerImage, sections, updateEvent, updateSection, showToast])
 
   const handlePublish = useCallback(async () => {
     if (!id || isPublishing) return
@@ -195,7 +220,7 @@ export default function EventDetailPage() {
         (e.key === 'y' || (e.key === 'z' && e.shiftKey))
       ) {
         e.preventDefault()
-        setHistory((prev) =>
+      setHistory((prev) =>
           prev.index >= prev.stack.length - 1 ? prev : { ...prev, index: prev.index + 1 },
         )
       }
@@ -431,7 +456,7 @@ export default function EventDetailPage() {
                     </SortableContext>
 
                     {section.fields.length === 0 && (
-                      <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+                      <div className="bg-white rounded-sm border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
                         Use the toolbar on the right to add a question
                       </div>
                     )}
@@ -445,7 +470,14 @@ export default function EventDetailPage() {
               onAddQuestion={() => addField('short_text', lastSectionId)}
               onAddTitleBlock={() => addField('title_block', lastSectionId)}
               onAddSection={addSection}
-              onAddImageBlock={(url) => addField('image_block', lastSectionId, url)}
+              onAddImageBlock={async (file) => {
+                try {
+                  const { url } = await uploadImage.mutateAsync(file)
+                  addField('image_block', lastSectionId, url)
+                } catch (err) {
+                  console.error('[onAddImageBlock]', err)
+                }
+              }}
             />
           </>
         ) : (
@@ -470,7 +502,7 @@ export default function EventDetailPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.15 }}
-              className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 w-full"
+              className="bg-white rounded-sm shadow-2xl p-6 max-w-sm mx-4 w-full"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-sm font-bold text-gray-900">Unsaved Changes</h3>
@@ -546,6 +578,21 @@ export default function EventDetailPage() {
         buttonText="Continue"
         onButtonClick={() => setStatusResult(null)}
       />
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
+          >
+            <FloppyDiskIcon size={12} weight="bold" className="text-emerald-400" />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
