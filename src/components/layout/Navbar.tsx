@@ -156,12 +156,12 @@ export default function Navbar() {
                     </div>
                   </div>
 
-                  <div className="h-px bg-gray-100 mx-1.5" />
+                  <div className="h-px bg-gray-100" />
 
-                  <div className="p-1">
+                  <div className="py-1">
                     <button
                       onClick={handleSignOut}
-                      className="group w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-md"
+                      className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left"
                     >
                       <SignOut
                         size={12}

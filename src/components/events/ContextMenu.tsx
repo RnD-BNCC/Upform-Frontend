@@ -66,7 +66,7 @@ export default function ContextMenu({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: -6 }}
       transition={{ duration: 0.08, ease: 'easeOut' }}
-      className="fixed z-[100] bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 w-40 select-none overflow-hidden"
+      className="fixed z-[100] bg-white rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 w-40 select-none overflow-hidden"
       style={{ left: adjustedX, top: adjustedY }}
     >
       <div className="px-3 pt-2.5 pb-2">
@@ -76,12 +76,12 @@ export default function ContextMenu({
         <p className="text-[11px] font-semibold text-gray-800 truncate" title={event.name}>{event.name}</p>
       </div>
 
-      <div className="h-px bg-gray-100 mx-2" />
+      <div className="h-px bg-gray-100" />
 
-      <div className="p-1 space-y-0.5">
+      <div className="py-1 space-y-0.5">
         <button
           onClick={onOpen}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
+          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left"
         >
           <ArrowSquareOut
             size={12}
@@ -92,7 +92,7 @@ export default function ContextMenu({
 
         <button
           onClick={onEdit}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
+          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left"
         >
           <PencilSimple
             size={12}
@@ -103,7 +103,7 @@ export default function ContextMenu({
 
         <button
           onClick={onToggleStatus}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left rounded-lg"
+          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left"
         >
           <PublishIcon
             size={12}
@@ -113,12 +113,12 @@ export default function ContextMenu({
         </button>
       </div>
 
-      <div className="h-px bg-gray-100 mx-2" />
+      <div className="h-px bg-gray-100" />
 
-      <div className="p-1">
+      <div className="py-1">
         <button
           onClick={onDelete}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left rounded-lg"
+          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left"
         >
           <Trash
             size={12}
