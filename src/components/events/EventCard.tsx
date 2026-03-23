@@ -64,7 +64,7 @@ export default function EventCard({ event, index, onContextMenu }: Props) {
 
         <button
           onClick={openMenu}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/25 transition-all duration-150 flex items-center justify-center z-10"
+          className="absolute top-3 right-3 w-7 h-7 rounded-full sm:opacity-0 sm:group-hover:opacity-100 hover:bg-black/25 transition-all duration-150 flex items-center justify-center z-10"
           title="More options"
         >
           <DotsThree size={18} weight="bold" className="text-white" />

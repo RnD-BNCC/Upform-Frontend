@@ -86,7 +86,7 @@ function PollCard({
 
         <button
           onClick={openMenu}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/25 transition-all duration-150 flex items-center justify-center z-10"
+          className="absolute top-3 right-3 w-7 h-7 rounded-full sm:opacity-0 sm:group-hover:opacity-100 hover:bg-black/25 transition-all duration-150 flex items-center justify-center z-10"
           title="More options"
         >
           <DotsThree size={18} weight="bold" className="text-white" />
@@ -335,6 +335,8 @@ export default function PollsPage() {
         backgroundSize: "32px 32px",
       }}
     >
+      <Navbar />
+
       <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
         <div className="absolute inset-0 overflow-hidden rounded-b-4xl pointer-events-none">
           <div
@@ -360,8 +362,6 @@ export default function PollsPage() {
             }}
           />
         </div>
-
-        <Navbar />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
           <p className="text-primary-300 text-sm font-bold mb-1">

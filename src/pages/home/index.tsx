@@ -43,13 +43,19 @@ function useAnimatedNumber(target: number, duration = 800) {
   return display;
 }
 
+function formatCompact(n: number) {
+  if (n < 1000) return String(n);
+  const k = n / 1000;
+  return (k % 1 === 0 ? k : k.toFixed(1)) + 'k';
+}
+
 function AnimatedStat({ value, label }: { value: number; label: string }) {
   const display = useAnimatedNumber(value);
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
       <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
-        {display}
+        {formatCompact(display)}
       </span>
       <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
         {label}
@@ -215,6 +221,8 @@ export default function HomePage() {
         backgroundSize: "32px 32px",
       }}
     >
+      <Navbar />
+
       <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
         <div className="absolute inset-0 overflow-hidden rounded-b-4xl pointer-events-none">
           <div
@@ -240,8 +248,6 @@ export default function HomePage() {
             }}
           />
         </div>
-
-        <Navbar />
 
         <div ref={heroRef} className="relative">
           <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">

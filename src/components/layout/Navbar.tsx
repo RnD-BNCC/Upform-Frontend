@@ -55,7 +55,18 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-20 bg-primary-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-4 sm:gap-8">
+        <div className="flex items-center gap-2 sm:gap-8">
+          <button
+            className="sm:hidden w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? (
+              <X size={16} weight="bold" className="text-white" />
+            ) : (
+              <List size={16} weight="bold" className="text-white" />
+            )}
+          </button>
           <button
             onClick={() => navigate("/")}
             className="text-base font-bold italic text-white shrink-0"
@@ -98,7 +109,7 @@ export default function Navbar() {
             className="flex items-center gap-1.5 bg-white text-primary-900 px-3 sm:px-3.5 py-1.5 text-xs font-bold tracking-widest uppercase border-2 border-primary-900 shadow-[2px_2px_0px_0px_#001d3a] hover:bg-primary-500 hover:text-white hover:border-primary-500 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-150 disabled:opacity-60"
           >
             <Plus size={14} weight="bold" />
-            <span className="hidden sm:inline">{isPolls ? 'Create Poll' : 'Create Form'}</span>
+            <span>{isPolls ? 'Create Poll' : 'Create Form'}</span>
           </motion.button>
 
           <div ref={profileRef} className="relative">
@@ -175,17 +186,6 @@ export default function Navbar() {
             </AnimatePresence>
           </div>
 
-          <button
-            className="sm:hidden w-8 h-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? (
-              <X size={16} weight="bold" className="text-white" />
-            ) : (
-              <List size={16} weight="bold" className="text-white" />
-            )}
-          </button>
         </div>
       </div>
 
@@ -196,7 +196,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="sm:hidden absolute top-14 inset-x-0 z-10 bg-primary-900 border-t border-white/10 shadow-xl"
+            className="sm:hidden absolute top-14 inset-x-0 z-10 bg-primary-800 border-t border-white/10 shadow-xl"
           >
             <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-0.5">
               {NAV_ITEMS.map(({ label, path }) => {
