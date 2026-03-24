@@ -7,7 +7,6 @@ import type { QAResult } from '@/types/polling'
 interface QAPresenterModalProps {
   unansweredQA: QAResult
   answeredQA: QAResult
-  totalCount: number
   highlightedVoteId: string | null
   onHighlight: (voteId: string | null) => void
   onMarkAnswered: (voteId: string) => void
@@ -21,7 +20,6 @@ interface QAPresenterModalProps {
 export default function QAPresenterModal({
   unansweredQA,
   answeredQA,
-  totalCount,
   highlightedVoteId,
   onHighlight,
   onMarkAnswered,

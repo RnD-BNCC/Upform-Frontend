@@ -1,0 +1,283 @@
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  CaretLeft,
+  ArrowRight,
+  X,
+  QrCode,
+  ArrowsOut,
+  ArrowsIn,
+  Lightbulb,
+  EyeSlash,
+  Eye,
+  Keyboard,
+  ArrowsClockwise,
+  Trophy,
+  ChatTeardropText,
+  Timer,
+} from "@phosphor-icons/react";
+import { TimerRing } from "@/components/ui/TimerRing";
+import type React from "react";
+import type { PresentControlsProps } from "./types";
+
+function ToolbarButton({
+  children,
+  onClick,
+  disabled,
+  active,
+  title,
+  variant,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  title?: string;
+  variant?: "danger";
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
+        variant === "danger"
+          ? "text-gray-500 hover:bg-red-50 hover:text-red-500"
+          : active
+            ? "bg-gray-200 text-gray-800"
+            : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function PresentControls({
+  currentSlide,
+  totalSlides,
+  isLeaderboardSlide,
+  isFirstSlide,
+  isWaitingRoom,
+  isLastQuestionSlide,
+  isQASlide,
+  isFullscreen,
+  showQASidebar,
+  showJoinOverlay,
+  hideResponses,
+  showSlideGrid,
+  timerActive,
+  timerRemaining,
+  showTimerPopover,
+  revealPhase,
+  slideType,
+  slideSettings,
+  onPrev,
+  onPrimaryAction,
+  onEnd,
+  onRestart,
+  onToggleFullscreen,
+  onToggleQASidebar,
+  onToggleJoinOverlay,
+  onToggleHideResponses,
+  onToggleSlideGrid,
+  onShowHotkeys,
+  onSetShowTimerPopover,
+  onStopTimer,
+  onStartTimer,
+}: PresentControlsProps) {
+  const primaryButtonClass = isLeaderboardSlide
+    ? "bg-red-500 hover:bg-red-600 text-white"
+    : isWaitingRoom
+      ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+      : revealPhase
+        ? "bg-primary-500 hover:bg-primary-600 text-white"
+        : isLastQuestionSlide
+          ? "bg-amber-500 hover:bg-amber-600 text-white"
+          : "bg-gray-100 hover:bg-gray-200 text-gray-700";
+
+  const primaryLabel = isLeaderboardSlide
+    ? "End poll"
+    : isWaitingRoom
+      ? "Start quiz"
+      : revealPhase
+        ? "Next question"
+        : isLastQuestionSlide
+          ? "Leaderboard"
+          : "Next slide";
+
+  const showTimerButton =
+    slideType === "multiple_choice" &&
+    !isWaitingRoom &&
+    !isLeaderboardSlide &&
+    !revealPhase;
+
+  return (
+    <>
+      <div className="fixed bottom-0 left-0 right-0 h-24 z-20 flex items-end justify-center pb-5 group">
+        <div className="flex items-center justify-between gap-4 bg-white rounded-full shadow-xl border border-gray-200 px-2.5 py-1.5 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+          <div className="flex items-center gap-1">
+            <ToolbarButton
+              onClick={onPrev}
+              disabled={isFirstSlide && !isLeaderboardSlide}
+              title="Previous slide (←)"
+            >
+              <CaretLeft size={18} weight="bold" />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={onToggleSlideGrid}
+              title="Slide overview"
+            >
+              <Lightbulb size={18} weight="bold" />
+            </ToolbarButton>
+            <button
+              onClick={onPrimaryAction}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full transition-colors cursor-pointer ml-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${primaryButtonClass}`}
+            >
+              {isLeaderboardSlide ? (
+                <X size={14} weight="bold" />
+              ) : revealPhase ? (
+                <ArrowRight size={14} weight="bold" />
+              ) : isLastQuestionSlide && !isWaitingRoom ? (
+                <Trophy size={14} weight="fill" />
+              ) : (
+                <ArrowRight size={14} weight="bold" />
+              )}
+              {primaryLabel}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {isQASlide && (
+              <ToolbarButton
+                onClick={onToggleQASidebar}
+                active={showQASidebar}
+                title="Q&A sidebar (Q)"
+              >
+                <ChatTeardropText size={18} weight="bold" />
+              </ToolbarButton>
+            )}
+            <ToolbarButton
+              onClick={onToggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen (F)" : "Fullscreen (F)"}
+            >
+              {isFullscreen ? (
+                <ArrowsIn size={18} weight="bold" />
+              ) : (
+                <ArrowsOut size={18} weight="bold" />
+              )}
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={onToggleJoinOverlay}
+              active={showJoinOverlay}
+              title="Show join code (L)"
+            >
+              <QrCode size={18} weight="bold" />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={onToggleHideResponses}
+              active={hideResponses}
+              title="Hide/show responses (H)"
+            >
+              {hideResponses ? (
+                <Eye size={18} weight="bold" />
+              ) : (
+                <EyeSlash size={18} weight="bold" />
+              )}
+            </ToolbarButton>
+            <ToolbarButton onClick={onShowHotkeys} title="Keyboard shortcuts (?)">
+              <Keyboard size={18} weight="bold" />
+            </ToolbarButton>
+            {showTimerButton && (
+              <div className="relative" data-timer-popover>
+                <ToolbarButton
+                  onClick={() => {
+                    if (timerActive) onStopTimer();
+                    else onSetShowTimerPopover(!showTimerPopover);
+                  }}
+                  active={timerActive}
+                  title={timerActive ? "Stop timer" : "Set timer"}
+                >
+                  {timerActive && timerRemaining !== null ? (
+                    <TimerRing
+                      remaining={timerRemaining}
+                      total={slideSettings.timer ?? timerRemaining}
+                      size={24}
+                    />
+                  ) : (
+                    <Timer size={18} weight="bold" />
+                  )}
+                </ToolbarButton>
+                <AnimatePresence>
+                  {showTimerPopover && !timerActive && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-gray-200 p-3 w-44 z-50"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p className="text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                        Timer
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5 mb-2">
+                        {[15, 30, 60, 90].map((sec) => (
+                          <button
+                            key={sec}
+                            onClick={() => {
+                              onStartTimer(sec);
+                              onSetShowTimerPopover(false);
+                            }}
+                            className="text-xs font-semibold py-1.5 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600 transition-colors cursor-pointer"
+                          >
+                            {sec}s
+                          </button>
+                        ))}
+                      </div>
+                      {slideSettings.timer && slideSettings.timer > 0 && (
+                        <button
+                          onClick={() => {
+                            onStartTimer(slideSettings.timer!);
+                            onSetShowTimerPopover(false);
+                          }}
+                          className="w-full text-xs font-semibold py-1.5 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors cursor-pointer"
+                        >
+                          Slide default ({slideSettings.timer}s)
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            <ToolbarButton onClick={onRestart} title="Restart quiz (R)">
+              <ArrowsClockwise size={18} weight="bold" />
+            </ToolbarButton>
+            <ToolbarButton onClick={onEnd} title="End poll" variant="danger">
+              <X size={18} weight="bold" />
+            </ToolbarButton>
+          </div>
+        </div>
+      </div>
+
+      {timerActive && timerRemaining !== null && (
+        <div className="fixed right-5 bottom-28 z-50 flex items-center gap-2 bg-white rounded-full shadow-lg border border-gray-200 px-3 py-2">
+          <TimerRing
+            remaining={timerRemaining}
+            total={slideSettings.timer ?? timerRemaining}
+            size={30}
+          />
+          <button
+            onClick={onStopTimer}
+            className="w-5 h-5 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+            title="Stop timer"
+          >
+            <X size={12} weight="bold" />
+          </button>
+        </div>
+      )}
+    </>
+  );
+}

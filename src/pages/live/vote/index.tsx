@@ -15,6 +15,7 @@ import {
   randomizeAvatarSeed,
 } from "@/utils/participant";
 import type { SlideType, PollSlide, QAQuestion } from "@/types/polling";
+import { SCALE_COLORS } from "@/config/polling";
 import {
   SpinnerGap,
   Presentation,
@@ -25,6 +26,7 @@ import {
   ThumbsUp,
 } from "@phosphor-icons/react";
 import { SuccessIcon } from "@/components/ui/icons";
+import { TimerRing } from "@/components/ui/TimerRing";
 
 function AudienceShell({ children }: { children: React.ReactNode }) {
   return (
@@ -239,7 +241,7 @@ function WordCloudInput({
         value={word}
         onChange={(e) => setWord(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && word.trim()) {
+          if (e.key === "Enter" && word.trim() && !isPending) {
             onSubmit({ word: word.trim() });
             setWord("");
           }
@@ -303,10 +305,10 @@ function MCInput({
       >
         {isPending ? (
           <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Voting...
+            <SpinnerGap size={16} className="animate-spin" /> Submitting...
           </span>
         ) : (
-          "Vote"
+          "Submit"
         )}
       </button>
     </div>
@@ -433,6 +435,7 @@ function ScaleInput({
   max = 10,
   minLabel,
   maxLabel,
+  colors,
 }: {
   statements: string[];
   onSubmit: (value: unknown) => void;
@@ -441,6 +444,7 @@ function ScaleInput({
   max?: number;
   minLabel?: string;
   maxLabel?: string;
+  colors?: string[];
 }) {
   const mid = Math.round((min + max) / 2);
   const [values, setValues] = useState<Record<number, number>>(
@@ -467,6 +471,7 @@ function ScaleInput({
         const isSkipped = skipped.has(i);
         const currentVal = values[i] ?? mid;
         const pct = ((currentVal - min) / (max - min)) * 100;
+        const color = colors?.[i] || SCALE_COLORS[i % SCALE_COLORS.length];
 
         return (
           <div key={i} className={`transition-opacity ${isSkipped ? "opacity-40" : ""}`}>
@@ -495,12 +500,12 @@ function ScaleInput({
                 <div className="relative py-3">
                   <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-gray-200" />
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1 rounded-full bg-primary-500"
-                    style={{ width: `${pct}%` }}
+                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1 rounded-full"
+                    style={{ width: `${pct}%`, backgroundColor: color }}
                   />
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-primary-400 border-4 border-primary-100 shadow-md"
-                    style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)' }}
+                    className="absolute top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-4 border-white shadow-md"
+                    style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)', backgroundColor: color }}
                   />
                   <input
                     type="range"
@@ -1022,6 +1027,7 @@ function AudienceSlideInput({
           max={(settings.scaleMax as number) ?? (settings.maxWords as number) ?? 10}
           minLabel={settings.scaleMinLabel as string | undefined}
           maxLabel={settings.scaleMaxLabel as string | undefined}
+          colors={(settings.scaleColors as string[]) ?? []}
         />
       );
     case "pin_on_image":
@@ -1082,6 +1088,8 @@ export default function LiveVotePage() {
     countdown,
     leaderboardScores,
     scoreUpdate,
+    timerState,
+    answerRevealed,
   } = useLiveSlide(socketRef, connected);
 
   const [voted, setVoted] = useState(false);
@@ -1098,7 +1106,37 @@ export default function LiveVotePage() {
   const [nameConfirmed, setNameConfirmed] = useState(false);
   const showCountdown = countdown !== null;
 
-  // Q&A Mentimeter-style
+  // Audience-side timer countdown
+  const [audienceTimerRemaining, setAudienceTimerRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    if (!timerState) {
+      setAudienceTimerRemaining(null);
+      return;
+    }
+    const { duration, startedAt } = timerState;
+    const tick = () => {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      const remaining = Math.max(0, Math.ceil(duration - elapsed));
+      setAudienceTimerRemaining(remaining);
+    };
+    tick();
+    const interval = setInterval(tick, 500);
+    return () => clearInterval(interval);
+  }, [timerState]);
+
+  // Auto-dismiss "Time's up!" overlay
+  useEffect(() => {
+    if (audienceTimerRemaining !== 0) return;
+    const t = setTimeout(() => setAudienceTimerRemaining(null), 2000);
+    return () => clearTimeout(t);
+  }, [audienceTimerRemaining]);
+
+  // Submit lock: persists when timer expires or answer is revealed; resets on slide change
+  const [submitBlocked, setSubmitBlocked] = useState(false);
+  useEffect(() => { setSubmitBlocked(false); }, [liveSlide]);
+  useEffect(() => { if (audienceTimerRemaining === 0) setSubmitBlocked(true); }, [audienceTimerRemaining]);
+  useEffect(() => { if (answerRevealed) setSubmitBlocked(true); }, [answerRevealed]);
+
   const [showQAModal, setShowQAModal] = useState(false);
   const [qaQuestions, setQaQuestions] = useState<QAQuestion[]>([]);
   const { data: initialQAQuestions } = useQAQuestions(poll?.id);
@@ -1126,6 +1164,7 @@ export default function LiveVotePage() {
     if (liveSlide !== null) {
       setCurrentSlideIndex(liveSlide);
       setVoted(false);
+      setAudienceTimerRemaining(null);
     }
   }, [liveSlide]);
 
@@ -1337,13 +1376,19 @@ export default function LiveVotePage() {
                   />
                 </div>
 
+                {audienceTimerRemaining !== null && audienceTimerRemaining > 0 && timerState && !voted && (
+                  <div className="flex justify-center mb-2">
+                    <TimerRing remaining={audienceTimerRemaining} total={timerState.duration} size={64} />
+                  </div>
+                )}
+
                 {voted ? (
                   <ThankYouScreen scoreFeedback={lastScoreFeedback} />
                 ) : (
                   <AudienceSlideInput
                     slide={activeSlide}
                     onSubmit={handleSubmit}
-                    isPending={submitVote.isPending}
+                    isPending={submitVote.isPending || submitBlocked}
                     participantName={participantNameState ?? ""}
                   />
                 )}
@@ -1352,6 +1397,24 @@ export default function LiveVotePage() {
           </div>
         )}
       </AudienceShell>
+
+      <AnimatePresence>
+        {audienceTimerRemaining === 0 && (
+          <motion.div
+            key="timesup"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          >
+            <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-2xl">
+              <p className="text-2xl font-black text-gray-900">Time's up!</p>
+              <p className="text-sm text-gray-400 mt-1">Waiting for next slide...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showQAModal && poll && participantNameState && (

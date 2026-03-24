@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import type { SlideType, SlideSettings, ImageLayout } from '@/types/polling'
-import { TOOLBAR_COLORS, FORMAT_CMDS, SCALE_COLORS, GRID_DOT_POSITIONS } from '@/config/polling'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import type { SlideType, SlideSettings, ImageLayout, ScaleStatementResult } from '@/types/polling'
+import { TOOLBAR_COLORS, FORMAT_CMDS, SCALE_COLORS, GRID_DOT_POSITIONS, BAR_COLORS_HEX } from '@/config/polling'
 import CaretIcon from '@/components/ui/CaretIcon'
+import ColorPickerDropdown from '@/components/ui/ColorPickerDropdown'
+import ScaleViz from '@/components/polling/visualizations/ScaleViz'
 import {
   TextB,
   TextItalic,
@@ -30,10 +31,8 @@ export default function SlidePreview({
   onQuestionBlur: (val: string) => void
 }) {
   const [editing, setEditing] = useState(false)
-  const [showColorPicker, setShowColorPicker] = useState(false)
 
   const editorRef = useRef<HTMLDivElement>(null)
-  const colorPickerRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const counterRef = useRef<HTMLSpanElement>(null)
 
@@ -86,16 +85,6 @@ export default function SlidePreview({
     return () => document.removeEventListener('selectionchange', handler)
   }, [editing, syncFormatButtons])
 
-  useEffect(() => {
-    if (!showColorPicker) return
-    const handler = (e: MouseEvent) => {
-      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
-        setShowColorPicker(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [showColorPicker])
 
   const handleInput = useCallback(() => {
     if (!editorRef.current) return
@@ -109,7 +98,6 @@ export default function SlidePreview({
     if (containerRef.current && containerRef.current.contains(e.relatedTarget as Node)) return
     const html = currentHtmlRef.current
     setEditing(false)
-    setShowColorPicker(false)
     onChangeRef.current(html)
     onBlurRef.current(html)
   }, [])
@@ -173,35 +161,17 @@ export default function SlidePreview({
           >
             Default <CaretIcon />
           </button>
-          <div className="relative" ref={colorPickerRef}>
-            <div
-              onMouseDown={(e) => { e.preventDefault(); setShowColorPicker(!showColorPicker) }}
-              className="w-5 h-5 rounded-full bg-gray-800 ml-1 cursor-pointer border-2 border-gray-200 hover:scale-110 transition-transform"
-              title="Text color"
-            />
-            <AnimatePresence>
-              {showColorPicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.12 }}
-                  className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-xl z-50 p-2"
-                >
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {TOOLBAR_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        onMouseDown={(e) => { e.preventDefault(); execCmd('foreColor', c); setShowColorPicker(false) }}
-                        className="w-5 h-5 rounded-full border border-gray-200 cursor-pointer hover:scale-110 transition-transform"
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <ColorPickerDropdown
+            value="#111827"
+            onChange={(c) => execCmd('foreColor', c)}
+            colors={TOOLBAR_COLORS}
+            direction="down"
+            align="left"
+            showCaret={false}
+            swatchSize="sm"
+            useMouseDown
+            triggerClassName="w-5 h-5 rounded-full bg-gray-800 ml-1 cursor-pointer border-2 border-gray-200 hover:scale-110 transition-transform"
+          />
           <div className="w-px h-4 bg-gray-200 mx-1.5" />
           {[
             { icon: <TextB size={15} weight="bold" />, title: 'Bold', cmd: 'bold' },
@@ -226,21 +196,39 @@ export default function SlidePreview({
 
   const vizArea = (
     <>
-      {['multiple_choice', 'ranking'].includes(type) && (
-        <div className="flex flex-col gap-3 mt-auto px-2">
-          {options.map((opt, i) => (
-            <div key={i} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold" style={{ color: settings.textColor ?? '#111827' }}>
+      {['multiple_choice', 'ranking'].includes(type) && options.length > 0 && (
+        <div className="flex items-end justify-center gap-2 mt-auto px-2 pb-1">
+          {options.map((opt, i) => {
+            const fakeCounts = [3, 5, 2, 4, 1, 3, 2, 4]
+            const fakeCount = fakeCounts[i % fakeCounts.length]
+            const maxFake = Math.max(...fakeCounts)
+            const barHeight = (fakeCount / maxFake) * 100
+
+            return (
+              <div key={i} className="flex flex-col items-center flex-1 min-w-0">
+                <div className="w-full relative" style={{ height: '100px' }}>
+                  <span
+                    className="absolute left-1/2 -translate-x-1/2 text-[10px] font-bold tabular-nums"
+                    style={{ color: settings.textColor ?? '#111827', opacity: 0.5, bottom: `calc(${barHeight}% + 2px)` }}
+                  >
+                    {fakeCount}
+                  </span>
+                  <div
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-t-md"
+                    style={{ width: '60%', height: `${barHeight}%`, minHeight: '3px', opacity: 0.7, backgroundColor: settings.barColors?.[i] || BAR_COLORS_HEX[i % BAR_COLORS_HEX.length] }}
+                  />
+                </div>
+                <span className="text-[8px] font-medium mt-1 truncate w-full text-center" style={{ color: settings.textColor ?? '#111827', opacity: 0.6 }}>
                   {opt || `Option ${i + 1}`}
                 </span>
-                <span className="text-sm font-bold tabular-nums" style={{ color: settings.textColor ?? '#111827', opacity: 0.5 }}>
-                  0%
-                </span>
               </div>
-              <div className="h-6 rounded-md" style={{ backgroundColor: 'rgba(0,0,0,0.04)' }} />
-            </div>
-          ))}
+            )
+          })}
+        </div>
+      )}
+      {['multiple_choice', 'ranking'].includes(type) && options.length === 0 && (
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: settings.textColor ?? '#111827', opacity: 0.3 }}>
+          Add options to preview
         </div>
       )}
       {type === 'word_cloud' && (
@@ -250,25 +238,32 @@ export default function SlidePreview({
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Open-ended responses will appear here</div>
       )}
       {type === 'scales' && options.length > 0 && (
-        <div className="flex flex-col gap-2.5 mt-auto px-2 w-full">
-          {options.map((stmt, i) => {
-            const color = settings.scaleColors?.[i] || SCALE_COLORS[i % SCALE_COLORS.length]
-            return (
-              <div key={i} className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-semibold truncate" style={{ color: settings.textColor ?? '#111827' }}>
-                  {stmt || `Statement ${i + 1}`}
-                </span>
-                <div className="h-1.5 rounded-full w-full" style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}>
-                  <div className="h-full rounded-full" style={{ backgroundColor: color, width: '0%' }} />
-                </div>
-              </div>
-            )
+        <ScaleViz
+          data={options.map((stmt, i) => {
+            const min = (settings.scaleMin as number) ?? 1
+            const max = (settings.scaleMax as number) ?? 10
+            const range = max - min || 1
+            const patterns = [
+              [0.55, 0.65, 0.7, 0.75, 0.8],
+              [0.25, 0.35, 0.4, 0.45, 0.35],
+              [0.6, 0.65, 0.7, 0.65, 0.75],
+              [0.3, 0.35, 0.5, 0.55, 0.45],
+              [0.7, 0.75, 0.8, 0.85, 0.9],
+            ]
+            const ratios = patterns[i % patterns.length]
+            const values = ratios.map(r => Math.round(min + range * r))
+            const distMap = new Map<number, number>()
+            for (const v of values) distMap.set(v, (distMap.get(v) ?? 0) + 1)
+            const distribution = Array.from(distMap.entries())
+              .map(([value, count]) => ({ value, count }))
+              .sort((a, b) => a.value - b.value)
+            const total = values.length
+            const avg = values.reduce((s, v) => s + v, 0) / total
+            return { statement: stmt || `Statement ${i + 1}`, distribution, average: avg, responseCount: total }
           })}
-          <div className="flex justify-between mt-0.5">
-            <span className="text-[8px] text-gray-400">{settings.scaleMinLabel || 'Strongly disagree'}</span>
-            <span className="text-[8px] text-gray-400">{settings.scaleMaxLabel || 'Strongly agree'}</span>
-          </div>
-        </div>
+          textColor={settings.textColor ?? '#111827'}
+          settings={settings}
+        />
       )}
       {type === 'scales' && options.length === 0 && (
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">Add statements to preview</div>

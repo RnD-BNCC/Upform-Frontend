@@ -11,67 +11,14 @@ import {
 import { ConfirmModal, LoadingModal, StatusModal } from '@/components/ui'
 import type { StatusType } from '@/components/ui/StatusModal'
 import type { PollSlide, SlideType, SlideSettings } from '@/types/polling'
-import SlidePreview from './components/SlidePreview'
-import SettingsPanel from './components/SettingsPanel'
-import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
 import {
-  ArrowLeft,
-  CaretDown,
-  Plus,
-  Trash,
-  Presentation,
-  SpinnerGap,
-  Copy,
-  FloppyDisk,
-} from '@phosphor-icons/react'
-
-function NumberDropdown({ value, options, onChange }: { value: number; options: number[]; onChange: (v: number) => void }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 bg-white transition-colors cursor-pointer"
-      >
-        <span className="text-xs font-semibold text-gray-800">{value}</span>
-        <CaretDown size={11} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.12 }}
-            className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-50 overflow-hidden max-h-40 overflow-y-auto"
-          >
-            {options.map((n) => (
-              <button
-                key={n}
-                onClick={() => { onChange(n); setOpen(false) }}
-                className={`w-full px-2.5 py-1.5 text-xs text-left transition-colors cursor-pointer ${
-                  value === n ? 'bg-primary-50 text-primary-600 font-semibold' : 'hover:bg-gray-50 text-gray-700'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
+  SlidePreview,
+  SettingsPanel,
+  MobileSlideNav,
+  SlidesSidebar,
+  MobileSettings,
+} from './components'
+import { FloppyDisk, SpinnerGap, Presentation } from '@phosphor-icons/react'
 
 function useSlideState(slide: PollSlide, pollId: string, onSaved?: () => void) {
   const updateSlide = useMutationUpdateSlide(pollId)
@@ -207,6 +154,12 @@ export default function PollEditPage() {
     updatePoll.mutate({ pollId, title })
   }
 
+  const handleSave = () => {
+    if (pollId && title) updatePoll.mutate({ pollId, title })
+    slideSaveRef.current?.()
+    showToast()
+  }
+
   const handleAddSlide = () => {
     setLoadingModal(true)
     createSlide.mutate(
@@ -259,166 +212,37 @@ export default function PollEditPage() {
         backgroundSize: '32px 32px',
       }}
     >
-      <header className="sm:hidden fixed top-0 left-0 right-0 bg-primary-800 z-50 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate('/polls')} className="text-white/60 hover:text-white transition-colors cursor-pointer">
-          <ArrowLeft size={18} weight="bold" />
-        </button>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={handleSaveTitle}
-          placeholder="Poll title..."
-          className="text-sm font-semibold text-white bg-transparent outline-none flex-1 placeholder:text-white/40"
-        />
-        <button
-          onClick={() => navigate(`/polls/${pollId}/present`)}
-          className="flex items-center gap-1.5 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
-        >
-          <Presentation size={12} weight="bold" />
-          Present
-        </button>
-      </header>
+      <MobileSlideNav
+        title={title}
+        slides={slides}
+        selectedIndex={selectedIndex}
+        onBack={() => navigate('/polls')}
+        onTitleChange={setTitle}
+        onTitleBlur={handleSaveTitle}
+        onSelectSlide={setSelectedIndex}
+        onAddSlide={handleAddSlide}
+        onPresent={() => navigate(`/polls/${pollId}/present`)}
+        onSave={handleSave}
+        isAddPending={createSlide.isPending}
+      />
 
-      <div className="sm:hidden fixed top-14 left-0 right-0 z-40 flex items-center gap-2 px-4 py-2.5 bg-white border-b border-gray-100 overflow-x-auto">
-        {slides.map((slide, i) => (
-          <button
-            key={slide.id}
-            onClick={() => setSelectedIndex(i)}
-            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              selectedIndex === i ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'
-            }`}
-          >
-            {i + 1}
-            <span className="max-w-20 truncate">
-              {slide.question || SLIDE_TYPES.find((t) => t.value === slide.type)?.label}
-            </span>
-          </button>
-        ))}
-        <button
-          onClick={handleAddSlide}
-          disabled={createSlide.isPending}
-          className="shrink-0 w-7 h-7 rounded-full bg-primary-50 text-primary-500 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <Plus size={14} weight="bold" />
-        </button>
-      </div>
-
-      <button
-        onClick={() => {
-          if (pollId && title) updatePoll.mutate({ pollId, title })
-          slideSaveRef.current?.()
-          showToast()
-        }}
-        className="sm:hidden fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full bg-primary-500 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-      >
-        <FloppyDisk size={20} weight="bold" />
-      </button>
-
-      <aside className="hidden sm:flex w-64 bg-white border-r border-gray-100 flex-col h-screen sticky top-0 shrink-0 overflow-y-auto">
-        <div className="flex items-center gap-2.5 px-4 pt-4 pb-2">
-          <button onClick={() => navigate('/polls')} className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
-            <ArrowLeft size={16} weight="bold" />
-          </button>
-          <span className="text-sm font-bold italic text-gray-900">UpForm</span>
-        </div>
-
-        <div className="px-4 pb-3">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleSaveTitle}
-            placeholder="Poll title..."
-            className="w-full text-sm font-semibold text-gray-900 bg-transparent outline-none border-b border-gray-200 hover:border-gray-400 focus:border-primary-500 px-0.5 py-1.5 transition-colors placeholder:text-gray-300"
-          />
-        </div>
-
-        <div className="px-4 pb-4 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span className="font-medium">Code:</span>
-              <span className="font-bold text-gray-800 tracking-wider">{poll.code}</span>
-            </div>
-            <button onClick={copyCode} className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer" title="Copy code">
-              <Copy size={13} weight="bold" />
-            </button>
-          </div>
-          <button
-            onClick={() => navigate(`/polls/${pollId}/present`)}
-            className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-600 transition-colors cursor-pointer"
-          >
-            <Presentation size={14} weight="bold" />
-            Present
-          </button>
-        </div>
-
-        <div className="border-t border-gray-100" />
-
-        <div className="p-3">
-          <button
-            onClick={handleAddSlide}
-            disabled={createSlide.isPending}
-            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Plus size={14} weight="bold" />
-            New slide
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-1.5 px-3 flex-1">
-          {slides.map((slide, i) => (
-            <motion.div
-              key={slide.id}
-              layout
-              onClick={() => setSelectedIndex(i)}
-              className={`relative flex flex-col gap-1 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer group ${
-                selectedIndex === i
-                  ? 'bg-primary-50 border-l-3 border-l-primary-500 border border-primary-100'
-                  : 'hover:bg-gray-50 border border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className={`text-[11px] font-bold ${selectedIndex === i ? 'text-primary-600' : 'text-gray-400'}`}>
-                  {i + 1}
-                </span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                  selectedIndex === i ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {TYPE_ICONS[slide.type as SlideType]}
-                  {SLIDE_TYPES.find((t) => t.value === slide.type)?.label ?? slide.type}
-                </span>
-              </div>
-              <p
-                className={`text-xs leading-snug line-clamp-2 ${
-                  selectedIndex === i ? 'text-primary-700 font-medium' : 'text-gray-500'
-                }`}
-                dangerouslySetInnerHTML={{ __html: (selectedIndex === i && liveQuestion !== null ? liveQuestion : slide.question) || 'Untitled question' }}
-              />
-              {slides.length > 1 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteSlide(slide.id) }}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer"
-                >
-                  <Trash size={12} weight="bold" />
-                </button>
-              )}
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="p-3 border-t border-gray-100 mt-auto">
-          <button
-            onClick={() => {
-              if (pollId && title) updatePoll.mutate({ pollId, title })
-              slideSaveRef.current?.()
-              showToast()
-            }}
-            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 px-3 py-2.5 rounded-xl transition-colors cursor-pointer"
-          >
-            <FloppyDisk size={14} weight="bold" />
-            Save
-          </button>
-        </div>
-      </aside>
+      <SlidesSidebar
+        title={title}
+        pollCode={poll.code}
+        slides={slides}
+        selectedIndex={selectedIndex}
+        liveQuestion={liveQuestion}
+        onBack={() => navigate('/polls')}
+        onTitleChange={setTitle}
+        onTitleBlur={handleSaveTitle}
+        onSelectSlide={setSelectedIndex}
+        onAddSlide={handleAddSlide}
+        onDeleteSlide={handleDeleteSlide}
+        onCopyCode={copyCode}
+        onPresent={() => navigate(`/polls/${pollId}/present`)}
+        onSave={handleSave}
+        isAddPending={createSlide.isPending}
+      />
 
       {selectedSlide ? (
         <SlideEditorBridge
@@ -539,146 +363,5 @@ function SlideEditorBridge({
         onBlur={() => state.doSave()}
       />
     </>
-  )
-}
-
-function MobileSettings({
-  type,
-  options,
-  settings,
-  onTypeChange,
-  onOptionsChange,
-  onSettingsChange,
-  onBlur,
-}: {
-  type: SlideType
-  options: string[]
-  settings: SlideSettings
-  onTypeChange: (type: SlideType) => void
-  onOptionsChange: (options: string[]) => void
-  onSettingsChange: (settings: SlideSettings) => void
-  onBlur: () => void
-}) {
-  const needsOptions = ['multiple_choice', 'ranking', 'hundred_points'].includes(type)
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <label className="text-xs font-semibold text-gray-500 mb-2 block">Question type</label>
-        <div className="flex flex-wrap gap-1.5">
-          {SLIDE_TYPES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => onTypeChange(t.value)}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                type === t.value
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              {TYPE_ICONS[t.value]}
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {needsOptions && (
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-2 block">Answer options</label>
-          <div className="flex flex-col gap-2">
-            {options.map((opt, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-[9px] font-bold shrink-0">
-                  {String.fromCharCode(65 + i)}
-                </div>
-                <input
-                  value={opt}
-                  onChange={(e) => {
-                    const next = [...options]; next[i] = e.target.value; onOptionsChange(next)
-                  }}
-                  onBlur={onBlur}
-                  className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
-                  placeholder={`Option ${i + 1}`}
-                />
-                {options.length > 1 && (
-                  <button onClick={() => onOptionsChange(options.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500 cursor-pointer p-0.5">
-                    <Trash size={12} weight="bold" />
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              onClick={() => onOptionsChange([...options, ''])}
-              className="text-xs text-primary-600 font-bold self-start cursor-pointer flex items-center gap-1"
-            >
-              <Plus size={10} weight="bold" />
-              Add option
-            </button>
-          </div>
-        </div>
-      )}
-
-      {type === 'scales' && (
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-2 block">Scale Range</label>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
-              <NumberDropdown
-                value={settings.maxSelections ?? 1}
-                options={Array.from({ length: 10 }, (_, i) => i)}
-                onChange={(min) => { onSettingsChange({ ...settings, maxSelections: min, maxWords: Math.max(settings.maxWords ?? 10, min + 1) }); onBlur() }}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
-              <NumberDropdown
-                value={settings.maxWords ?? 10}
-                options={Array.from({ length: 10 - (settings.maxSelections ?? 1) }, (_, i) => (settings.maxSelections ?? 1) + 1 + i)}
-                onChange={(max) => { onSettingsChange({ ...settings, maxWords: max }); onBlur() }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {type === 'guess_number' && (
-        <div>
-          <label className="text-xs font-semibold text-gray-500 mb-2 block">Correct number</label>
-          <input
-            type="number"
-            value={settings.correctNumber ?? ''}
-            onChange={(e) => onSettingsChange({ ...settings, correctNumber: e.target.value ? Number(e.target.value) : undefined })}
-            onBlur={onBlur}
-            className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white mb-3"
-            placeholder="Enter the correct number"
-          />
-          <label className="text-xs font-semibold text-gray-500 mb-2 block">Number range</label>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
-              <input
-                type="number"
-                value={settings.numberMin ?? 1}
-                onChange={(e) => onSettingsChange({ ...settings, numberMin: Number(e.target.value) })}
-                onBlur={onBlur}
-                className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-[11px] text-gray-400 font-medium mb-1 block">Max</label>
-              <input
-                type="number"
-                value={settings.numberMax ?? 100}
-                onChange={(e) => onSettingsChange({ ...settings, numberMax: Number(e.target.value) })}
-                onBlur={onBlur}
-                className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 bg-white"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
   )
 }
