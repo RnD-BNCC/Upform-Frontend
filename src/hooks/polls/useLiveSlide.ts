@@ -11,6 +11,8 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
   const [countdown, setCountdown] = useState<number | null>(null)
   const [leaderboardScores, setLeaderboardScores] = useState<LeaderboardEntry[]>([])
   const [scoreUpdate, setScoreUpdate] = useState<{ participantId: string; points: number; isCorrect: boolean } | null>(null)
+  const [timerState, setTimerState] = useState<{ duration: number; startedAt: number } | null>(null)
+  const [answerRevealed, setAnswerRevealed] = useState(false)
 
   useEffect(() => {
     const socket = socketRef.current
@@ -21,6 +23,8 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
       setCurrentSlide(data.currentSlide)
       setPollStatus('waiting')
       setCountdown(null)
+      setTimerState(null)
+      setAnswerRevealed(false)
     }
 
     const onPollState = (data: { status: PollStatus }) => {
@@ -54,6 +58,18 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
       setScoreUpdate(data)
     }
 
+    const onTimerStart = (data: { pollId: string; duration: number; startedAt: number }) => {
+      setTimerState({ duration: data.duration, startedAt: data.startedAt })
+    }
+
+    const onTimerStop = () => {
+      setTimerState(null)
+    }
+
+    const onAnswerRevealed = () => {
+      setAnswerRevealed(true)
+    }
+
     socket.on('slide-change', onSlideChange)
     socket.on('poll-state', onPollState)
     socket.on('participant-count', onParticipantCount)
@@ -61,6 +77,9 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
     socket.on('countdown', onCountdown)
     socket.on('show-leaderboard', onShowLeaderboard)
     socket.on('score-update', onScoreUpdate)
+    socket.on('timer-start', onTimerStart)
+    socket.on('timer-stop', onTimerStop)
+    socket.on('reveal-answer', onAnswerRevealed)
 
     return () => {
       if (goTimer) clearTimeout(goTimer)
@@ -71,8 +90,11 @@ export function useLiveSlide(socketRef: MutableRefObject<Socket | null>, connect
       socket.off('countdown', onCountdown)
       socket.off('show-leaderboard', onShowLeaderboard)
       socket.off('score-update', onScoreUpdate)
+      socket.off('timer-start', onTimerStart)
+      socket.off('timer-stop', onTimerStop)
+      socket.off('reveal-answer', onAnswerRevealed)
     }
   }, [socketRef, connected])
 
-  return { currentSlide, pollStatus, participantCount, participantList, countdown, leaderboardScores, scoreUpdate }
+  return { currentSlide, pollStatus, participantCount, participantList, countdown, leaderboardScores, scoreUpdate, timerState, answerRevealed }
 }

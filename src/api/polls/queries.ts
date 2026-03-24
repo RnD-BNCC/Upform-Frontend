@@ -210,5 +210,6 @@ export function useQuerySlideResults(pollId: string, slideId: string) {
       return data
     },
     enabled: !!pollId && !!slideId,
+    staleTime: 0,
   })
 }

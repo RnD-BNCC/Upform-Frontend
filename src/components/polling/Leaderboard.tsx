@@ -52,7 +52,7 @@ export default function Leaderboard({
                     key={entry.id}
                     initial={{ x: 300, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: (runners.length - 1 - i) * 0.8, type: 'spring', stiffness: 80, damping: 15 }}
+                    transition={{ delay: (runners.length - 1 - i) * 0.8, type: 'spring', stiffness: 260, damping: 28 }}
                     className={`flex items-center gap-2.5 sm:gap-4 rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-4 ${BAR_BG[rank - 1]}`}
                   >
                     <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br ${RANK_COLORS[rank - 1]} flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-lg shrink-0`}>

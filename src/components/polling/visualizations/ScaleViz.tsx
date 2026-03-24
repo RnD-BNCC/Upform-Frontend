@@ -93,8 +93,6 @@ function StatementRow({
   min,
   max,
   textColor,
-  minLabel,
-  maxLabel,
   index,
 }: {
   item: ScaleStatementResult
@@ -102,8 +100,6 @@ function StatementRow({
   min: number
   max: number
   textColor: string
-  minLabel: string
-  maxLabel: string
   index: number
 }) {
   const svgWidth = 600
@@ -228,7 +224,7 @@ export default function ScaleViz({
   const maxLabel = settings?.scaleMaxLabel || 'Strongly agree'
 
   return (
-    <div className="flex flex-col gap-10 w-full max-w-3xl mx-auto p-6">
+    <div className="flex flex-col gap-14 w-full max-w-3xl mx-auto p-6">
       {normalized.map((item, i) => (
         <StatementRow
           key={item.statement}
@@ -237,8 +233,6 @@ export default function ScaleViz({
           min={min}
           max={max}
           textColor={textColor}
-          minLabel={minLabel}
-          maxLabel={maxLabel}
           index={i}
         />
       ))}

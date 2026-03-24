@@ -92,6 +92,11 @@ export const BAR_COLORS = [
   'bg-pink-500',
 ]
 
+export const BAR_COLORS_HEX = [
+  '#3B82F6', '#10B981', '#F59E0B', '#F43F5E',
+  '#A855F7', '#06B6D4', '#F97316', '#EC4899',
+]
+
 export const WORD_CLOUD_COLORS = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
   '#8b5cf6', '#06b6d4', '#f97316', '#ec4899',

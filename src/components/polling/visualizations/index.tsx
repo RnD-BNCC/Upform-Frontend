@@ -19,6 +19,7 @@ export default function SlideVisualization({
   correctNumber,
   highlightedVoteId,
   settings,
+  revealCorrectAnswer,
   onQANext,
   onQAPrev,
   onMarkQAAnswered,
@@ -31,6 +32,7 @@ export default function SlideVisualization({
   correctNumber?: number
   highlightedVoteId?: string | null
   settings?: SlideSettings
+  revealCorrectAnswer?: string
   onQANext?: () => void
   onQAPrev?: () => void
   onMarkQAAnswered?: (voteId: string) => void
@@ -47,7 +49,7 @@ export default function SlideVisualization({
     case 'word_cloud':
       return <WordCloudViz data={results as Parameters<typeof WordCloudViz>[0]['data']} />
     case 'multiple_choice':
-      return <MCBarChart data={results as Parameters<typeof MCBarChart>[0]['data']} textColor={textColor} bgColor={bgColor} correctAnswer={correctAnswer} />
+      return <MCBarChart data={results as Parameters<typeof MCBarChart>[0]['data']} textColor={textColor} settings={settings} revealCorrectAnswer={revealCorrectAnswer} />
     case 'open_ended':
       return <OpenEndedFeed data={results as Parameters<typeof OpenEndedFeed>[0]['data']} textColor={textColor} />
     case 'ranking':

@@ -50,6 +50,7 @@ export type SlideSettings = {
   scaleMinLabel?: string
   scaleMaxLabel?: string
   scaleColors?: string[]
+  barColors?: string[]
 }
 
 export type PollSlide = {

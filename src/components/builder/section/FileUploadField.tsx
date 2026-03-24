@@ -27,7 +27,6 @@ type Props = {
   allowedFileTypes?: string[];
   maxFileCount?: number;
   maxFileSizeMb?: number;
-  isSelected: boolean;
   onChange: (updates: Partial<FormField>) => void;
 };
 
@@ -35,7 +34,6 @@ export default memo(function FileUploadField({
   allowedFileTypes,
   maxFileCount,
   maxFileSizeMb,
-  isSelected,
   onChange,
 }: Props) {
   const [countOpen, setCountOpen] = useState(false);

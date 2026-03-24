@@ -347,7 +347,6 @@ export default function QuestionCard({
                 allowedFileTypes={field.allowedFileTypes}
                 maxFileCount={field.maxFileCount}
                 maxFileSizeMb={field.maxFileSizeMb}
-                isSelected={isSelected}
                 onChange={onChange}
               />
             )}
