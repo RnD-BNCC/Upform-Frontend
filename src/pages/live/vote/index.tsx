@@ -175,10 +175,12 @@ function WaitingScreen({
 
 function ThankYouScreen({
   scoreFeedback,
+  hasCorrectAnswer = true,
 }: {
   scoreFeedback?: { points: number; isCorrect: boolean } | null;
+  hasCorrectAnswer?: boolean;
 }) {
-  if (scoreFeedback) {
+  if (scoreFeedback && hasCorrectAnswer) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
         {scoreFeedback.isCorrect ? (
@@ -315,117 +317,7 @@ function MCInput({
   );
 }
 
-function OpenEndedInput({
-  onSubmit,
-  isPending,
-}: {
-  onSubmit: (value: unknown) => void;
-  isPending: boolean;
-}) {
-  const [text, setText] = useState("");
 
-  return (
-    <div className="flex flex-col gap-3">
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Type your answer..."
-        rows={4}
-        className="text-sm border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 resize-none"
-        autoFocus
-      />
-      <button
-        onClick={() => {
-          if (text.trim()) onSubmit({ text: text.trim() });
-        }}
-        disabled={!text.trim() || isPending}
-        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-      >
-        {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
-        ) : (
-          "Submit"
-        )}
-      </button>
-    </div>
-  );
-}
-
-function RankingInput({
-  options,
-  onSubmit,
-  isPending,
-}: {
-  options: string[];
-  onSubmit: (value: unknown) => void;
-  isPending: boolean;
-}) {
-  const [ranking, setRanking] = useState<string[]>(options);
-
-  const moveUp = (i: number) => {
-    if (i === 0) return;
-    const next = [...ranking];
-    [next[i - 1], next[i]] = [next[i], next[i - 1]];
-    setRanking(next);
-  };
-
-  const moveDown = (i: number) => {
-    if (i === ranking.length - 1) return;
-    const next = [...ranking];
-    [next[i], next[i + 1]] = [next[i + 1], next[i]];
-    setRanking(next);
-  };
-
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs text-gray-400 font-medium mb-1">
-        Tap arrows to reorder
-      </p>
-      {ranking.map((opt, i) => (
-        <div
-          key={opt}
-          className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3"
-        >
-          <span className="text-sm font-bold text-gray-400 w-5">{i + 1}</span>
-          <span className="text-sm font-medium text-gray-700 flex-1">
-            {opt}
-          </span>
-          <div className="flex flex-col gap-0.5">
-            <button
-              onClick={() => moveUp(i)}
-              disabled={i === 0}
-              className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30 cursor-pointer"
-            >
-              ▲
-            </button>
-            <button
-              onClick={() => moveDown(i)}
-              disabled={i === ranking.length - 1}
-              className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30 cursor-pointer"
-            >
-              ▼
-            </button>
-          </div>
-        </div>
-      ))}
-      <button
-        onClick={() => onSubmit({ ranking })}
-        disabled={isPending}
-        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
-      >
-        {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
-        ) : (
-          "Submit Ranking"
-        )}
-      </button>
-    </div>
-  );
-}
 
 function ScaleInput({
   statements,
@@ -447,8 +339,8 @@ function ScaleInput({
   colors?: string[];
 }) {
   const mid = Math.round((min + max) / 2);
-  const [values, setValues] = useState<Record<number, number>>(
-    () => Object.fromEntries(statements.map((_, i) => [i, mid]))
+  const [values, setValues] = useState<Record<number, number>>(() =>
+    Object.fromEntries(statements.map((_, i) => [i, mid])),
   );
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
 
@@ -474,7 +366,10 @@ function ScaleInput({
         const color = colors?.[i] || SCALE_COLORS[i % SCALE_COLORS.length];
 
         return (
-          <div key={i} className={`transition-opacity ${isSkipped ? "opacity-40" : ""}`}>
+          <div
+            key={i}
+            className={`transition-opacity ${isSkipped ? "opacity-40" : ""}`}
+          >
             <div className="flex items-center justify-between mb-1">
               <h3 className="font-bold text-lg text-gray-900">
                 {stmt || `Statement ${i + 1}`}
@@ -493,7 +388,9 @@ function ScaleInput({
             </div>
 
             {isSkipped ? (
-              <div className="text-sm text-gray-400 italic py-6 text-center">Skipped</div>
+              <div className="text-sm text-gray-400 italic py-6 text-center">
+                Skipped
+              </div>
             ) : (
               <div className="pt-1">
                 <p className="text-gray-700 text-sm mb-3">{currentVal}</p>
@@ -505,7 +402,11 @@ function ScaleInput({
                   />
                   <div
                     className="absolute top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border-4 border-white shadow-md"
-                    style={{ left: `${pct}%`, transform: 'translate(-50%, -50%)', backgroundColor: color }}
+                    style={{
+                      left: `${pct}%`,
+                      transform: "translate(-50%, -50%)",
+                      backgroundColor: color,
+                    }}
                   />
                   <input
                     type="range"
@@ -514,7 +415,10 @@ function ScaleInput({
                     step={1}
                     value={currentVal}
                     onChange={(e) =>
-                      setValues((prev) => ({ ...prev, [i]: Number(e.target.value) }))
+                      setValues((prev) => ({
+                        ...prev,
+                        [i]: Number(e.target.value),
+                      }))
                     }
                     className="relative w-full h-7 appearance-none bg-transparent cursor-pointer z-10 opacity-0"
                   />
@@ -524,8 +428,12 @@ function ScaleInput({
                   <span className="text-xs text-gray-400">{max}</span>
                 </div>
                 <div className="flex justify-between -mt-0.5">
-                  <span className="text-[11px] text-gray-400 italic">{minLabel || "Strongly disagree"}</span>
-                  <span className="text-[11px] text-gray-400 italic">{maxLabel || "Strongly agree"}</span>
+                  <span className="text-[11px] text-gray-400 italic">
+                    {minLabel || "Strongly disagree"}
+                  </span>
+                  <span className="text-[11px] text-gray-400 italic">
+                    {maxLabel || "Strongly agree"}
+                  </span>
                 </div>
               </div>
             )}
@@ -629,12 +537,10 @@ function GuessNumberInput({
   const pct = max > min ? ((value - min) / (max - min)) * 100 : 50;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="text-center">
-        <span className="text-4xl font-black text-primary-600 tabular-nums">
-          {value}
-        </span>
-      </div>
+    <div className="flex flex-col gap-6">
+      <p className="text-center text-base font-medium text-gray-600">
+        Your answer: <span className="font-black text-gray-900">{value}</span>
+      </p>
       <div className="relative px-1">
         <input
           type="range"
@@ -642,14 +548,14 @@ function GuessNumberInput({
           max={max}
           value={value}
           onChange={(e) => setValue(Number(e.target.value))}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-200 accent-primary-500
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white
-            [&::-moz-range-thumb]:w-7 [&::-moz-range-thumb]:h-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary-500 [&::-moz-range-thumb]:shadow-lg [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white"
+          className="w-full h-1.5 rounded-full appearance-none cursor-pointer
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:shadow-[0_0_0_10px_rgba(99,102,241,0.12)]
+            [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary-500 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:shadow-[0_0_0_10px_rgba(99,102,241,0.12)]"
           style={{
             background: `linear-gradient(to right, #0054a5 0%, #0054a5 ${pct}%, #e5e7eb ${pct}%, #e5e7eb 100%)`,
           }}
         />
-        <div className="flex justify-between mt-1">
+        <div className="flex justify-between mt-2">
           <span className="text-xs font-semibold text-gray-400">{min}</span>
           <span className="text-xs font-semibold text-gray-400">{max}</span>
         </div>
@@ -657,108 +563,7 @@ function GuessNumberInput({
       <button
         onClick={() => onSubmit({ value })}
         disabled={isPending}
-        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-      >
-        {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
-        ) : (
-          "Submit Guess"
-        )}
-      </button>
-    </div>
-  );
-}
-
-function HundredPointsInput({
-  options,
-  onSubmit,
-  isPending,
-}: {
-  options: string[];
-  onSubmit: (value: unknown) => void;
-  isPending: boolean;
-}) {
-  const [allocations, setAllocations] = useState<Record<string, number>>(() =>
-    Object.fromEntries(options.map((o) => [o, 0])),
-  );
-
-  const total = Object.values(allocations).reduce((s, v) => s + v, 0);
-  const remaining = 100 - total;
-  const maxAlloc = Math.max(...Object.values(allocations), 1);
-
-  const adjust = (option: string, delta: number) => {
-    setAllocations((prev) => {
-      const current = prev[option] ?? 0;
-      const newVal = Math.max(0, Math.min(100, current + delta));
-      return { ...prev, [option]: newVal };
-    });
-  };
-
-  const BAR_COLORS = [
-    "bg-blue-500",
-    "bg-emerald-500",
-    "bg-amber-500",
-    "bg-rose-500",
-    "bg-purple-500",
-    "bg-cyan-500",
-    "bg-orange-500",
-    "bg-pink-500",
-  ];
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="text-center">
-        <span
-          className={`text-2xl font-black tabular-nums ${remaining === 0 ? "text-emerald-500" : remaining < 0 ? "text-red-500" : "text-gray-800"}`}
-        >
-          {remaining}
-        </span>
-        <p className="text-xs text-gray-400 font-medium">points remaining</p>
-      </div>
-      {options.map((opt, i) => {
-        const pts = allocations[opt] ?? 0;
-        const barWidth = maxAlloc > 0 ? (pts / maxAlloc) * 100 : 0;
-        return (
-          <div
-            key={opt}
-            className="flex flex-col gap-1.5 bg-white border border-gray-200 rounded-xl px-4 py-3"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">{opt}</span>
-              <span className="text-sm font-bold text-gray-800 tabular-nums w-8 text-right">
-                {pts}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => adjust(opt, -10)}
-                className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center hover:bg-gray-200 active:scale-95 transition-all cursor-pointer shrink-0"
-              >
-                -10
-              </button>
-              <div className="flex-1 h-6 rounded-full bg-gray-100 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${BAR_COLORS[i % BAR_COLORS.length]} transition-all duration-200`}
-                  style={{ width: `${barWidth}%` }}
-                />
-              </div>
-              <button
-                onClick={() => adjust(opt, 10)}
-                disabled={remaining <= 0}
-                className="w-8 h-8 rounded-lg bg-primary-50 text-primary-600 font-bold text-xs flex items-center justify-center hover:bg-primary-100 active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                +10
-              </button>
-            </div>
-          </div>
-        );
-      })}
-      <button
-        onClick={() => remaining === 0 && onSubmit({ allocations })}
-        disabled={remaining !== 0 || isPending}
-        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 mt-1 cursor-pointer disabled:cursor-not-allowed"
+        className="bg-primary-500 text-white font-bold py-3 rounded-full hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
         {isPending ? (
           <span className="flex items-center justify-center gap-2">
@@ -842,147 +647,6 @@ function PinOnImageInput({
   );
 }
 
-const GRID_DOT_COLORS = [
-  "#3B82F6",
-  "#EF4444",
-  "#22C55E",
-  "#F97316",
-  "#8B5CF6",
-  "#EC4899",
-  "#06B6D4",
-  "#EAB308",
-];
-
-function Grid2x2Input({
-  options,
-  axisXLabel,
-  axisYLabel,
-  onSubmit,
-  isPending,
-}: {
-  options: string[];
-  axisXLabel?: string;
-  axisYLabel?: string;
-  onSubmit: (value: unknown) => void;
-  isPending: boolean;
-}) {
-  const [placements, setPlacements] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
-  const [selectedOption, setSelectedOption] = useState<string | null>(
-    options[0] || null,
-  );
-  const allPlaced = options.every((o) => placements[o]);
-
-  const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!selectedOption) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    const next = { ...placements, [selectedOption]: { x, y } };
-    setPlacements(next);
-    const remaining = options.filter((o) => o !== selectedOption && !next[o]);
-    setSelectedOption(remaining[0] || null);
-  };
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        {options.map((opt, i) => (
-          <button
-            key={opt}
-            onClick={() => setSelectedOption(opt)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all cursor-pointer ${
-              selectedOption === opt
-                ? "border-primary-500 bg-primary-50 text-primary-700"
-                : placements[opt]
-                  ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                  : "border-gray-200 bg-white text-gray-600"
-            }`}
-          >
-            <span
-              className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
-              style={{
-                backgroundColor: GRID_DOT_COLORS[i % GRID_DOT_COLORS.length],
-              }}
-            />
-            {opt}
-          </button>
-        ))}
-      </div>
-
-      <div
-        className={`relative aspect-square rounded-xl border-2 cursor-crosshair transition-colors ${
-          selectedOption
-            ? "border-primary-300 bg-primary-50/30"
-            : "border-gray-200 bg-gray-50"
-        }`}
-        onClick={handleGridClick}
-      >
-        <div className="absolute inset-0 flex items-center pointer-events-none">
-          <div className="w-full h-px bg-gray-200" />
-        </div>
-        <div className="absolute inset-0 flex justify-center pointer-events-none">
-          <div className="h-full w-px bg-gray-200" />
-        </div>
-        <span className="absolute bottom-1.5 right-2 text-[9px] font-medium text-gray-400">
-          {axisXLabel || "X"} →
-        </span>
-        <span className="absolute top-1.5 left-2 text-[9px] font-medium text-gray-400">
-          ↑ {axisYLabel || "Y"}
-        </span>
-
-        {Object.entries(placements).map(([opt, pos]) => {
-          const idx = options.indexOf(opt);
-          return (
-            <div
-              key={opt}
-              className="absolute pointer-events-none flex flex-col items-center"
-              style={{
-                left: `${pos.x}%`,
-                top: `${pos.y}%`,
-                transform: "translate(-50%, -50%)",
-              }}
-            >
-              <div
-                className="w-4 h-4 rounded-full shadow-md border-2 border-white"
-                style={{
-                  backgroundColor:
-                    GRID_DOT_COLORS[idx % GRID_DOT_COLORS.length],
-                }}
-              />
-              <span className="text-[9px] font-bold text-gray-600 bg-white/90 rounded px-1 mt-0.5 whitespace-nowrap">
-                {opt}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {selectedOption && !allPlaced && (
-        <p className="text-xs text-center text-primary-600 font-medium">
-          Placing: <span className="font-bold">{selectedOption}</span> — tap the
-          grid
-        </p>
-      )}
-
-      <button
-        onClick={() => allPlaced && onSubmit({ placements })}
-        disabled={!allPlaced || isPending}
-        className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-      >
-        {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
-        ) : (
-          "Submit"
-        )}
-      </button>
-    </div>
-  );
-}
-
 function AudienceSlideInput({
   slide,
   onSubmit,
@@ -1007,24 +671,20 @@ function AudienceSlideInput({
           isPending={isPending}
         />
       );
-    case "open_ended":
-      return <OpenEndedInput onSubmit={onSubmit} isPending={isPending} />;
-    case "ranking":
-      return (
-        <RankingInput
-          options={slide.options}
-          onSubmit={onSubmit}
-          isPending={isPending}
-        />
-      );
     case "scales":
       return (
         <ScaleInput
           statements={slide.options}
           onSubmit={onSubmit}
           isPending={isPending}
-          min={(settings.scaleMin as number) ?? (settings.maxSelections as number) ?? 1}
-          max={(settings.scaleMax as number) ?? (settings.maxWords as number) ?? 10}
+          min={
+            (settings.scaleMin as number) ??
+            (settings.maxSelections as number) ??
+            1
+          }
+          max={
+            (settings.scaleMax as number) ?? (settings.maxWords as number) ?? 10
+          }
           minLabel={settings.scaleMinLabel as string | undefined}
           maxLabel={settings.scaleMaxLabel as string | undefined}
           colors={(settings.scaleColors as string[]) ?? []}
@@ -1034,16 +694,6 @@ function AudienceSlideInput({
       return (
         <PinOnImageInput
           imageUrl={settings.imageUrl as string | undefined}
-          onSubmit={onSubmit}
-          isPending={isPending}
-        />
-      );
-    case "grid_2x2":
-      return (
-        <Grid2x2Input
-          options={slide.options}
-          axisXLabel={settings.axisXLabel as string | undefined}
-          axisYLabel={settings.axisYLabel as string | undefined}
           onSubmit={onSubmit}
           isPending={isPending}
         />
@@ -1063,14 +713,6 @@ function AudienceSlideInput({
           isPending={isPending}
           min={(settings.numberMin as number) ?? 0}
           max={(settings.numberMax as number) ?? 10}
-        />
-      );
-    case "hundred_points":
-      return (
-        <HundredPointsInput
-          options={slide.options}
-          onSubmit={onSubmit}
-          isPending={isPending}
         />
       );
     default:
@@ -1107,7 +749,9 @@ export default function LiveVotePage() {
   const showCountdown = countdown !== null;
 
   // Audience-side timer countdown
-  const [audienceTimerRemaining, setAudienceTimerRemaining] = useState<number | null>(null);
+  const [audienceTimerRemaining, setAudienceTimerRemaining] = useState<
+    number | null
+  >(null);
   useEffect(() => {
     if (!timerState) {
       setAudienceTimerRemaining(null);
@@ -1133,9 +777,15 @@ export default function LiveVotePage() {
 
   // Submit lock: persists when timer expires or answer is revealed; resets on slide change
   const [submitBlocked, setSubmitBlocked] = useState(false);
-  useEffect(() => { setSubmitBlocked(false); }, [liveSlide]);
-  useEffect(() => { if (audienceTimerRemaining === 0) setSubmitBlocked(true); }, [audienceTimerRemaining]);
-  useEffect(() => { if (answerRevealed) setSubmitBlocked(true); }, [answerRevealed]);
+  useEffect(() => {
+    setSubmitBlocked(false);
+  }, [liveSlide]);
+  useEffect(() => {
+    if (audienceTimerRemaining === 0) setSubmitBlocked(true);
+  }, [audienceTimerRemaining]);
+  useEffect(() => {
+    if (answerRevealed) setSubmitBlocked(true);
+  }, [answerRevealed]);
 
   const [showQAModal, setShowQAModal] = useState(false);
   const [qaQuestions, setQaQuestions] = useState<QAQuestion[]>([]);
@@ -1376,14 +1026,24 @@ export default function LiveVotePage() {
                   />
                 </div>
 
-                {audienceTimerRemaining !== null && audienceTimerRemaining > 0 && timerState && !voted && (
-                  <div className="flex justify-center mb-2">
-                    <TimerRing remaining={audienceTimerRemaining} total={timerState.duration} size={64} />
-                  </div>
-                )}
+                {audienceTimerRemaining !== null &&
+                  audienceTimerRemaining > 0 &&
+                  timerState &&
+                  !voted && (
+                    <div className="flex justify-center mb-2">
+                      <TimerRing
+                        remaining={audienceTimerRemaining}
+                        total={timerState.duration}
+                        size={64}
+                      />
+                    </div>
+                  )}
 
                 {voted ? (
-                  <ThankYouScreen scoreFeedback={lastScoreFeedback} />
+                  <ThankYouScreen
+                    scoreFeedback={answerRevealed ? lastScoreFeedback : null}
+                    hasCorrectAnswer={true}
+                  />
                 ) : (
                   <AudienceSlideInput
                     slide={activeSlide}
@@ -1410,7 +1070,9 @@ export default function LiveVotePage() {
           >
             <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-2xl">
               <p className="text-2xl font-black text-gray-900">Time's up!</p>
-              <p className="text-sm text-gray-400 mt-1">Waiting for next slide...</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Waiting for next slide...
+              </p>
             </div>
           </motion.div>
         )}

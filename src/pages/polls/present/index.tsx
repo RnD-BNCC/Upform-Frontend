@@ -414,8 +414,9 @@ export default function PollPresentPage() {
     }
     setTimerActive(false);
     if (
-      activeSlide?.type === "multiple_choice" &&
-      slideSettings.correctAnswer
+      (activeSlide?.type === "multiple_choice" && slideSettings.correctAnswer) ||
+      (activeSlide?.type === "guess_number" && slideSettings.correctNumber !== undefined) ||
+      (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length)
     ) {
       setRevealPhase(true);
       socketRef.current?.emit("broadcast-reveal-answer", { pollId });
@@ -498,8 +499,9 @@ export default function PollPresentPage() {
       if (isLastQuestionSlide) goToSlide(slides.length);
       else goToSlide(currentSlide + 1);
     } else if (
-      activeSlide?.type === "multiple_choice" &&
-      slideSettings.correctAnswer
+      (activeSlide?.type === "multiple_choice" && slideSettings.correctAnswer) ||
+      (activeSlide?.type === "guess_number" && slideSettings.correctNumber !== undefined) ||
+      (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length)
     ) {
       stopTimer();
       setRevealPhase(true);
@@ -556,8 +558,9 @@ export default function PollPresentPage() {
           }
           if (
             !isWaitingRoom &&
-            activeSlide?.type === "multiple_choice" &&
-            slideSettings.correctAnswer
+            ((activeSlide?.type === "multiple_choice" && slideSettings.correctAnswer) ||
+              (activeSlide?.type === "guess_number" && slideSettings.correctNumber !== undefined) ||
+              (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length))
           ) {
             stopTimer();
             setRevealPhase(true);

@@ -30,7 +30,7 @@ export default function SettingsPanel({
   onSettingsChange: (settings: SlideSettings) => void
   onBlur: () => void
 }) {
-  const needsOptions = ['multiple_choice', 'ranking', 'hundred_points'].includes(type)
+  const needsOptions = ['multiple_choice'].includes(type)
 
   const handleSettingsField = <K extends keyof SlideSettings>(key: K, value: SlideSettings[K]) => {
     onSettingsChange({ ...settings, [key]: value })
@@ -74,8 +74,19 @@ export default function SettingsPanel({
           </div>
         )}
 
-        {type === 'multiple_choice' && (
+        {type === 'word_cloud' && (
           <div className="mb-5">
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Correct answers</label>
+            <p className="text-[10px] text-gray-400 mb-2">Add accepted answers for scoring. Leave empty for no scoring.</p>
+            <CorrectAnswersEditor
+              answers={settings.correctAnswers ?? []}
+              onChange={(answers) => onSettingsChange({ ...settings, correctAnswers: answers })}
+              onBlur={onBlur}
+            />
+          </div>
+        )}
+
+        <div className="mb-5">
             <label className="text-xs font-semibold text-gray-500 mb-2 block">Response timer</label>
             <div className="flex gap-1.5 mb-2">
               {[0, 15, 30, 60].map((sec) => (
@@ -112,19 +123,6 @@ export default function SettingsPanel({
               <span className="text-xs text-gray-400 font-medium shrink-0">sec</span>
             </div>
           </div>
-        )}
-
-        {type === 'open_ended' && (
-          <div className="mb-5">
-            <label className="text-xs font-semibold text-gray-500 mb-2 block">Correct answers</label>
-            <p className="text-[10px] text-gray-400 mb-2">Add accepted answers for scoring. Leave empty for no scoring.</p>
-            <CorrectAnswersEditor
-              answers={settings.correctAnswers ?? []}
-              onChange={(answers) => onSettingsChange({ ...settings, correctAnswers: answers })}
-              onBlur={onBlur}
-            />
-          </div>
-        )}
 
         {type === 'scales' && (
           <>
@@ -198,36 +196,6 @@ export default function SettingsPanel({
               </div>
             </div>
           </>
-        )}
-
-        {type === 'grid_2x2' && (
-          <div className="mb-5">
-            <label className="text-xs font-semibold text-gray-500 mb-2 block">Axis labels</label>
-            <div className="flex flex-col gap-2">
-              <div>
-                <label className="text-[11px] text-gray-400 font-medium mb-1 block">X Axis (horizontal)</label>
-                <input
-                  type="text"
-                  value={settings.axisXLabel ?? ''}
-                  onChange={(e) => onSettingsChange({ ...settings, axisXLabel: e.target.value || undefined })}
-                  onBlur={onBlur}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
-                  placeholder="e.g. Effort"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-gray-400 font-medium mb-1 block">Y Axis (vertical)</label>
-                <input
-                  type="text"
-                  value={settings.axisYLabel ?? ''}
-                  onChange={(e) => onSettingsChange({ ...settings, axisYLabel: e.target.value || undefined })}
-                  onBlur={onBlur}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
-                  placeholder="e.g. Impact"
-                />
-              </div>
-            </div>
-          </div>
         )}
 
         {type === 'pin_on_image' && (

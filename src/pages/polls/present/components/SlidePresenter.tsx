@@ -79,6 +79,7 @@ export default function SlidePresenter({
                     revealCorrectAnswer={
                       revealPhase ? slideSettings.correctAnswer : undefined
                     }
+                    revealPhase={revealPhase}
                     onQANext={onQANext}
                     onQAPrev={onQAPrev}
                     onMarkQAAnswered={onMarkQAAnswered}
@@ -117,6 +118,7 @@ export default function SlidePresenter({
                   revealCorrectAnswer={
                     revealPhase ? slideSettings.correctAnswer : undefined
                   }
+                  revealPhase={revealPhase}
                   onQANext={onQANext}
                   onQAPrev={onQAPrev}
                   onMarkQAAnswered={onMarkQAAnswered}

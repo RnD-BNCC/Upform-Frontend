@@ -1,13 +1,9 @@
 import {
   ChatTeardropText,
   ListBullets,
-  TextAa,
-  SortAscending,
   ChartBar,
   Question,
   NumberCircleOne,
-  Coins,
-  GridFour,
   MapPin,
 } from '@phosphor-icons/react'
 import type { SlideType, ImageLayout } from '@/types/polling'
@@ -17,26 +13,20 @@ import type { SlideType, ImageLayout } from '@/types/polling'
 export const SLIDE_TYPES: { value: SlideType; label: string; icon: React.ReactNode }[] = [
   { value: 'word_cloud', label: 'Word Cloud', icon: <ChatTeardropText size={14} weight="bold" /> },
   { value: 'multiple_choice', label: 'Multiple Choice', icon: <ListBullets size={14} weight="bold" /> },
-  { value: 'open_ended', label: 'Open Ended', icon: <TextAa size={14} weight="bold" /> },
-  { value: 'ranking', label: 'Ranking', icon: <SortAscending size={14} weight="bold" /> },
+
   { value: 'scales', label: 'Scales', icon: <ChartBar size={14} weight="bold" /> },
   { value: 'qa', label: 'Q&A', icon: <Question size={14} weight="bold" /> },
   { value: 'guess_number', label: 'Guess Number', icon: <NumberCircleOne size={14} weight="bold" /> },
-  { value: 'hundred_points', label: '100 Points', icon: <Coins size={14} weight="bold" /> },
-  { value: 'grid_2x2', label: '2x2 Grid', icon: <GridFour size={14} weight="bold" /> },
   { value: 'pin_on_image', label: 'Pin on Image', icon: <MapPin size={14} weight="bold" /> },
 ]
 
 export const TYPE_ICONS: Record<SlideType, React.ReactNode> = {
   word_cloud: <ChatTeardropText size={12} weight="bold" />,
   multiple_choice: <ListBullets size={12} weight="bold" />,
-  open_ended: <TextAa size={12} weight="bold" />,
-  ranking: <SortAscending size={12} weight="bold" />,
+
   scales: <ChartBar size={12} weight="bold" />,
   qa: <Question size={12} weight="bold" />,
   guess_number: <NumberCircleOne size={12} weight="bold" />,
-  hundred_points: <Coins size={12} weight="bold" />,
-  grid_2x2: <GridFour size={12} weight="bold" />,
   pin_on_image: <MapPin size={12} weight="bold" />,
 }
 
@@ -103,11 +93,6 @@ export const WORD_CLOUD_COLORS = [
   '#14b8a6', '#84cc16', '#d946ef', '#eab308',
 ]
 
-export const OPEN_ENDED_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#06b6d4', '#f97316', '#ec4899',
-  '#14b8a6', '#84cc16', '#d946ef', '#eab308',
-]
 
 export const DOT_COLORS = ['#3B82F6', '#EF4444', '#22C55E', '#F97316', '#8B5CF6', '#EC4899', '#06B6D4', '#EAB308']
 
@@ -140,11 +125,3 @@ export const LEADERBOARD_BAR_BG = [
   'bg-primary-300/15',
 ]
 
-// ── Grid Preview Positions ───────────────────────────────────
-
-export const GRID_DOT_POSITIONS = [
-  { x: 70, y: 30 },
-  { x: 30, y: 70 },
-  { x: 65, y: 65 },
-  { x: 35, y: 35 },
-]

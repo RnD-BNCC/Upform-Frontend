@@ -85,15 +85,22 @@ export default function PresentControls({
   onStopTimer,
   onStartTimer,
 }: PresentControlsProps) {
+  const hasCorrectAnswer =
+    (slideType === "multiple_choice" && !!slideSettings?.correctAnswer) ||
+    (slideType === "guess_number" && slideSettings?.correctNumber !== undefined) ||
+    (slideType === "word_cloud" && !!slideSettings?.correctAnswers?.length);
+
   const primaryButtonClass = isLeaderboardSlide
     ? "bg-red-500 hover:bg-red-600 text-white"
     : isWaitingRoom
       ? "bg-emerald-500 hover:bg-emerald-600 text-white"
       : revealPhase
         ? "bg-primary-500 hover:bg-primary-600 text-white"
-        : isLastQuestionSlide
+        : hasCorrectAnswer
           ? "bg-amber-500 hover:bg-amber-600 text-white"
-          : "bg-gray-100 hover:bg-gray-200 text-gray-700";
+          : isLastQuestionSlide
+            ? "bg-amber-500 hover:bg-amber-600 text-white"
+            : "bg-gray-100 hover:bg-gray-200 text-gray-700";
 
   const primaryLabel = isLeaderboardSlide
     ? "End poll"
@@ -101,12 +108,14 @@ export default function PresentControls({
       ? "Start quiz"
       : revealPhase
         ? "Next question"
-        : isLastQuestionSlide
-          ? "Leaderboard"
-          : "Next slide";
+        : hasCorrectAnswer
+          ? "Reveal answer"
+          : isLastQuestionSlide
+            ? "Leaderboard"
+            : "Next slide";
 
   const showTimerButton =
-    slideType === "multiple_choice" &&
+    (slideType === "multiple_choice" || slideType === "guess_number" || slideType === "word_cloud") &&
     !isWaitingRoom &&
     !isLeaderboardSlide &&
     !revealPhase;
