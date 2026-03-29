@@ -34,6 +34,9 @@ export const Api = {
   // Q&A Questions
   pollQuestions: (pollId: string) => `/polls/${pollId}/questions`,
 
+  // Spreadsheet integration
+  eventSpreadsheet: (eventId: string) => `/events/${eventId}/spreadsheet`,
+
   // Upload
   upload: '/upload',
   uploadFile: '/upload/file',

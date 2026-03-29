@@ -527,6 +527,8 @@ export default function EventDetailPage() {
           <ResponsesPanel
             responses={responses}
             allFields={allFields}
+            eventId={id ?? ''}
+            spreadsheetUrl={existing?.spreadsheetUrl}
           />
         )}
       </div>

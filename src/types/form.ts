@@ -100,4 +100,6 @@ export interface FormEvent {
   image?: string | null
   sections: FormSection[]
   responses?: FormResponse[]
+  spreadsheetId?: string | null
+  spreadsheetUrl?: string | null
 }

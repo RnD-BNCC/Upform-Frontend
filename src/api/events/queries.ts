@@ -103,3 +103,50 @@ export function useMutationDeleteEvent(
     onError: options?.onError,
   })
 }
+
+type SpreadsheetPayload = { spreadsheetId: string; spreadsheetUrl: string }
+
+export function useMutationConnectSheet(
+  options?: UseMutationOptions<SpreadsheetPayload, Error, string>,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const { data } = await apiClient.post<SpreadsheetPayload>(Api.eventSpreadsheet(eventId))
+      return data
+    },
+    onSuccess: (data, eventId, ...rest) => {
+      queryClient.setQueryData(
+        [QUERY_KEYS.EVENT_DETAIL, eventId],
+        (old: FormEvent | undefined) =>
+          old
+            ? { ...old, spreadsheetId: data.spreadsheetId, spreadsheetUrl: data.spreadsheetUrl }
+            : old,
+      )
+      options?.onSuccess?.(data, eventId, ...rest)
+    },
+    onError: options?.onError,
+  })
+}
+
+export function useMutationDisconnectSheet(
+  options?: UseMutationOptions<void, Error, string>,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      await apiClient.delete(Api.eventSpreadsheet(eventId))
+    },
+    onSuccess: (_, eventId, ...rest) => {
+      queryClient.setQueryData(
+        [QUERY_KEYS.EVENT_DETAIL, eventId],
+        (old: FormEvent | undefined) =>
+          old ? { ...old, spreadsheetId: null, spreadsheetUrl: null } : old,
+      )
+      options?.onSuccess?.(_, eventId, ...rest)
+    },
+    onError: options?.onError,
+  })
+}
