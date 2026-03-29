@@ -53,8 +53,8 @@ function ToolbarButton({
 }
 
 export default function PresentControls({
-  currentSlide,
-  totalSlides,
+  currentSlide: _currentSlide,
+  totalSlides: _totalSlides,
   isLeaderboardSlide,
   isFirstSlide,
   isWaitingRoom,
@@ -64,7 +64,7 @@ export default function PresentControls({
   showQASidebar,
   showJoinOverlay,
   hideResponses,
-  showSlideGrid,
+  showSlideGrid: _showSlideGrid,
   timerActive,
   timerRemaining,
   showTimerPopover,

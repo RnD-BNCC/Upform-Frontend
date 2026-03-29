@@ -454,7 +454,7 @@ export default function SlidePreview({
                 const color =
                   settings.scaleColors?.[i] ||
                   SCALE_COLORS[i % SCALE_COLORS.length];
-                const { fill, stroke, avgX } = miniCurve(
+                const { fill, stroke, avgX: _avgX } = miniCurve(
                   fakePeaks[i % fakePeaks.length],
                 );
                 return (
