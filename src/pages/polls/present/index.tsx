@@ -104,8 +104,12 @@ export default function PollPresentPage() {
     isQASlide: false,
   });
 
+  const slideInitRef = useRef(false);
   useEffect(() => {
-    if (poll) setCurrentSlide(poll.currentSlide);
+    if (poll && !slideInitRef.current) {
+      setCurrentSlide(poll.currentSlide);
+      slideInitRef.current = true;
+    }
   }, [poll?.currentSlide]);
 
   useEffect(() => {
@@ -420,7 +424,7 @@ export default function PollPresentPage() {
     ) {
       setRevealPhase(true);
       socketRef.current?.emit("broadcast-reveal-answer", { pollId });
-    } else {
+    } else if (activeSlide?.type !== "scales" && activeSlide?.type !== "qa") {
       if (isLastQuestionSlide) goToSlide(slides.length);
       else goToSlide(currentSlide + 1);
     }

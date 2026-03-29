@@ -94,6 +94,7 @@ function StatementRow({
   max,
   textColor,
   index,
+  compact,
 }: {
   item: ScaleStatementResult
   color: string
@@ -101,9 +102,10 @@ function StatementRow({
   max: number
   textColor: string
   index: number
+  compact: boolean
 }) {
   const svgWidth = 600
-  const svgHeight = 60
+  const svgHeight = compact ? 40 : 60
   const range = max - min || 1
 
   const smoothed = useMemo(
@@ -149,7 +151,7 @@ function StatementRow({
 
         {/* Wave overlay */}
         {item.responseCount > 0 && (
-          <div className="absolute -top-12 left-0 right-0 pointer-events-none" style={{ height: svgHeight }}>
+          <div className={`absolute left-0 right-0 pointer-events-none ${compact ? '-top-8' : '-top-12'}`} style={{ height: svgHeight }}>
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
               preserveAspectRatio="none"
@@ -224,7 +226,7 @@ export default function ScaleViz({
   const maxLabel = settings?.scaleMaxLabel || 'Strongly agree'
 
   return (
-    <div className="flex flex-col gap-14 w-full max-w-3xl mx-auto p-6">
+    <div className={`flex flex-col w-full max-w-3xl mx-auto p-6 overflow-y-auto ${normalized.length >= 4 ? 'gap-8' : 'gap-14'}`}>
       {normalized.map((item, i) => (
         <StatementRow
           key={item.statement}
@@ -234,6 +236,7 @@ export default function ScaleViz({
           max={max}
           textColor={textColor}
           index={i}
+          compact={normalized.length >= 4}
         />
       ))}
       <div className="flex justify-between -mt-4">

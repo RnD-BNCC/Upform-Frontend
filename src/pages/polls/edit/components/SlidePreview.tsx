@@ -1,14 +1,15 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import type {
-  SlideType,
-  SlideSettings,
-  ImageLayout,
-  ScaleStatementResult,
-} from "@/types/polling";
-import { TOOLBAR_COLORS, FORMAT_CMDS, BAR_COLORS_HEX } from "@/config/polling";
+import { useState, useRef, useEffect, useCallback } from "react";
+import type { SlideType, SlideSettings, ImageLayout } from "@/types/polling";
+import {
+  TOOLBAR_COLORS,
+  FORMAT_CMDS,
+  BAR_COLORS_HEX,
+  WORD_CLOUD_COLORS,
+  SCALE_COLORS,
+} from "@/config/polling";
+import cloud from "d3-cloud";
 import CaretIcon from "@/components/ui/CaretIcon";
 import ColorPickerDropdown from "@/components/ui/ColorPickerDropdown";
-import ScaleViz from "@/components/polling/visualizations/ScaleViz";
 import {
   TextB,
   TextItalic,
@@ -17,6 +18,88 @@ import {
   ThumbsUp,
   ArrowDown,
 } from "@phosphor-icons/react";
+
+const MOCK_WORDS = [
+  { text: "Creative", count: 8 },
+  { text: "Innovation", count: 6 },
+  { text: "Leadership", count: 5 },
+  { text: "Quality", count: 4 },
+  { text: "Focus", count: 7 },
+  { text: "Bold", count: 3 },
+  { text: "Fast", count: 3 },
+  { text: "Inspire", count: 2 },
+];
+
+function MiniWordCloud() {
+  const W = 360,
+    H = 140;
+  const [words, setWords] = useState<
+    Array<{
+      text: string;
+      x: number;
+      y: number;
+      size: number;
+      rotate: number;
+      color: string;
+    }>
+  >([]);
+
+  useEffect(() => {
+    const maxC = Math.max(...MOCK_WORDS.map((d) => d.count));
+    const input = MOCK_WORDS.map((item, idx) => ({
+      text: item.text,
+      size: 10 + (item.count / maxC) * 22,
+      color: WORD_CLOUD_COLORS[idx % WORD_CLOUD_COLORS.length],
+    }));
+    cloud<{ color: string } & cloud.Word>()
+      .size([W, H])
+      .words(input)
+      .padding(4)
+      .rotate(() => (Math.random() > 0.5 ? 0 : 90))
+      .font("Montserrat")
+      .fontWeight("800")
+      .fontSize((d) => d.size!)
+      .spiral("archimedean")
+      .on("end", (out) => {
+        setWords(
+          out.map((w) => ({
+            text: w.text!,
+            x: w.x!,
+            y: w.y!,
+            size: w.size!,
+            rotate: w.rotate!,
+            color: w.color,
+          })),
+        );
+      })
+      .start();
+  }, []);
+
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <g transform={`translate(${W / 2},${H / 2})`}>
+        {words.map((w) => (
+          <text
+            key={w.text}
+            textAnchor="middle"
+            dominantBaseline="central"
+            transform={`translate(${w.x},${w.y}) rotate(${w.rotate})`}
+            style={{
+              fontSize: w.size,
+              fill: w.color,
+              fontFamily: "Montserrat, sans-serif",
+              fontWeight: 800,
+              opacity: 0.85,
+            }}
+            className="select-none"
+          >
+            {w.text}
+          </text>
+        ))}
+      </g>
+    </svg>
+  );
+}
 
 export default function SlidePreview({
   code,
@@ -312,44 +395,139 @@ export default function SlidePreview({
         </div>
       )}
       {type === "word_cloud" && (
-        <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">
-          Word cloud responses will appear here
+        <div className="flex-1 flex items-center justify-center">
+          <MiniWordCloud />
         </div>
       )}
 
-      {type === "scales" && options.length > 0 && (
-        <ScaleViz
-          data={options.map((stmt, i) => {
-            const min = (settings.scaleMin as number) ?? 1;
-            const max = (settings.scaleMax as number) ?? 10;
-            const range = max - min || 1;
-            const patterns = [
-              [0.55, 0.65, 0.7, 0.75, 0.8],
-              [0.25, 0.35, 0.4, 0.45, 0.35],
-              [0.6, 0.65, 0.7, 0.65, 0.75],
-              [0.3, 0.35, 0.5, 0.55, 0.45],
-              [0.7, 0.75, 0.8, 0.85, 0.9],
-            ];
-            const ratios = patterns[i % patterns.length];
-            const values = ratios.map((r) => Math.round(min + range * r));
-            const distMap = new Map<number, number>();
-            for (const v of values) distMap.set(v, (distMap.get(v) ?? 0) + 1);
-            const distribution = Array.from(distMap.entries())
-              .map(([value, count]) => ({ value, count }))
-              .sort((a, b) => a.value - b.value);
-            const total = values.length;
-            const avg = values.reduce((s, v) => s + v, 0) / total;
-            return {
-              statement: stmt || `Statement ${i + 1}`,
-              distribution,
-              average: avg,
-              responseCount: total,
-            };
-          })}
-          textColor={settings.textColor ?? "#111827"}
-          settings={settings}
-        />
-      )}
+      {type === "scales" &&
+        options.length > 0 &&
+        (() => {
+          const fakeAvgs = [6.8, 4.2, 7.1, 3.8, 8.2];
+          const min = (settings.scaleMin as number) ?? 1;
+          const max = (settings.scaleMax as number) ?? 10;
+          const range = max - min || 1;
+          const tc = settings.textColor ?? "#111827";
+          const minLabel =
+            (settings.scaleMinLabel as string) || "Strongly disagree";
+          const maxLabel =
+            (settings.scaleMaxLabel as string) || "Strongly agree";
+          const SVG_W = 200,
+            SVG_H = 28;
+          const fakePeaks = [0.6, 0.38, 0.68, 0.35, 0.78];
+
+          function miniCurve(peakFrac: number) {
+            const bw = range * 0.1;
+            const peakVal = min + peakFrac * range;
+            const pts: { x: number; y: number }[] = [];
+            for (let i = 0; i < 60; i++) {
+              const x = min + (i / 59) * range;
+              const diff = (x - peakVal) / bw;
+              pts.push({ x, y: Math.exp(-0.5 * diff * diff) });
+            }
+            const xS = (v: number) => ((v - min) / range) * SVG_W;
+            const yS = (v: number) => SVG_H - v * SVG_H * 0.88;
+            let fill = `M ${xS(pts[0].x)} ${yS(pts[0].y)}`;
+            let stroke = `M ${xS(pts[0].x)} ${yS(pts[0].y)}`;
+            for (let i = 1; i < pts.length; i++) {
+              const p = pts[i - 1],
+                c = pts[i];
+              const cpx = (xS(p.x) + xS(c.x)) / 2;
+              const seg = ` C ${cpx} ${yS(p.y)}, ${cpx} ${yS(c.y)}, ${xS(c.x)} ${yS(c.y)}`;
+              fill += seg;
+              stroke += seg;
+            }
+            fill += ` L ${SVG_W} ${SVG_H} L 0 ${SVG_H} Z`;
+            return { fill, stroke, avgX: xS(peakVal) };
+          }
+
+          return (
+            <div
+              className="flex-1 flex flex-col justify-center px-4 py-2 max-h-3xl"
+              style={{
+                gap: options.length >= 4 ? "10px" : "14px",
+              }}
+            >
+              {options.map((stmt, i) => {
+                const avg = fakeAvgs[i % fakeAvgs.length];
+                const pct = ((avg - min) / range) * 100;
+                const color =
+                  settings.scaleColors?.[i] ||
+                  SCALE_COLORS[i % SCALE_COLORS.length];
+                const { fill, stroke, avgX } = miniCurve(
+                  fakePeaks[i % fakePeaks.length],
+                );
+                return (
+                  <div key={i} className="flex flex-col gap-0.5">
+                    <span
+                      className="text-[9px] font-bold truncate"
+                      style={{ color: tc }}
+                    >
+                      {stmt || `Statement ${i + 1}`}
+                    </span>
+                    <div className="relative">
+                      <div
+                        className="h-1 rounded-full w-full"
+                        style={{ backgroundColor: "rgba(128,128,128,0.15)" }}
+                      >
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${pct}%`, backgroundColor: color }}
+                        />
+                      </div>
+                      {/* Wave overlay */}
+                      <div
+                        className="absolute left-0 right-0 pointer-events-none"
+                        style={{ top: -SVG_H + 2, height: SVG_H }}
+                      >
+                        <svg
+                          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+                          preserveAspectRatio="none"
+                          className="w-full h-full"
+                        >
+                          <path d={fill} fill={color} fillOpacity={0.18} />
+                          <path
+                            d={stroke}
+                            stroke={color}
+                            strokeWidth={1.5}
+                            fill="none"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+                      {/* Average badge */}
+                      <div
+                        className="absolute -top-2 w-4 h-4 rounded-full flex items-center justify-center text-white font-black"
+                        style={{
+                          left: `${pct}%`,
+                          transform: "translateX(-50%)",
+                          backgroundColor: color,
+                          fontSize: "5px",
+                        }}
+                      >
+                        {avg.toFixed(1)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex justify-between -mt-1">
+                <span
+                  className="text-[7px] font-medium"
+                  style={{ color: tc, opacity: 0.45 }}
+                >
+                  {minLabel}
+                </span>
+                <span
+                  className="text-[7px] font-medium"
+                  style={{ color: tc, opacity: 0.45 }}
+                >
+                  {maxLabel}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
       {type === "scales" && options.length === 0 && (
         <div className="flex-1 flex items-center justify-center text-gray-300 text-sm">
           Add statements to preview
@@ -434,7 +612,8 @@ export default function SlidePreview({
           fill += ` L ${xS(pts[pts.length - 1].x)} ${baseline} L ${xS(pts[0].x)} ${baseline} Z`;
           const tc = settings.textColor ?? "#111827";
           const cn = settings.correctNumber;
-          const tickStep = gnRange <= 10 ? 1 : gnRange <= 20 ? 2 : Math.ceil(gnRange / 10);
+          const tickStep =
+            gnRange <= 10 ? 1 : gnRange <= 20 ? 2 : Math.ceil(gnRange / 10);
           const ticks: number[] = [];
           for (let v = gnMin; v <= gnMax; v += tickStep) ticks.push(v);
           if (ticks[ticks.length - 1] !== gnMax) ticks.push(gnMax);
@@ -447,21 +626,68 @@ export default function SlidePreview({
                 style={{ height: 80 }}
               >
                 <defs>
-                  <linearGradient id="gnPreviewFill" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="gnPreviewFill"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
                     <stop offset="0%" stopColor="#818cf8" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="#818cf8" stopOpacity="0.03" />
+                    <stop
+                      offset="100%"
+                      stopColor="#818cf8"
+                      stopOpacity="0.03"
+                    />
                   </linearGradient>
                 </defs>
                 <path d={fill} fill="url(#gnPreviewFill)" />
-                <path d={stroke} stroke="#6366f1" strokeWidth={2} fill="none" strokeLinecap="round" />
+                <path
+                  d={stroke}
+                  stroke="#6366f1"
+                  strokeWidth={2}
+                  fill="none"
+                  strokeLinecap="round"
+                />
                 {cn !== undefined && (
-                  <line x1={xS(cn)} y1={PT - 4} x2={xS(cn)} y2={baseline} stroke="#10b981" strokeWidth={1.5} strokeDasharray="3 2" />
+                  <line
+                    x1={xS(cn)}
+                    y1={PT - 4}
+                    x2={xS(cn)}
+                    y2={baseline}
+                    stroke="#10b981"
+                    strokeWidth={1.5}
+                    strokeDasharray="3 2"
+                  />
                 )}
-                <line x1={PL} y1={baseline} x2={W - PR} y2={baseline} stroke={tc} strokeOpacity={0.12} strokeWidth={1} />
+                <line
+                  x1={PL}
+                  y1={baseline}
+                  x2={W - PR}
+                  y2={baseline}
+                  stroke={tc}
+                  strokeOpacity={0.12}
+                  strokeWidth={1}
+                />
                 {ticks.map((v) => (
                   <g key={v} transform={`translate(${xS(v)}, ${baseline})`}>
-                    <line y1={0} y2={3} stroke={tc} strokeOpacity={0.25} strokeWidth={1} />
-                    <text y={11} textAnchor="middle" fontSize={8} fill={tc} fillOpacity={0.45} fontWeight="600">{v}</text>
+                    <line
+                      y1={0}
+                      y2={3}
+                      stroke={tc}
+                      strokeOpacity={0.25}
+                      strokeWidth={1}
+                    />
+                    <text
+                      y={11}
+                      textAnchor="middle"
+                      fontSize={8}
+                      fill={tc}
+                      fillOpacity={0.45}
+                      fontWeight="600"
+                    >
+                      {v}
+                    </text>
                   </g>
                 ))}
               </svg>

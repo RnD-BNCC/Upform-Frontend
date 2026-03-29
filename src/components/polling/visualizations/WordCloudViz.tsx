@@ -67,25 +67,8 @@ export default function WordCloudViz({
       color: COLORS[idx % COLORS.length],
     }))
 
-    // Debug: test if canvas can actually render Montserrat
-    document.fonts.load('800 20px Montserrat').then((fonts) => {
+    document.fonts.load('800 20px Montserrat').then(() => {
       if (cancelled) return
-
-      // Check if font actually loaded
-      const fontLoaded = document.fonts.check('800 20px Montserrat')
-      console.log('[WordCloud] fonts.load resolved, count:', fonts.length, 'check:', fontLoaded)
-
-      // Test canvas text measurement
-      const testCanvas = document.createElement('canvas')
-      const ctx = testCanvas.getContext('2d')!
-      ctx.font = '800 40px Montserrat'
-      const testWidth = ctx.measureText('test').width
-      ctx.font = '800 40px sans-serif'
-      const fallbackWidth = ctx.measureText('test').width
-      console.log('[WordCloud] canvas measure — Montserrat:', testWidth, 'sans-serif:', fallbackWidth, 'same?', testWidth === fallbackWidth)
-
-      console.log(`[WordCloud] input words: ${input.length}, container: ${width}x${height}`)
-      console.log('[WordCloud] input sizes:', input.map(w => `${w.text}=${Math.round(w.size!)}`).join(', '))
 
       cloud<CloudInput>()
         .size([width, height])
@@ -98,8 +81,6 @@ export default function WordCloudViz({
         .spiral('archimedean')
         .on('end', (output) => {
           if (cancelled) return
-          console.log(`[WordCloud] placed ${output.length}/${input.length}:`)
-          output.forEach(w => console.log(`  "${w.text}" x=${w.x} y=${w.y} rot=${w.rotate} size=${w.size} w=${(w as any).width} h=${(w as any).height}`))
           setWords(
             output.map((w) => ({
               text: w.text!,
@@ -126,7 +107,7 @@ export default function WordCloudViz({
   const { width, height } = dimensions
 
   return (
-    <div ref={containerRef} className="w-full h-full min-h-[250px] max-h-[70vh]">
+    <div ref={containerRef} className="w-full h-full">
       {!data || data.length === 0 ? (
         <div className="flex items-center justify-center h-full text-white/40 text-lg">
           Waiting for responses...

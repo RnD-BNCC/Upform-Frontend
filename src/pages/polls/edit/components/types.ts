@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import type { PollSlide, SlideType, SlideSettings } from "@/types/polling";
 
 export interface MobileSlideNavProps {
@@ -26,6 +27,8 @@ export interface SlidesSidebarProps {
   onSelectSlide: (index: number) => void;
   onAddSlide: () => void;
   onDeleteSlide: (id: string) => void;
+  onReorderSlides: (orderedIds: string[]) => void;
+  saveReorderRef: RefObject<(() => void) | null>;
   onCopyCode: () => void;
   onPresent: () => void;
   onSave: () => void;
