@@ -28,6 +28,8 @@ export interface FormField {
   shuffleOptions?: boolean
   /** Maps option value → image URL (base64 or object URL). For multiple_choice/checkbox/dropdown. */
   optionImages?: Record<string, string>
+  /** Maps option value → image width percentage (20-100). For resized option images. */
+  optionImageWidths?: Record<string, number>
   /** Image URL for title_block header or question header. */
   headerImage?: string
   /** Whether to include a free-text "Other" option. Only for multiple_choice / checkbox. */
@@ -71,6 +73,22 @@ export interface FormResponse {
   answers: Record<string, string | string[]>
 }
 
+export interface PieLabelProps {
+  cx?: number
+  cy?: number
+  midAngle?: number
+  innerRadius?: number
+  outerRadius?: number
+  percent?: number
+}
+
+export interface PieSectorProps {
+  cx?: number
+  cy?: number
+  midAngle?: number
+  outerRadius?: number
+}
+
 export interface FormEvent {
   id: string
   name: string
@@ -79,6 +97,9 @@ export interface FormEvent {
   updatedAt: string
   responseCount: number
   color: string
+  image?: string | null
   sections: FormSection[]
   responses?: FormResponse[]
+  spreadsheetId?: string | null
+  spreadsheetUrl?: string | null
 }

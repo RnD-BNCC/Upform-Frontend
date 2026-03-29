@@ -50,9 +50,14 @@ function useTypewriter(words: string[], speed = 100, pause = 1500) {
 
 export default function LoginPage() {
   const greeting = useTypewriter(GREETINGS);
+  const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
-    await authClient.signIn.social({ provider: "google", callbackURL: "/" });
+    setLoading(true);
+    await authClient.signIn.social({
+      provider: "google",
+      callbackURL: `${window.location.origin}/`,
+    });
   };
 
   return (
@@ -81,11 +86,38 @@ export default function LoginPage() {
 
           <motion.button
             onClick={handleGoogleSignIn}
-            whileTap={{ scale: 0.98 }}
-            className="flex w-full items-center justify-center gap-3 border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors duration-150 hover:border-primary-500 hover:bg-primary-500 hover:text-white"
+            disabled={loading}
+            whileTap={loading ? undefined : { scale: 0.98 }}
+            className="flex w-full font-bold items-center justify-center gap-3 border border-gray-200 bg-white px-4 py-2.5 text-sm  text-gray-400 transition-colors duration-150 hover:border-primary-500 hover:bg-primary-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700"
           >
-            <GoogleIcon />
-            Sign in with Google
+            {loading ? (
+              <svg
+                width={16}
+                height={16}
+                viewBox="0 0 24 24"
+                className="animate-spin"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  fill="none"
+                  opacity="0.2"
+                />
+                <path
+                  d="M12 2a10 10 0 0 1 10 10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
+            ) : (
+              <GoogleIcon />
+            )}
+            {loading ? "Signing in..." : "Sign in with Google"}
           </motion.button>
 
           <p className="mt-5 text-center text-xs text-gray-400">

@@ -79,7 +79,7 @@ export const LinearScaleField = memo(function LinearScaleField({
   }, []);
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="mt-3 space-y-3 pb-3 border-b border-gray-100">
       <div className="flex items-center gap-2">
         <div ref={minRef} className="relative">
           <button
@@ -162,7 +162,7 @@ export const LinearScaleField = memo(function LinearScaleField({
             onChange={(e) => onChange({ minLabel: e.target.value || undefined })}
             placeholder="Label (optional)"
             onClick={(e) => e.stopPropagation()}
-            className="text-base text-gray-900 border-b border-gray-300 hover:border-gray-400 focus:border-primary-500 outline-none pb-0.5 w-48 transition-colors placeholder:text-gray-400 bg-transparent"
+            className="text-base text-gray-900 hover:[box-shadow:0_1.5px_0_0_#d1d5db] focus:[box-shadow:0_1.5px_0_0_#0054a5] outline-none pb-0.5 w-48 transition-colors placeholder:text-gray-400 bg-transparent"
           />
         </div>
         <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export const LinearScaleField = memo(function LinearScaleField({
             onChange={(e) => onChange({ maxLabel: e.target.value || undefined })}
             placeholder="Label (optional)"
             onClick={(e) => e.stopPropagation()}
-            className="text-base text-gray-900 border-b border-gray-300 hover:border-gray-400 focus:border-primary-500 outline-none pb-0.5 w-48 transition-colors placeholder:text-gray-400 bg-transparent"
+            className="text-base text-gray-900 hover:[box-shadow:0_1.5px_0_0_#d1d5db] focus:[box-shadow:0_1.5px_0_0_#0054a5] outline-none pb-0.5 w-48 transition-colors placeholder:text-gray-400 bg-transparent"
           />
         </div>
       </div>

@@ -118,7 +118,7 @@ export default function QuestionCard({
   }, []);
 
   const hasOptions = useMemo(() => ["multiple_choice", "checkbox", "dropdown"].includes(field.type), [field.type]);
-  const canBranch = useMemo(() => sections && sections.length > 1 && ["multiple_choice", "dropdown"].includes(field.type), [sections, field.type]);
+  const canBranch = useMemo(() => sections && sections.length > 1 && ["multiple_choice", "checkbox", "dropdown"].includes(field.type), [sections, field.type]);
   const canShuffle = useMemo(() => ["multiple_choice", "checkbox", "dropdown"].includes(field.type), [field.type]);
   const canValidate = useMemo(() => ["short_text", "paragraph", "email"].includes(field.type), [field.type]);
   const hasBranching = canBranch && showBranching;
@@ -171,7 +171,6 @@ export default function QuestionCard({
     });
   }, [onSelect]);
 
-  // ── title_block ──────────────────────────────────────────────────────────
   if (field.type === "title_block") {
     return (
       <div ref={setNodeRef} style={style} {...attributes}>
@@ -220,7 +219,6 @@ export default function QuestionCard({
     );
   }
 
-  // ── image_block ───────────────────────────────────────────────────────────
   if (field.type === "image_block") {
     return (
       <div ref={setNodeRef} style={style} {...attributes}>
@@ -257,7 +255,6 @@ export default function QuestionCard({
     );
   }
 
-  // ── regular question ──────────────────────────────────────────────────────
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <motion.div
@@ -350,7 +347,6 @@ export default function QuestionCard({
                 allowedFileTypes={field.allowedFileTypes}
                 maxFileCount={field.maxFileCount}
                 maxFileSizeMb={field.maxFileSizeMb}
-                isSelected={isSelected}
                 onChange={onChange}
               />
             )}

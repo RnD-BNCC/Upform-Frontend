@@ -8,5 +8,7 @@ export type Route = {
   component: ComponentType
   isEnabled: boolean
   noLayout?: boolean
+  isPublic?: boolean
+  isUnguarded?: boolean
   children?: Route[]
 }

@@ -4,3 +4,4 @@ export { default as FormCover } from "./layout/FormCover";
 export { default as SectionCard } from "./card/SectionCard";
 export { default as RichInput } from "./utils/RichInput";
 export { default as QuestionCard } from "./section";
+export { default as ShareDialog } from "./ShareDialog";

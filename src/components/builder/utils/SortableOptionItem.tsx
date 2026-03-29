@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -16,6 +16,7 @@ export type SortableOptionItemProps = {
   index: number;
   value: string;
   imageUrl?: string;
+  imageWidth?: number;
   fieldType: FieldType;
   hasBranching: boolean;
   sections?: FormSection[];
@@ -28,6 +29,7 @@ export type SortableOptionItemProps = {
   onSetBranch: (target: string) => void;
   onOpenBranch: (idx: number | null) => void;
   onImageUpload: (url: string) => void;
+  onImageResize?: (width: number) => void;
 };
 
 export function SortableOptionItem({
@@ -35,6 +37,7 @@ export function SortableOptionItem({
   index,
   value,
   imageUrl,
+  imageWidth,
   fieldType,
   hasBranching,
   sections,
@@ -47,9 +50,38 @@ export function SortableOptionItem({
   onSetBranch,
   onOpenBranch,
   onImageUpload,
+  onImageResize,
 }: SortableOptionItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imgWrapperRef = useRef<HTMLDivElement>(null);
+  const resizeRef = useRef({ startX: 0, startWidth: 100 });
+
+  const startResize = useCallback(
+    (e: React.MouseEvent, direction: "left" | "right") => {
+      e.preventDefault();
+      e.stopPropagation();
+      const cw = imgWrapperRef.current?.parentElement?.offsetWidth ?? 1;
+      const actualWidth = imgWrapperRef.current ? (imgWrapperRef.current.offsetWidth / cw) * 100 : (imageWidth ?? 100);
+      resizeRef.current = { startX: e.clientX, startWidth: actualWidth };
+      const onMove = (ev: MouseEvent) => {
+        const cw = imgWrapperRef.current?.parentElement?.getBoundingClientRect().width ?? 600;
+        const delta =
+          direction === "right"
+            ? ev.clientX - resizeRef.current.startX
+            : resizeRef.current.startX - ev.clientX;
+        const pct = Math.max(20, Math.min(100, resizeRef.current.startWidth + (delta / cw) * 100));
+        onImageResize?.(Math.round(pct));
+      };
+      const onUp = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [imageWidth, onImageResize],
+  );
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -92,12 +124,14 @@ export function SortableOptionItem({
         />
 
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-        <button
-          onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-          className="opacity-0 group-hover/opt:opacity-100 transition-opacity p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 shrink-0 min-w-7 min-h-7 flex items-center justify-center"
-        >
-          <ImageIcon size={15} />
-        </button>
+        {fieldType !== "dropdown" && (
+          <button
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            className="opacity-0 group-hover/opt:opacity-100 transition-opacity p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 shrink-0 min-w-7 min-h-7 flex items-center justify-center"
+          >
+            <ImageIcon size={15} />
+          </button>
+        )}
 
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
@@ -159,9 +193,17 @@ export function SortableOptionItem({
 
       {imageUrl && (
         <div className="ml-7 mb-1">
-          <div className="relative group/imgpreview inline-block">
-            <img src={imageUrl} className="max-h-36 max-w-xs rounded-md object-contain border border-gray-100" alt="" />
-            <div className="absolute inset-0 bg-black/0 group-hover/imgpreview:bg-black/30 transition-colors rounded-md flex items-center justify-center gap-1.5 opacity-0 group-hover/imgpreview:opacity-100">
+          <div
+            ref={imgWrapperRef}
+            className="relative group/imgpreview inline-block"
+            style={imageWidth ? { width: `${imageWidth}%` } : undefined}
+          >
+            <img
+              src={imageUrl}
+              className={`rounded-md object-contain border border-gray-100 ${imageWidth ? 'w-full' : 'max-h-36 max-w-xs'}`}
+              alt=""
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover/imgpreview:bg-black/30 transition-colors rounded-md flex flex-col items-center justify-center gap-1 opacity-0 group-hover/imgpreview:opacity-100">
               <button
                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                 className="bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded font-semibold transition-colors"
@@ -175,6 +217,14 @@ export function SortableOptionItem({
                 Remove
               </button>
             </div>
+            <div
+              onMouseDown={(e) => startResize(e, "right")}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-8 bg-white border border-gray-300 rounded-full cursor-ew-resize shadow-sm opacity-0 group-hover/imgpreview:opacity-100 transition-opacity z-10"
+            />
+            <div
+              onMouseDown={(e) => startResize(e, "left")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-8 bg-white border border-gray-300 rounded-full cursor-ew-resize shadow-sm opacity-0 group-hover/imgpreview:opacity-100 transition-opacity z-10"
+            />
           </div>
         </div>
       )}

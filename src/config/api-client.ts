@@ -1,28 +1,38 @@
-import axios from 'axios'
-import { authClient } from '@/lib/auth-client'
+import axios from "axios";
+import { authClient } from "@/lib/auth-client";
+
+const baseURL = `${import.meta.env.VITE_API_URL}/api`;
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '/api',
+  baseURL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-})
+});
+
+export const publicApiClient = axios.create({
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 apiClient.interceptors.request.use(async (config) => {
-  const { data } = await authClient.getSession()
+  const { data } = await authClient.getSession();
   if (data?.session?.token) {
-    config.headers.Authorization = `Bearer ${data.session.token}`
+    config.headers.Authorization = `Bearer ${data.session.token}`;
   }
-  return config
-})
+  return config;
+});
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      authClient.signOut()
-      window.location.href = '/login'
+      await authClient.signOut();
+      window.location.href = "/login";
     }
-    return Promise.reject(error)
+    return Promise.reject(error);
   },
-)
+);
+
