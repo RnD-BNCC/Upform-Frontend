@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
 import type { FormField, FormResponse } from '@/types/form'
 import IndividualResponseCard from './IndividualResponseCard'
 
@@ -10,6 +11,17 @@ interface IndividualTabProps {
 
 export default function IndividualTab({ responses, allFields }: IndividualTabProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+        setDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   if (responses.length === 0) {
     return <p className="text-sm text-gray-400 text-center py-8">No responses to display</p>
@@ -26,17 +38,46 @@ export default function IndividualTab({ responses, allFields }: IndividualTabPro
           <CaretLeftIcon size={18} className="text-gray-600" />
         </button>
 
-        <select
-          value={currentIndex}
-          onChange={(e) => setCurrentIndex(Number(e.target.value))}
-          className="text-sm text-gray-700 font-medium bg-transparent border-none focus:outline-none cursor-pointer text-center"
-        >
-          {responses.map((_, i) => (
-            <option key={i} value={i}>
-              {i + 1} of {responses.length}
-            </option>
-          ))}
-        </select>
+        <div ref={dropdownRef} className="relative">
+          <button
+            onClick={() => setDropdownOpen((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-1 text-sm text-gray-700 font-medium hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+          >
+            {currentIndex + 1} of {responses.length}
+            <CaretDownIcon
+              size={12}
+              className={`text-gray-400 transition-transform duration-150 ${dropdownOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+          <AnimatePresence>
+            {dropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 4 }}
+                transition={{ duration: 0.1 }}
+                className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1.5 min-w-24 max-h-60 overflow-y-auto"
+              >
+                {responses.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setCurrentIndex(i)
+                      setDropdownOpen(false)
+                    }}
+                    className={`w-full px-4 py-2 text-sm text-center transition-colors cursor-pointer ${
+                      currentIndex === i
+                        ? 'text-primary-600 bg-primary-50 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {i + 1} of {responses.length}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         <button
           onClick={() => setCurrentIndex((i) => Math.min(responses.length - 1, i + 1))}

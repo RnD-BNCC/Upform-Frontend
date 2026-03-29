@@ -10,4 +10,34 @@ export const Api = {
   responseDetail: (eventId: string, responseId: string) =>
     `/events/${eventId}/responses/${responseId}`,
   publicEventDetail: (id: string) => `/public/events/${id}`,
+  publicResponses: (eventId: string) => `/public/events/${eventId}/responses`,
+
+  // Polls
+  polls: '/polls',
+  pollDetail: (id: string) => `/polls/${id}`,
+  pollSlides: (pollId: string) => `/polls/${pollId}/slides`,
+  pollSlideDetail: (pollId: string, slideId: string) =>
+    `/polls/${pollId}/slides/${slideId}`,
+  pollSlidesReorder: (pollId: string) => `/polls/${pollId}/slides/reorder`,
+  pollScores: (pollId: string) => `/polls/${pollId}/scores`,
+  pollVotes: (pollId: string) => `/polls/${pollId}/votes`,
+
+  // Public polls
+  publicPollJoin: (code: string) => `/public/polls/join/${code}`,
+  publicPollVote: (pollId: string, slideId: string) =>
+    `/public/polls/${pollId}/slides/${slideId}/vote`,
+  publicPollResults: (pollId: string, slideId: string) =>
+    `/public/polls/${pollId}/slides/${slideId}/results`,
+  publicPollVoteAnswer: (pollId: string, slideId: string, voteId: string) =>
+    `/public/polls/${pollId}/slides/${slideId}/votes/${voteId}/answer`,
+
+  // Q&A Questions
+  pollQuestions: (pollId: string) => `/polls/${pollId}/questions`,
+
+  // Spreadsheet integration
+  eventSpreadsheet: (eventId: string) => `/events/${eventId}/spreadsheet`,
+
+  // Upload
+  upload: '/upload',
+  uploadFile: '/upload/file',
 } as const

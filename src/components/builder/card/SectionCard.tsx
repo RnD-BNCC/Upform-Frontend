@@ -36,7 +36,7 @@ export default function SectionCard({
           Section {sectionIdx + 1} of {totalSections}
         </span>
       </div>
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-sm shadow-sm overflow-hidden">
         <div className="h-1" style={{ backgroundColor: accentColor }} />
         <div
           className="px-5 py-4 border-l-4"

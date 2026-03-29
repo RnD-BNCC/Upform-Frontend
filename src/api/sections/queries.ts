@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { UseMutationOptions } from '@tanstack/react-query'
 import { apiClient } from '@/config/api-client'
 import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '../queryKeys'
@@ -16,7 +17,10 @@ export function useQuerySections(eventId: string) {
   })
 }
 
-export function useMutationCreateSection(eventId: string) {
+export function useMutationCreateSection(
+  eventId: string,
+  options?: UseMutationOptions<FormSection, Error, CreateSectionPayload>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -24,14 +28,19 @@ export function useMutationCreateSection(eventId: string) {
       const { data } = await apiClient.post<FormSection>(Api.sections(eventId), payload)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SECTIONS, eventId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      options?.onSuccess?.(...args)
     },
+    onError: options?.onError,
   })
 }
 
-export function useMutationUpdateSection(eventId: string) {
+export function useMutationUpdateSection(
+  eventId: string,
+  options?: UseMutationOptions<FormSection, Error, UpdateSectionPayload & { sectionId: string }>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -39,14 +48,19 @@ export function useMutationUpdateSection(eventId: string) {
       const { data } = await apiClient.patch<FormSection>(Api.sectionDetail(eventId, sectionId), payload)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SECTIONS, eventId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      options?.onSuccess?.(...args)
     },
+    onError: options?.onError,
   })
 }
 
-export function useMutationReorderSections(eventId: string) {
+export function useMutationReorderSections(
+  eventId: string,
+  options?: UseMutationOptions<FormSection[], Error, string[]>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -54,23 +68,30 @@ export function useMutationReorderSections(eventId: string) {
       const { data } = await apiClient.put<FormSection[]>(Api.sectionsReorder(eventId), { order })
       return data
     },
-    onSuccess: () => {
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SECTIONS, eventId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      options?.onSuccess?.(...args)
     },
+    onError: options?.onError,
   })
 }
 
-export function useMutationDeleteSection(eventId: string) {
+export function useMutationDeleteSection(
+  eventId: string,
+  options?: UseMutationOptions<void, Error, string>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (sectionId: string) => {
       await apiClient.delete(Api.sectionDetail(eventId, sectionId))
     },
-    onSuccess: () => {
+    onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SECTIONS, eventId] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      options?.onSuccess?.(...args)
     },
+    onError: options?.onError,
   })
 }

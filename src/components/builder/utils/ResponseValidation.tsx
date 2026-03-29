@@ -14,7 +14,7 @@ export const ResponseValidation = memo(function ResponseValidation({
   onChange,
 }: Props) {
   return (
-    <div className="mt-3 pt-3">
+    <div className="mt-3 pt-3 border-t border-gray-100">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-gray-500">Response validation</span>
         {field.correctAnswer !== undefined && (
@@ -30,21 +30,22 @@ export const ResponseValidation = memo(function ResponseValidation({
       {(field.type === "multiple_choice" || field.type === "checkbox") && (
         <>
           <p className="text-xs text-gray-400 mb-2">Tap an option to mark it as the correct answer</p>
-          {(field.options ?? []).map((opt) => {
+          {(field.options ?? []).map((opt, i) => {
+            const key = `${i}::${opt}`;
             const isCorrect =
               field.type === "multiple_choice"
-                ? field.correctAnswer === opt
-                : (field.correctAnswer as string[] | undefined)?.includes(opt);
+                ? field.correctAnswer === key
+                : (field.correctAnswer as string[] | undefined)?.includes(key);
             return (
               <div
-                key={opt}
+                key={key}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (field.type === "multiple_choice") {
-                    onChange({ correctAnswer: isCorrect ? undefined : opt });
+                    onChange({ correctAnswer: isCorrect ? undefined : key });
                   } else {
                     const cur = (field.correctAnswer as string[] | undefined) ?? [];
-                    onChange({ correctAnswer: isCorrect ? cur.filter((a) => a !== opt) : [...cur, opt] });
+                    onChange({ correctAnswer: isCorrect ? cur.filter((a) => a !== key) : [...cur, key] });
                   }
                 }}
                 className="flex items-center gap-2 py-1.5 cursor-pointer group/ak w-full"

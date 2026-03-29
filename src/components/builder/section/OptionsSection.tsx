@@ -47,16 +47,22 @@ export default function OptionsSection({
       const old = (field.options ?? [])[i];
       const updated = [...(field.options ?? [])];
       updated[i] = value;
+      const changes: Partial<FormField> = { options: updated };
       if (field.optionImages?.[old]) {
         const imgs = { ...field.optionImages };
         imgs[value] = imgs[old];
         delete imgs[old];
-        onChange({ options: updated, optionImages: imgs });
-      } else {
-        onChange({ options: updated });
+        changes.optionImages = imgs;
       }
+      if (field.optionImageWidths?.[old]) {
+        const widths = { ...field.optionImageWidths };
+        widths[value] = widths[old];
+        delete widths[old];
+        changes.optionImageWidths = widths;
+      }
+      onChange(changes);
     },
-    [field.options, field.optionImages, onChange],
+    [field.options, field.optionImages, field.optionImageWidths, onChange],
   );
 
   const removeOption = useCallback(
@@ -65,9 +71,15 @@ export default function OptionsSection({
       const newOptions = (field.options ?? []).filter((_, idx) => idx !== i);
       const imgs = field.optionImages ? { ...field.optionImages } : undefined;
       if (imgs) delete imgs[opt];
-      onChange({ options: newOptions, optionImages: Object.keys(imgs ?? {}).length ? imgs : undefined });
+      const widths = field.optionImageWidths ? { ...field.optionImageWidths } : undefined;
+      if (widths) delete widths[opt];
+      onChange({
+        options: newOptions,
+        optionImages: Object.keys(imgs ?? {}).length ? imgs : undefined,
+        optionImageWidths: Object.keys(widths ?? {}).length ? widths : undefined,
+      });
     },
-    [field.options, field.optionImages, onChange],
+    [field.options, field.optionImages, field.optionImageWidths, onChange],
   );
 
   const setBranch = useCallback(
@@ -85,12 +97,24 @@ export default function OptionsSection({
       if (!url) {
         const imgs = { ...field.optionImages };
         delete imgs[optionValue];
-        onChange({ optionImages: Object.keys(imgs).length ? imgs : undefined });
+        const widths = { ...field.optionImageWidths };
+        delete widths[optionValue];
+        onChange({
+          optionImages: Object.keys(imgs).length ? imgs : undefined,
+          optionImageWidths: Object.keys(widths).length ? widths : undefined,
+        });
       } else {
         onChange({ optionImages: { ...field.optionImages, [optionValue]: url } });
       }
     },
-    [field.optionImages, onChange],
+    [field.optionImages, field.optionImageWidths, onChange],
+  );
+
+  const setOptionImageWidth = useCallback(
+    (optionValue: string, width: number) => {
+      onChange({ optionImageWidths: { ...field.optionImageWidths, [optionValue]: width } });
+    },
+    [field.optionImageWidths, onChange],
   );
 
   const handleOptionDragEnd = useCallback(
@@ -114,6 +138,7 @@ export default function OptionsSection({
               index={i}
               value={opt}
               imageUrl={field.optionImages?.[opt]}
+              imageWidth={field.optionImageWidths?.[opt]}
               fieldType={field.type}
               hasBranching={hasBranching}
               sections={sections}
@@ -126,6 +151,7 @@ export default function OptionsSection({
               onSetBranch={(target) => setBranch(opt, target)}
               onOpenBranch={onOpenBranch}
               onImageUpload={(url) => setOptionImage(opt, url)}
+              onImageResize={(w) => setOptionImageWidth(opt, w)}
             />
           ))}
         </SortableContext>
@@ -165,7 +191,7 @@ export default function OptionsSection({
           onClick={(e) => e.stopPropagation()}
           onBlur={addOption}
           placeholder="Add option"
-          className="text-[15px] text-gray-500 outline-none bg-transparent border-none focus:border-b focus:border-primary-400 pb-0.5 transition-colors flex-1 min-w-0"
+          className="text-[15px] text-gray-500 outline-none bg-transparent hover:[box-shadow:0_1.5px_0_0_#d1d5db] focus:[box-shadow:0_1.5px_0_0_#0054a5] pb-0.5 transition-all flex-1 min-w-0"
         />
         {(field.type === "multiple_choice" || field.type === "checkbox") && !field.hasOtherOption && (
           <>

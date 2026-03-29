@@ -1,16 +1,29 @@
 import type { FormResponse } from '@/types/form'
 
+export const PASTEL_COLORS = [
+  '#FDE68A',
+  '#A7F3D0',
+  '#BFDBFE',
+  '#C4B5FD',
+  '#FBCFE8',
+  '#FCA5A5',
+  '#FED7AA',
+  '#D9F99D',
+  '#A5F3FC',
+  '#E9D5FF',
+]
+
 export const CHART_COLORS = [
-  '#4285F4', // blue
-  '#EA4335', // red
-  '#FBBC04', // yellow
-  '#34A853', // green
-  '#FF6D01', // orange
-  '#46BDC6', // teal
-  '#7B1FA2', // purple
-  '#F06292', // pink
-  '#0097A7', // cyan
-  '#795548', // brown
+  '#4285F4',
+  '#EA4335',
+  '#FBBC04',
+  '#34A853',
+  '#FF6D01',
+  '#46BDC6',
+  '#7B1FA2',
+  '#F06292',
+  '#0097A7',
+  '#795548',
 ]
 
 export function aggregateChoiceResponses(

@@ -49,7 +49,13 @@ export default function QuestionSummaryCard({
         return <BarChartCard data={data} />
       }
       case 'file_upload': {
-        const values = collectTextResponses(field.id, responses)
+        const values: string[] = []
+        for (const r of responses) {
+          const val = r.answers[field.id]
+          if (!val) continue
+          if (Array.isArray(val)) values.push(...val)
+          else if (typeof val === 'string' && val.trim()) values.push(val)
+        }
         return <FileResponseList values={values} />
       }
       default: {

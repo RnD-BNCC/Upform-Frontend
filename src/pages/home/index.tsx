@@ -4,13 +4,10 @@ import { gsap } from "gsap";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar, Footer } from "@/components/layout";
 import { EventCard, ContextMenu } from "@/components/events";
-import { NoFormsIllustration } from "@/components/ui";
-import {
-  useQueryEvents,
-  useMutationDeleteEvent,
-  useMutationUpdateEvent,
-} from "@/api/events";
+import { ConfirmModal, LoadingModal, NoFormsIllustration, Pagination, StatusModal } from "@/components/ui";
+import { useGetEvents, useDeleteEvent, useUpdateEvent } from "@/hooks/events";
 import type { FormEvent } from "@/types/form";
+import type { StatusType } from "@/components/ui/StatusModal";
 import { MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
 
 type Filter = "All" | "Active" | "Draft" | "Closed";
@@ -46,13 +43,19 @@ function useAnimatedNumber(target: number, duration = 800) {
   return display;
 }
 
+function formatCompact(n: number) {
+  if (n < 1000) return String(n);
+  const k = n / 1000;
+  return (k % 1 === 0 ? k : k.toFixed(1)) + 'k';
+}
+
 function AnimatedStat({ value, label }: { value: number; label: string }) {
   const display = useAnimatedNumber(value);
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
       <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
-        {display}
+        {formatCompact(display)}
       </span>
       <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
         {label}
@@ -70,7 +73,6 @@ export default function HomePage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -79,13 +81,12 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Reset page when filter changes
   const handleFilterChange = useCallback((f: Filter) => {
     setFilter(f);
     setPage(1);
   }, []);
 
-  const { data: result, isLoading } = useQueryEvents({
+  const { data: result, isLoading } = useGetEvents({
     page,
     take: 9,
     status: filter === "All" ? undefined : (filter.toLowerCase() as "draft" | "active" | "closed"),
@@ -96,8 +97,8 @@ export default function HomePage() {
   const meta = result?.meta;
   const counts = result?.counts;
 
-  const deleteEvent = useMutationDeleteEvent();
-  const updateEvent = useMutationUpdateEvent();
+  const deleteEvent = useDeleteEvent();
+  const updateEvent = useUpdateEvent();
 
   const [ctxMenu, setCtxMenu] = useState<{
     id: string;
@@ -105,24 +106,87 @@ export default function HomePage() {
     y: number;
   } | null>(null);
 
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "delete" | "publish" | "unpublish" | "reopen";
+    eventId: string;
+    eventName: string;
+  } | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [statusResult, setStatusResult] = useState<{
+    type: StatusType;
+    title: string;
+    description: string;
+  } | null>(null);
+
   const handleDelete = (id: string) => {
-    deleteEvent.mutate(id);
+    const event = events.find((e) => e.id === id);
     setCtxMenu(null);
+    setConfirmAction({
+      type: "delete",
+      eventId: id,
+      eventName: event?.name ?? "this form",
+    });
   };
 
   const handleToggleStatus = (id: string) => {
     const event = events.find((e) => e.id === id);
     if (!event) return;
-    const next: Record<string, FormEvent["status"]> = {
-      active: "draft",
-      draft: "active",
-      closed: "active",
-    };
-    updateEvent.mutate({
-      eventId: id,
-      status: next[event.status] ?? event.status,
-    });
     setCtxMenu(null);
+    const actionMap: Record<string, "publish" | "unpublish" | "reopen"> = {
+      draft: "publish",
+      active: "unpublish",
+      closed: "reopen",
+    };
+    setConfirmAction({
+      type: actionMap[event.status] ?? "publish",
+      eventId: id,
+      eventName: event.name,
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmAction) return;
+    const action = confirmAction;
+    setConfirmAction(null);
+    setIsActionLoading(true);
+    try {
+      if (action.type === "delete") {
+        await deleteEvent.mutateAsync(action.eventId);
+        setStatusResult({
+          type: "success",
+          title: "Form Deleted",
+          description: `"${action.eventName}" has been deleted.`,
+        });
+      } else {
+        const statusMap: Record<string, FormEvent["status"]> = {
+          publish: "active",
+          unpublish: "draft",
+          reopen: "active",
+        };
+        await updateEvent.mutateAsync({
+          eventId: action.eventId,
+          status: statusMap[action.type],
+        });
+        const successMessages: Record<string, { title: string; description: string }> = {
+          publish: { title: "Form Published", description: `"${action.eventName}" is now live and accepting responses.` },
+          unpublish: { title: "Form Unpublished", description: `"${action.eventName}" has been moved back to draft.` },
+          reopen: { title: "Form Reopened", description: `"${action.eventName}" is now live again.` },
+        };
+        setStatusResult({
+          type: "success",
+          ...successMessages[action.type],
+        });
+      }
+    } catch (error) {
+      console.error('[handleConfirm]', error)
+      setStatusResult({
+        type: "error",
+        title: "Action Failed",
+        description: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const ctxEvent = ctxMenu
@@ -157,7 +221,8 @@ export default function HomePage() {
         backgroundSize: "32px 32px",
       }}
     >
-      {/* Navbar + Hero unified block */}
+      <Navbar />
+
       <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
         <div className="absolute inset-0 overflow-hidden rounded-b-4xl pointer-events-none">
           <div
@@ -184,12 +249,8 @@ export default function HomePage() {
           />
         </div>
 
-        <Navbar />
-
-        {/* Hero */}
         <div ref={heroRef} className="relative">
           <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
-            {/* Text */}
             <div className="hero-text">
               <p className="text-primary-300 text-sm font-bold mb-1">
                 Welcome back
@@ -202,7 +263,6 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Stat bar */}
             <div className="stat-card flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm divide-x divide-white/10 w-full sm:w-auto shrink-0">
               <AnimatedStat value={counts?.total ?? 0} label="Total Forms" />
               <AnimatedStat value={counts?.active ?? 0} label="Active" />
@@ -212,9 +272,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
-        {/* Section header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2.5">
@@ -229,7 +287,6 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            {/* Search */}
             <div className="relative flex-1 sm:flex-none">
               <MagnifyingGlass
                 size={14}
@@ -244,13 +301,12 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Filter pills */}
             <div className="flex items-center gap-1.5 flex-wrap">
               {FILTERS.map((f) => (
                 <button
                   key={f}
                   onClick={() => handleFilterChange(f)}
-                  className={`text-xs px-3 sm:px-3.5 py-1.5 rounded-md font-medium transition-all ${
+                  className={`text-xs px-3 sm:px-3.5 py-1.5 rounded-sm font-medium transition-all ${
                     filter === f
                       ? "bg-primary-500 text-white shadow-sm"
                       : "text-gray-500 bg-white border border-gray-200 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50"
@@ -263,7 +319,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Grid or empty */}
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -317,27 +372,8 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Pagination */}
-              {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-xs text-gray-500 font-medium px-2">
-                    {page} / {meta.totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
-                    disabled={page >= meta.totalPages}
-                    className="text-xs px-3 py-1.5 rounded-md font-medium border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    Next
-                  </button>
-                </div>
+              {meta && (
+                <Pagination page={page} totalPages={meta.totalPages} onPageChange={setPage} />
               )}
             </motion.div>
           )}
@@ -346,7 +382,6 @@ export default function HomePage() {
 
       <Footer />
 
-      {/* Context menu */}
       <AnimatePresence>
         {ctxMenu && ctxEvent && (
           <ContextMenu
@@ -356,6 +391,10 @@ export default function HomePage() {
             event={ctxEvent}
             onClose={() => setCtxMenu(null)}
             onOpen={() => {
+              navigate(`/forms/${ctxEvent.id}`);
+              setCtxMenu(null);
+            }}
+            onEdit={() => {
               navigate(`/forms/${ctxEvent.id}/edit`);
               setCtxMenu(null);
             }}
@@ -364,6 +403,44 @@ export default function HomePage() {
           />
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleConfirm}
+        variant={confirmAction?.type === "delete" ? "danger" : "warning"}
+        title={
+          confirmAction?.type === "delete" ? "Delete Form?"
+            : confirmAction?.type === "publish" ? "Publish Form?"
+            : confirmAction?.type === "unpublish" ? "Unpublish Form?"
+            : "Reopen Form?"
+        }
+        description={
+          confirmAction?.type === "delete"
+            ? `"${confirmAction.eventName}" will be permanently deleted. This cannot be undone.`
+            : confirmAction?.type === "publish"
+              ? `"${confirmAction?.eventName}" will go live and start accepting responses.`
+              : confirmAction?.type === "unpublish"
+                ? `"${confirmAction?.eventName}" will be moved back to draft and stop accepting responses.`
+                : `"${confirmAction?.eventName}" will go live again and start accepting responses.`
+        }
+        confirmText={
+          confirmAction?.type === "delete" ? "Delete"
+            : confirmAction?.type === "publish" ? "Publish"
+            : confirmAction?.type === "unpublish" ? "Unpublish"
+            : "Reopen"
+        }
+      />
+
+      <LoadingModal isOpen={isActionLoading} />
+
+      <StatusModal
+        isOpen={!!statusResult}
+        onClose={() => setStatusResult(null)}
+        type={statusResult?.type ?? "success"}
+        title={statusResult?.title ?? ""}
+        description={statusResult?.description ?? ""}
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ClipboardTextIcon } from '@phosphor-icons/react'
+import { ClipboardTextIcon, ArrowSquareOutIcon, SpinnerGapIcon, TableIcon } from '@phosphor-icons/react'
 import type { FormField, FormResponse } from '@/types/form'
+import { useConnectSheet } from '@/hooks/events'
 import SummaryTab from './SummaryTab'
 import QuestionsTab from './QuestionsTab'
 import IndividualTab from './IndividualTab'
@@ -11,6 +12,8 @@ type SubTab = 'summary' | 'questions' | 'individual'
 interface ResponsesPanelProps {
   responses: FormResponse[]
   allFields: FormField[]
+  eventId: string
+  spreadsheetUrl?: string | null
 }
 
 const SUB_TABS: Array<{ key: SubTab; label: string }> = [
@@ -19,8 +22,9 @@ const SUB_TABS: Array<{ key: SubTab; label: string }> = [
   { key: 'individual', label: 'Individual' },
 ]
 
-export default function ResponsesPanel({ responses, allFields }: ResponsesPanelProps) {
+export default function ResponsesPanel({ responses, allFields, eventId, spreadsheetUrl }: ResponsesPanelProps) {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('summary')
+  const connectSheet = useConnectSheet(eventId)
 
   if (responses.length === 0) {
     return (
@@ -39,10 +43,36 @@ export default function ResponsesPanel({ responses, allFields }: ResponsesPanelP
   return (
     <div className="flex-1 min-w-0 space-y-4">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-5 pt-5 pb-0">
+        <div className="px-5 pt-5 pb-0 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
             {responses.length} response{responses.length !== 1 ? 's' : ''}
           </h2>
+
+          {spreadsheetUrl ? (
+            <a
+              href={spreadsheetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+            >
+              <TableIcon size={16} weight="bold" />
+              Open Google Sheet
+              <ArrowSquareOutIcon size={14} />
+            </a>
+          ) : (
+            <button
+              onClick={() => connectSheet.mutate(eventId)}
+              disabled={connectSheet.isPending}
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {connectSheet.isPending ? (
+                <SpinnerGapIcon size={16} className="animate-spin" />
+              ) : (
+                <TableIcon size={16} />
+              )}
+              {connectSheet.isPending ? 'Connecting...' : 'Connect to Google Sheets'}
+            </button>
+          )}
         </div>
 
         <div className="flex gap-0 px-5 mt-4">

@@ -5,4 +5,6 @@ export {
   useMutationUpdateEvent,
   useQueryPublicEvent,
   useMutationDeleteEvent,
+  useMutationConnectSheet,
+  useMutationDisconnectSheet,
 } from './queries'

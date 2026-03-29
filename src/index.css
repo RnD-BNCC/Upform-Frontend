@@ -26,8 +26,10 @@
   --color-ring: #0054a5;
 }
 
-* {
-  border-color: var(--color-border);
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 @keyframes gradient-shift {

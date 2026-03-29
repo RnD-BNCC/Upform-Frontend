@@ -2,30 +2,51 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CheckIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   SpinnerGapIcon,
 } from '@phosphor-icons/react'
 import PreviewField from '@/pages/events/preview/section/PreviewField'
-import { useQueryPublicEvent } from '@/api/events'
-import { useMutationSubmitPublicResponse } from '@/api/responses'
+import { useGetPublicEvent } from '@/hooks/events'
+import { useSubmitPublicResponse } from '@/hooks/responses'
+import { useMutationUploadFile } from '@/api/upload/queries'
 import type { FormSection } from '@/types/form'
+
+function loadDraft(id?: string) {
+  if (!id) return null
+  try {
+    const raw = localStorage.getItem(`upform-draft-${id}`)
+    return raw ? JSON.parse(raw) : null
+  } catch (err) {
+    console.error("[loadDraft]:", err)
+    return null
+  }
+}
 
 export default function PublicFormPage() {
   const { id } = useParams()
-  const { data: event, isLoading, isError } = useQueryPublicEvent(id ?? '')
-  const submitResponse = useMutationSubmitPublicResponse(id ?? '')
+  const { data: event, isLoading, isError } = useGetPublicEvent(id ?? '')
+  const submitResponse = useSubmitPublicResponse(id ?? '')
+  const uploadFile = useMutationUploadFile()
+  const draftKey = `upform-draft-${id}`
+  const pendingFilesRef = useRef<Record<string, File[]>>({})
 
-  const [sectionHistory, setSectionHistory] = useState<number[]>([0])
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
-  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({})
+  const [sectionHistory, setSectionHistory] = useState<number[]>(
+    () => loadDraft(id)?.sectionHistory ?? [0],
+  )
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>(
+    () => loadDraft(id)?.answers ?? {},
+  )
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>(
+    () => loadDraft(id)?.otherTexts ?? {},
+  )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [direction, setDirection] = useState(1)
   const [shakeIds, setShakeIds] = useState<Set<string>>(new Set())
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const submittingRef = useRef(false)
 
   const sections = event?.sections ?? []
   const formTitle = event?.name ?? 'Untitled Form'
@@ -36,6 +57,23 @@ export default function PublicFormPage() {
     if (event) document.title = `${event.name || 'Untitled Form'} — UpForm`
     return () => { document.title = 'UpForm' }
   }, [event])
+
+  useEffect(() => {
+    if (!id || submitted) return
+    const hasData = Object.keys(answers).length > 0 || Object.keys(otherTexts).length > 0
+    if (hasData) {
+      localStorage.setItem(draftKey, JSON.stringify({ answers, otherTexts, sectionHistory }))
+    } else {
+      localStorage.removeItem(draftKey)
+    }
+  }, [answers, otherTexts, sectionHistory, id, submitted, draftKey])
+
+  useEffect(() => {
+    if (Object.keys(answers).length === 0 || submitted) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [answers, submitted])
 
   const currentSection = sectionHistory[sectionHistory.length - 1]
   const section = sections[currentSection]
@@ -88,6 +126,11 @@ export default function PublicFormPage() {
       ) {
         errs[f.id] = 'This question is required.'
       }
+      if (f.type === 'email' && val && typeof val === 'string' && val.length > 0) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          errs[f.id] = 'Format email tidak valid.'
+        }
+      }
     })
     return errs
   }
@@ -121,18 +164,35 @@ export default function PublicFormPage() {
   }
 
   const handleSubmit = async () => {
+    if (submittingRef.current) return
     const errs = validate(section)
     if (Object.keys(errs).length > 0) { showErrors(errs); return }
+    submittingRef.current = true
     setIsSubmitting(true)
     try {
-      await submitResponse.mutateAsync({ answers })
+      const finalAnswers = { ...answers }
+      for (const [fieldId, files] of Object.entries(pendingFilesRef.current)) {
+        if (files.length === 0) continue
+        const uploaded: string[] = []
+        for (const file of files) {
+          const result = await uploadFile.mutateAsync(file)
+          uploaded.push(`${result.filename}::${result.url}`)
+        }
+        finalAnswers[fieldId] = uploaded.length === 1 ? uploaded[0] : uploaded
+      }
+      await submitResponse.mutateAsync({ answers: finalAnswers })
+      pendingFilesRef.current = {}
+      localStorage.removeItem(draftKey)
       setSubmitted(true)
     } finally {
       setIsSubmitting(false)
+      submittingRef.current = false
     }
   }
 
   const handleSubmitAnother = () => {
+    localStorage.removeItem(draftKey)
+    pendingFilesRef.current = {}
     setAnswers({})
     setOtherTexts({})
     setErrors({})
@@ -154,11 +214,14 @@ export default function PublicFormPage() {
 
   if (isError || (!isLoading && !event)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold text-gray-900">Form not found</h2>
-          <p className="text-sm text-gray-400 mt-1.5">
-            This form may have been closed or doesn't exist.
+      <div className="min-h-screen flex flex-col justify-center items-center">
+        <div className="flex items-center justify-center flex-col">
+          <p className="text-lg font-black mb-4 text-primary-500">404</p>
+          <p className="text-2xl font-extrabold text-black">
+            Oops! This form does not exist :(
+          </p>
+          <p className="text-gray-400 text-lg mb-16 font-semibold">
+            This form may have been closed or deleted by the owner
           </p>
         </div>
       </div>
@@ -167,32 +230,49 @@ export default function PublicFormPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 sm:p-10 max-w-sm w-full text-center"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-            className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4"
-          >
-            <CheckIcon size={24} weight="bold" color="#16a34a" />
-          </motion.div>
-          <h2 className="text-lg font-bold text-gray-900">Response recorded!</h2>
-          <p className="text-sm text-gray-400 mt-1.5">
-            Your response has been submitted successfully.
-          </p>
-          <button
-            onClick={handleSubmitAnother}
-            className="mt-6 text-sm text-primary-500 hover:text-primary-600 font-medium transition-colors cursor-pointer"
-          >
-            Submit another response
-          </button>
-        </motion.div>
+      <div
+        className="min-h-screen bg-gray-50"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-2xl mx-auto px-4 pt-6 pb-12 space-y-3">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div
+              className="h-14 relative overflow-hidden"
+              style={{ backgroundColor: bannerColor }}
+            >
+              <div
+                className="absolute inset-0 opacity-[0.07]"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)',
+                  backgroundSize: '18px 18px',
+                }}
+              />
+              <div className="absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-black/20" />
+            </div>
+            <div className="p-6 border-l-4" style={{ borderLeftColor: bannerColor }}>
+              <h1 className="text-xl font-bold text-gray-900">{formTitle}</h1>
+              <p className="text-sm text-gray-600 mt-1">Your response has been recorded.</p>
+              <button
+                onClick={handleSubmitAnother}
+                className="text-sm font-medium mt-4 cursor-pointer hover:underline"
+                style={{ color: bannerColor }}
+              >
+                Submit another response
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center pt-4">
+            <span className="text-[10px] text-gray-300 font-medium">
+              Powered by <span className="font-bold italic">UpForm</span>
+            </span>
+          </div>
+        </div>
       </div>
     )
   }
@@ -268,6 +348,7 @@ export default function PublicFormPage() {
                 hasError={!!errors[field.id]}
                 errorMessage={errors[field.id]}
                 isShaking={shakeIds.has(field.id)}
+                pendingFilesRef={pendingFilesRef}
                 onAnswer={(value) => setAnswer(field.id, value)}
                 onOtherTextChange={(text) =>
                   setOtherTexts((prev) => ({ ...prev, [field.id]: text }))
@@ -301,7 +382,7 @@ export default function PublicFormPage() {
             whileTap={{ scale: 0.97 }}
             onClick={isLast ? handleSubmit : handleNext}
             disabled={isSubmitting}
-            className="flex items-center gap-1.5 bg-primary-500 text-white px-5 py-2.5 text-sm font-medium hover:bg-primary-600 transition-colors duration-150 rounded cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-primary-500 text-white px-5 py-2.5 text-sm font-medium hover:bg-primary-600 transition-colors duration-150 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <SpinnerGapIcon size={15} className="animate-spin" />

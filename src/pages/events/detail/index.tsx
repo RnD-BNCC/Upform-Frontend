@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useLocation } from 'react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import { DndContext, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import { QuestionCard, FieldTypeSidebar, BuilderHeader, FormCover, SectionCard, ShareDialog } from '@/components/builder'
-import { useQueryEventDetail, useMutationUpdateEvent } from '@/api/events'
-import { useMutationUpdateSection } from '@/api/sections'
-import { useQueryResponses } from '@/api/responses'
+import { ConfirmModal, LoadingModal, StatusModal } from '@/components/ui'
+import { useGetEventDetail, useUpdateEvent } from '@/hooks/events'
+import { useUpdateSection } from '@/hooks/sections'
+import { useGetResponses } from '@/hooks/responses'
+import { useMutationUploadImage } from '@/api/upload/queries'
 import type { FormField, FormSection, FieldType } from '@/types/form'
 import { ResponsesPanel } from '@/components/responses'
-import { SpinnerGapIcon } from '@phosphor-icons/react'
+import { SpinnerGapIcon, FloppyDiskIcon } from '@phosphor-icons/react'
 
 type Tab = 'questions' | 'responses'
 
@@ -18,17 +20,20 @@ type SavedSnapshot = {
   title: string
   description: string
   color: string
+  image: string | null
   sections: FormSection[]
 }
 
 export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  const { data: existing, isLoading } = useQueryEventDetail(id ?? '')
-  const { data: responses = [] } = useQueryResponses(id ?? '')
-  const updateEvent = useMutationUpdateEvent()
-  const updateSection = useMutationUpdateSection(id ?? '')
+  const { data: existing, isLoading } = useGetEventDetail(id ?? '')
+  const { data: responses = [] } = useGetResponses(id ?? '')
+  const updateEvent = useUpdateEvent()
+  const updateSection = useUpdateSection(id ?? '')
+  const uploadImage = useMutationUploadImage()
   const [formTitle, setFormTitle] = useState('Untitled Form')
   const [formDescription, setFormDescription] = useState('')
   const [bannerColor, setBannerColor] = useState('#0054a5')
@@ -44,9 +49,35 @@ export default function EventDetailPage() {
   const [eventStatus, setEventStatus] = useState<'draft' | 'active' | 'closed'>('draft')
   const [isPublishing, setIsPublishing] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'unpublish' | 'close' | 'publish' | null>(null)
+  const [isChangingStatus, setIsChangingStatus] = useState(false)
+  const [statusResult, setStatusResult] = useState<'unpublish' | 'close' | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const showToast = useCallback((msg = 'Saved successfully') => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2500)
+  }, [])
 
   useEffect(() => {
     if (initialized) return
+
+    const nav = location.state as { sections?: FormSection[]; formTitle?: string; formDescription?: string; bannerColor?: string; bannerImage?: string | null } | null
+    if (nav?.sections) {
+      setFormTitle(nav.formTitle ?? 'Untitled Form')
+      setFormDescription(nav.formDescription ?? '')
+      setBannerColor(nav.bannerColor ?? '#0054a5')
+      setBannerImage(nav.bannerImage ?? null)
+      setHistory({ stack: [nav.sections], index: 0 })
+      if (existing) {
+        setSavedSnapshot({ title: existing.name || 'Untitled Form', description: existing.description || '', color: existing.color || '#0054a5', image: existing.image ?? null, sections: existing.sections ?? [] })
+        setEventStatus(existing.status)
+      }
+      setInitialized(true)
+      window.history.replaceState({}, '')
+      return
+    }
+
     if (isLoading) return
     if (existing) {
       const title = existing.name || 'Untitled Form'
@@ -55,17 +86,26 @@ export default function EventDetailPage() {
       const secs = existing.sections?.length
         ? existing.sections
         : [{ id: crypto.randomUUID(), title: '', fields: [] }]
+      const img = existing.image ?? null
       setFormTitle(title)
       setFormDescription(desc)
       setBannerColor(color)
+      setBannerImage(img)
       setHistory({ stack: [secs], index: 0 })
-      setSavedSnapshot({ title, description: desc, color, sections: secs })
+      setSavedSnapshot({ title, description: desc, color, image: img, sections: secs })
       setEventStatus(existing.status)
       setInitialized(true)
     } else {
       navigate('/', { replace: true })
     }
-  }, [existing, isLoading, initialized, navigate])
+  }, [existing, isLoading, initialized, navigate, location.state])
+
+  // Sync eventStatus on query refetch
+  useEffect(() => {
+    if (initialized && existing) {
+      setEventStatus(existing.status)
+    }
+  }, [initialized, existing?.status])
 
   const sections = history.stack[history.index]
   const setSections = (updater: FormSection[] | ((prev: FormSection[]) => FormSection[])) => {
@@ -83,8 +123,32 @@ export default function EventDetailPage() {
     if (formTitle !== savedSnapshot.title) return true
     if (formDescription !== savedSnapshot.description) return true
     if (bannerColor !== savedSnapshot.color) return true
+    if (bannerImage !== savedSnapshot.image) return true
     return JSON.stringify(sections) !== JSON.stringify(savedSnapshot.sections)
-  }, [formTitle, formDescription, bannerColor, sections, savedSnapshot])
+  }, [formTitle, formDescription, bannerColor, bannerImage, sections, savedSnapshot])
+
+  const handleBannerFileSelect = useCallback(async (file: File) => {
+    try {
+      const { url } = await uploadImage.mutateAsync(file)
+      setBannerImage(url)
+    } catch (err) {
+      console.error('[handleBannerFileSelect]', err)
+    }
+  }, [uploadImage])
+
+  const uploadBlobUrl = useCallback(async (blobUrl: string) => {
+    try {
+      const res = await fetch(blobUrl)
+      const blob = await res.blob()
+      const file = new File([blob], `image-${Date.now()}.${blob.type.split('/')[1] || 'png'}`, { type: blob.type })
+      const { url } = await uploadImage.mutateAsync(file)
+      URL.revokeObjectURL(blobUrl)
+      return url
+    } catch (err) {
+      console.error('[uploadBlobUrl]:', err)
+      return blobUrl
+    }
+  }, [uploadImage])
 
   const handleSave = useCallback(async () => {
     if (!id || isSaving) return
@@ -95,9 +159,37 @@ export default function EventDetailPage() {
         name: formTitle,
         description: formDescription,
         color: bannerColor,
+        image: bannerImage,
       })
+
+      const resolvedSections = await Promise.all(
+        sections.map(async (s) => {
+          const fields = await Promise.all(
+            s.fields.map(async (f) => {
+              const updates: Partial<FormField> = {}
+              if (f.headerImage?.startsWith('blob:')) {
+                updates.headerImage = await uploadBlobUrl(f.headerImage)
+              }
+              if (f.optionImages) {
+                const imgs = { ...f.optionImages }
+                let changed = false
+                for (const [key, url] of Object.entries(imgs)) {
+                  if (url.startsWith('blob:')) {
+                    imgs[key] = await uploadBlobUrl(url)
+                    changed = true
+                  }
+                }
+                if (changed) updates.optionImages = imgs
+              }
+              return Object.keys(updates).length ? { ...f, ...updates } : f
+            }),
+          )
+          return { ...s, fields }
+        }),
+      )
+
       await Promise.all(
-        sections.map((s) =>
+        resolvedSections.map((s) =>
           updateSection.mutateAsync({
             sectionId: s.id,
             title: s.title,
@@ -106,39 +198,58 @@ export default function EventDetailPage() {
           }),
         ),
       )
+
+      setSections(resolvedSections)
       setSavedSnapshot({
         title: formTitle,
         description: formDescription,
         color: bannerColor,
-        sections: JSON.parse(JSON.stringify(sections)),
+        image: bannerImage,
+        sections: JSON.parse(JSON.stringify(resolvedSections)),
       })
+      showToast()
+    } catch (err) {
+      console.error('[handleSave]:', err)
     } finally {
       setIsSaving(false)
     }
-  }, [id, isSaving, formTitle, formDescription, bannerColor, sections, updateEvent, updateSection])
+  }, [id, isSaving, formTitle, formDescription, bannerColor, bannerImage, sections, updateEvent, updateSection, uploadBlobUrl, showToast])
 
   const handlePublish = useCallback(async () => {
     if (!id || isPublishing) return
+    setConfirmAction(null)
     if (isDirty) await handleSave()
     setIsPublishing(true)
     try {
       await updateEvent.mutateAsync({ eventId: id, status: 'active' })
       setEventStatus('active')
       setShowShareDialog(true)
+    } catch (err) {
+      console.error('[handlePublish]', err)
     } finally {
       setIsPublishing(false)
     }
   }, [id, isPublishing, isDirty, handleSave, updateEvent])
 
-  const handleStatusChange = useCallback(async (status: 'draft' | 'active' | 'closed') => {
-    if (!id) return
-    await updateEvent.mutateAsync({ eventId: id, status })
-    setEventStatus(status)
-  }, [id, updateEvent])
+  const handleStatusChange = useCallback(async (action: 'unpublish' | 'close') => {
+    if (!id || isChangingStatus) return
+    setConfirmAction(null)
+    setIsChangingStatus(true)
+    try {
+      const status = action === 'unpublish' ? 'draft' : 'closed'
+      await updateEvent.mutateAsync({ eventId: id, status })
+      setEventStatus(status)
+      setStatusResult(action)
+    } catch (err) {
+      console.error('[handleStatusChange]', err)
+    } finally {
+      setIsChangingStatus(false)
+    }
+  }, [id, isChangingStatus, updateEvent])
 
   const publicFormUrl = `${window.location.origin}/forms/${id}`
 
-  // Ctrl+S + undo/redo
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -152,7 +263,7 @@ export default function EventDetailPage() {
         (e.key === 'y' || (e.key === 'z' && e.shiftKey))
       ) {
         e.preventDefault()
-        setHistory((prev) =>
+      setHistory((prev) =>
           prev.index >= prev.stack.length - 1 ? prev : { ...prev, index: prev.index + 1 },
         )
       }
@@ -161,7 +272,7 @@ export default function EventDetailPage() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleSave])
 
-  // Browser refresh/close guard
+  // Beforeunload guard
   useEffect(() => {
     if (!isDirty) return
     const handler = (e: BeforeUnloadEvent) => {
@@ -323,11 +434,11 @@ export default function EventDetailPage() {
         isSaving={isSaving}
         isDirty={isDirty}
         eventStatus={eventStatus}
-        onPublish={handlePublish}
+        onPublish={() => setConfirmAction('publish')}
         isPublishing={isPublishing}
         onShare={() => setShowShareDialog(true)}
-        onUnpublish={() => handleStatusChange('draft')}
-        onClose={() => handleStatusChange('closed')}
+        onUnpublish={() => setConfirmAction('unpublish')}
+        onClose={() => setConfirmAction('close')}
       />
 
       <div className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex gap-5">
@@ -339,6 +450,7 @@ export default function EventDetailPage() {
                 bannerImage={bannerImage}
                 onBannerColorChange={setBannerColor}
                 onBannerImageChange={setBannerImage}
+                onBannerFileSelect={handleBannerFileSelect}
                 formTitle={formTitle}
                 onTitleChange={setFormTitle}
                 formDescription={formDescription}
@@ -387,7 +499,7 @@ export default function EventDetailPage() {
                     </SortableContext>
 
                     {section.fields.length === 0 && (
-                      <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+                      <div className="bg-white rounded-sm border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
                         Use the toolbar on the right to add a question
                       </div>
                     )}
@@ -401,18 +513,26 @@ export default function EventDetailPage() {
               onAddQuestion={() => addField('short_text', lastSectionId)}
               onAddTitleBlock={() => addField('title_block', lastSectionId)}
               onAddSection={addSection}
-              onAddImageBlock={(url) => addField('image_block', lastSectionId, url)}
+              onAddImageBlock={async (file) => {
+                try {
+                  const { url } = await uploadImage.mutateAsync(file)
+                  addField('image_block', lastSectionId, url)
+                } catch (err) {
+                  console.error('[onAddImageBlock]', err)
+                }
+              }}
             />
           </>
         ) : (
           <ResponsesPanel
             responses={responses}
             allFields={allFields}
+            eventId={id ?? ''}
+            spreadsheetUrl={existing?.spreadsheetUrl}
           />
         )}
       </div>
 
-      {/* Unsaved changes navigation dialog */}
       <AnimatePresence>
         {showLeaveDialog && (
           <motion.div
@@ -427,7 +547,7 @@ export default function EventDetailPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.15 }}
-              className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 w-full"
+              className="bg-white rounded-sm shadow-2xl p-6 max-w-sm mx-4 w-full"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-sm font-bold text-gray-900">Unsaved Changes</h3>
@@ -453,10 +573,69 @@ export default function EventDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* Share dialog */}
       <AnimatePresence>
         {showShareDialog && (
           <ShareDialog url={publicFormUrl} onClose={() => setShowShareDialog(false)} />
+        )}
+      </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (confirmAction === 'publish') handlePublish()
+          else if (confirmAction) handleStatusChange(confirmAction)
+        }}
+        variant="warning"
+        title={
+          confirmAction === 'publish' ? (eventStatus === 'closed' ? 'Reopen Form?' : 'Publish Form?')
+            : confirmAction === 'unpublish' ? 'Unpublish Form?'
+            : 'Close Form?'
+        }
+        description={
+          confirmAction === 'publish'
+            ? (eventStatus === 'closed'
+              ? 'This will reopen your form and make it live again. Anyone with the link can submit responses.'
+              : 'This will make your form live. Anyone with the link can submit responses.')
+            : confirmAction === 'unpublish'
+              ? 'This will take your form offline. It will no longer accept responses until you publish it again.'
+              : 'This will permanently close your form. It will no longer accept any new responses.'
+        }
+        confirmText={
+          confirmAction === 'publish' ? (eventStatus === 'closed' ? 'Reopen' : 'Publish')
+            : confirmAction === 'unpublish' ? 'Unpublish'
+            : 'Close Form'
+        }
+      />
+
+      <LoadingModal isOpen={isChangingStatus || isPublishing} />
+
+      <StatusModal
+        isOpen={!!statusResult}
+        onClose={() => setStatusResult(null)}
+        type="success"
+        title={statusResult === 'unpublish' ? 'Form Unpublished!' : 'Form Closed!'}
+        description={
+          statusResult === 'unpublish'
+            ? 'Your form has been unpublished. You can publish it again anytime.'
+            : 'Your form has been closed and will no longer accept responses.'
+        }
+        buttonText="Continue"
+        onButtonClick={() => setStatusResult(null)}
+      />
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
+          >
+            <FloppyDiskIcon size={12} weight="bold" className="text-emerald-400" />
+            {toast}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

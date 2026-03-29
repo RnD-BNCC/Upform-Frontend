@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { FormField, FormResponse } from '@/types/form'
+import FileResponseList from './charts/FileResponseList'
 
 interface IndividualResponseCardProps {
   response: FormResponse
@@ -35,12 +36,19 @@ export default function IndividualResponseCard({ response, allFields }: Individu
 
       {questionFields.map((field) => {
         const val = response.answers[field.id]
-        const display = Array.isArray(val) ? val.join(', ') : (val || '—')
 
         return (
           <div key={field.id} className="px-5 py-3.5">
             <p className="text-xs font-medium text-gray-400 mb-1">{field.label}</p>
-            <p className="text-sm text-gray-800">{display}</p>
+            {field.type === 'file_upload' && val ? (
+              <FileResponseList
+                values={Array.isArray(val) ? val : [val]}
+              />
+            ) : (
+              <p className="text-sm text-gray-800">
+                {Array.isArray(val) ? val.join(', ') : (val || '—')}
+              </p>
+            )}
           </div>
         )
       })}

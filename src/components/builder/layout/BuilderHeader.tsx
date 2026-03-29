@@ -10,7 +10,6 @@ import {
   DotsThreeVerticalIcon,
   ProhibitIcon,
   LockIcon,
-  GaugeIcon,
   ShuffleIcon,
   PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
@@ -65,7 +64,9 @@ export default function BuilderHeader({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const showOverflow = eventStatus === "active" && (onUnpublish || onClose);
+  const showOverflow =
+    (eventStatus === "active" && (onUnpublish || onClose)) ||
+    (eventStatus === "closed" && onClose);
 
   const toolBtn = (active: boolean) =>
     `flex flex-col items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors shrink-0 ${
@@ -75,7 +76,7 @@ export default function BuilderHeader({
     }`;
 
   const titleInput =
-    "flex-1 text-sm font-semibold text-white placeholder:text-white/40 outline-none bg-transparent min-w-0 border-b border-white/20 hover:border-white/40 focus:border-white/60 px-1.5 py-1 transition-colors";
+    "flex-1 text-xs font-semibold text-white placeholder:text-white/40 outline-none bg-transparent min-w-0 border-b border-white/20 hover:border-white/40 focus:border-white/60 px-1.5 py-1 transition-colors";
 
   const ctaBase =
     "flex items-center gap-1.5 bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 transition-colors rounded-lg shrink-0";
@@ -83,14 +84,13 @@ export default function BuilderHeader({
   return (
     <header className="bg-primary-800 sticky top-0 z-60">
       <div className="max-w-5xl mx-auto">
-        {/* Toolbar */}
         <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 pt-3 pb-5">
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors shrink-0"
           >
-            <ArrowLeftIcon size={18} weight="bold" />
-            <span className="hidden sm:inline text-sm font-medium">Back</span>
+            <ArrowLeftIcon size={14} weight="bold" />
+            <span className="hidden sm:inline text-xs font-medium">Back</span>
           </button>
 
           <input
@@ -111,9 +111,9 @@ export default function BuilderHeader({
                 className={toolBtn(!!isDirty)}
               >
                 {isSaving ? (
-                  <SpinnerGapIcon size={18} className="animate-spin" />
+                  <SpinnerGapIcon size={16} className="animate-spin" />
                 ) : (
-                  <FloppyDiskIcon size={18} />
+                  <FloppyDiskIcon size={16} />
                 )}
                 <span className="text-[10px] sm:text-[11px] font-medium leading-none">
                   {isSaving ? "Saving" : "Save"}
@@ -122,23 +122,24 @@ export default function BuilderHeader({
             )}
 
             <button onClick={onPreview} className={toolBtn(true)}>
-              <EyeIcon size={18} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">Preview</span>
+              <EyeIcon size={16} />
+              <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+                Preview
+              </span>
             </button>
 
             <button disabled className={toolBtn(false)}>
-              <GaugeIcon size={18} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">Miner</span>
+              <ShuffleIcon size={16} />
+              <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+                Random
+              </span>
             </button>
 
             <button disabled className={toolBtn(false)}>
-              <ShuffleIcon size={18} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">Random</span>
-            </button>
-
-            <button disabled className={toolBtn(false)}>
-              <PaperPlaneTiltIcon size={18} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">Email</span>
+              <PaperPlaneTiltIcon size={16} />
+              <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+                Email
+              </span>
             </button>
 
             {showOverflow && (
@@ -147,8 +148,10 @@ export default function BuilderHeader({
                   onClick={() => setMenuOpen((v) => !v)}
                   className={toolBtn(true)}
                 >
-                  <DotsThreeVerticalIcon size={18} weight="bold" />
-                  <span className="text-[10px] sm:text-[11px] font-medium leading-none">More</span>
+                  <DotsThreeVerticalIcon size={16} weight="bold" />
+                  <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+                    More
+                  </span>
                 </button>
 
                 <AnimatePresence>
@@ -158,13 +161,16 @@ export default function BuilderHeader({
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -4 }}
                       transition={{ duration: 0.1 }}
-                      className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden z-50"
+                      className="absolute right-0 py-2 top-full w-44 bg-white rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden z-50"
                     >
-                      <div className="p-1">
+                      <div>
                         {onUnpublish && (
                           <button
-                            onClick={() => { setMenuOpen(false); onUnpublish(); }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors text-left"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              onUnpublish();
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600 hover:font-semibold transition-colors text-left"
                           >
                             <ProhibitIcon size={14} />
                             Unpublish
@@ -172,8 +178,11 @@ export default function BuilderHeader({
                         )}
                         {onClose && (
                           <button
-                            onClick={() => { setMenuOpen(false); onClose(); }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors text-left"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              onClose();
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600 hover:font-semibold transition-colors text-left"
                           >
                             <LockIcon size={14} />
                             Close form
@@ -187,22 +196,28 @@ export default function BuilderHeader({
             )}
           </div>
 
-          {/* Desktop CTA */}
-          {eventStatus === "draft" && onPublish && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onPublish}
-              disabled={isPublishing}
-              className={`hidden sm:flex px-4 py-2 disabled:opacity-50 ${ctaBase}`}
-            >
-              {isPublishing ? (
-                <SpinnerGapIcon size={13} className="animate-spin" />
-              ) : (
-                <RocketLaunchIcon size={13} />
-              )}
-              <span>{isPublishing ? "Publishing..." : "Publish"}</span>
-            </motion.button>
-          )}
+          {(eventStatus === "draft" || eventStatus === "closed") &&
+            onPublish && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={onPublish}
+                disabled={isPublishing}
+                className={`hidden sm:flex px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${ctaBase}`}
+              >
+                {isPublishing ? (
+                  <SpinnerGapIcon size={13} className="animate-spin" />
+                ) : (
+                  <RocketLaunchIcon size={13} />
+                )}
+                <span>
+                  {isPublishing
+                    ? "Publishing..."
+                    : eventStatus === "closed"
+                      ? "Reopen"
+                      : "Publish"}
+                </span>
+              </motion.button>
+            )}
           {eventStatus === "active" && onShare && (
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -215,7 +230,6 @@ export default function BuilderHeader({
           )}
         </div>
 
-        {/* Mobile: title + CTA */}
         <div className="sm:hidden flex items-center justify-between gap-3 px-4 pb-3">
           <input
             type="text"
@@ -225,21 +239,28 @@ export default function BuilderHeader({
             placeholder="Untitled Form"
             className={`rounded ${titleInput}`}
           />
-          {eventStatus === "draft" && onPublish && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onPublish}
-              disabled={isPublishing}
-              className={`px-3.5 py-2 disabled:opacity-50 ${ctaBase}`}
-            >
-              {isPublishing ? (
-                <SpinnerGapIcon size={13} className="animate-spin" />
-              ) : (
-                <RocketLaunchIcon size={13} />
-              )}
-              <span>{isPublishing ? "Publishing..." : "Publish"}</span>
-            </motion.button>
-          )}
+          {(eventStatus === "draft" || eventStatus === "closed") &&
+            onPublish && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={onPublish}
+                disabled={isPublishing}
+                className={`px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${ctaBase}`}
+              >
+                {isPublishing ? (
+                  <SpinnerGapIcon size={13} className="animate-spin" />
+                ) : (
+                  <RocketLaunchIcon size={13} />
+                )}
+                <span>
+                  {isPublishing
+                    ? "Publishing..."
+                    : eventStatus === "closed"
+                      ? "Reopen"
+                      : "Publish"}
+                </span>
+              </motion.button>
+            )}
           {eventStatus === "active" && onShare && (
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -252,7 +273,6 @@ export default function BuilderHeader({
           )}
         </div>
 
-        {/* Tabs */}
         <div className="flex justify-center gap-8">
           <button
             onClick={() => onTabChange("questions")}
