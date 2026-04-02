@@ -265,7 +265,7 @@ export default function SlidePreview({
         {editing && (
           <span
             ref={counterRef}
-            className="absolute top-2 right-2 text-[10px] font-semibold text-white bg-primary-400 rounded-full w-7 h-5 flex items-center justify-center"
+            className="absolute bottom-2 right-2 text-[10px] font-semibold text-white bg-primary-400 rounded-full w-7 h-5 flex items-center justify-center"
           >
             0
           </span>
@@ -696,24 +696,37 @@ export default function SlidePreview({
         })()}
       {type === "pin_on_image" && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          {settings.imageUrl ? (
+          {settings.pinImageUrl ? (
             <div className="relative w-full max-h-40 overflow-hidden rounded-lg">
               <img
-                src={settings.imageUrl}
+                src={settings.pinImageUrl}
                 alt=""
                 className="w-full object-cover rounded-lg"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/80 rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
-                  Audience will pin here
+              {settings.correctArea ? (
+                <div
+                  className="absolute pointer-events-none border-2 border-green-500"
+                  style={{
+                    left: `${settings.correctArea.x}%`,
+                    top: `${settings.correctArea.y}%`,
+                    width: `${settings.correctArea.width}%`,
+                    height: `${settings.correctArea.height}%`,
+                    backgroundColor: 'rgba(34,197,94,0.15)',
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-white/80 rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
+                    Audience will pin here
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <div className="text-gray-300 text-sm text-center">
-              Upload an image above
+              Upload a background image
               <br />
-              to enable pinning
+              in the settings to enable pinning
             </div>
           )}
         </div>

@@ -693,7 +693,7 @@ function AudienceSlideInput({
     case "pin_on_image":
       return (
         <PinOnImageInput
-          imageUrl={settings.imageUrl as string | undefined}
+          imageUrl={settings.pinImageUrl as string | undefined}
           onSubmit={onSubmit}
           isPending={isPending}
         />
@@ -748,7 +748,6 @@ export default function LiveVotePage() {
   const [nameConfirmed, setNameConfirmed] = useState(false);
   const showCountdown = countdown !== null;
 
-  // Audience-side timer countdown
   const [audienceTimerRemaining, setAudienceTimerRemaining] = useState<
     number | null
   >(null);
@@ -768,7 +767,6 @@ export default function LiveVotePage() {
     return () => clearInterval(interval);
   }, [timerState]);
 
-  // Auto-dismiss "Time's up!" overlay
   useEffect(() => {
     if (audienceTimerRemaining !== 0) return;
     const t = setTimeout(() => setAudienceTimerRemaining(null), 2000);

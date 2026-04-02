@@ -33,6 +33,7 @@ export type SlideSettings = {
   bgColor?: string
   imageUrl?: string
   imageLayout?: ImageLayout
+  pinImageUrl?: string
   correctAnswer?: string
   correctAnswers?: string[]
   correctNumber?: number
@@ -47,6 +48,7 @@ export type SlideSettings = {
   scaleMaxLabel?: string
   scaleColors?: string[]
   barColors?: string[]
+  correctArea?: { x: number; y: number; width: number; height: number }
 }
 
 export type PollSlide = {

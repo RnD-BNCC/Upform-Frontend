@@ -7,6 +7,7 @@ interface JoinOverlayProps {
   onClose: () => void;
   joinUrl: string;
   code: string;
+  showQrCode?: boolean;
 }
 
 export default function JoinOverlay({
@@ -14,6 +15,7 @@ export default function JoinOverlay({
   onClose,
   joinUrl,
   code,
+  showQrCode = true,
 }: JoinOverlayProps) {
   return (
     <AnimatePresence>
@@ -39,9 +41,11 @@ export default function JoinOverlay({
           >
             {joinUrl}/{code}
           </a>
-          <div className="flex justify-center mb-3">
-            <QRCodeSVG value={`${joinUrl}/${code}`} size={140} level="M" />
-          </div>
+          {showQrCode && (
+            <div className="flex justify-center mb-3">
+              <QRCodeSVG value={`${joinUrl}/${code}`} size={140} level="M" />
+            </div>
+          )}
           <p className="text-2xl font-black text-gray-900 tracking-widest">
             {code}
           </p>

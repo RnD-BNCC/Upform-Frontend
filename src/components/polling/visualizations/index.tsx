@@ -98,6 +98,7 @@ export default function SlideVisualization({
           data={results as Parameters<typeof PinOnImageViz>[0]["data"]}
           settings={settings}
           textColor={textColor}
+          revealPhase={revealPhase}
         />
       );
     default:

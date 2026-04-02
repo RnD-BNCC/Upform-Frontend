@@ -420,7 +420,8 @@ export default function PollPresentPage() {
     if (
       (activeSlide?.type === "multiple_choice" && slideSettings.correctAnswer) ||
       (activeSlide?.type === "guess_number" && slideSettings.correctNumber !== undefined) ||
-      (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length)
+      (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length) ||
+      (activeSlide?.type === "pin_on_image" && slideSettings.correctArea)
     ) {
       setRevealPhase(true);
       socketRef.current?.emit("broadcast-reveal-answer", { pollId });
@@ -505,7 +506,8 @@ export default function PollPresentPage() {
     } else if (
       (activeSlide?.type === "multiple_choice" && slideSettings.correctAnswer) ||
       (activeSlide?.type === "guess_number" && slideSettings.correctNumber !== undefined) ||
-      (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length)
+      (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length) ||
+      (activeSlide?.type === "pin_on_image" && slideSettings.correctArea)
     ) {
       stopTimer();
       setRevealPhase(true);
@@ -564,7 +566,8 @@ export default function PollPresentPage() {
             !isWaitingRoom &&
             ((activeSlide?.type === "multiple_choice" && slideSettings.correctAnswer) ||
               (activeSlide?.type === "guess_number" && slideSettings.correctNumber !== undefined) ||
-              (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length))
+              (activeSlide?.type === "word_cloud" && slideSettings.correctAnswers?.length) ||
+              (activeSlide?.type === "pin_on_image" && slideSettings.correctArea))
           ) {
             stopTimer();
             setRevealPhase(true);
@@ -746,6 +749,7 @@ export default function PollPresentPage() {
           participantCount={participantCount}
           joinUrl={joinUrl}
           textColor={textColor}
+          showInstructionsBar={slideSettings.showInstructionsBar !== false}
         />
       )}
 
@@ -787,6 +791,7 @@ export default function PollPresentPage() {
         onClose={() => setShowJoinOverlay(false)}
         joinUrl={joinUrl}
         code={poll.code}
+        showQrCode={slideSettings.showQrCode !== false}
       />
 
       <SlideGridModal

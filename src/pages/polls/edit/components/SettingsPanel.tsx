@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { SlideType, SlideSettings } from '@/types/polling'
 import ColorPickerDropdown from '@/components/ui/ColorPickerDropdown'
 import { COLOR_PRESETS } from '@/config/polling'
@@ -11,6 +12,7 @@ import {
   ImageUpload,
   LayoutPicker,
   ScaleStatementsEditor,
+  CorrectAreaPicker,
 } from './settings'
 
 export default function SettingsPanel({
@@ -31,6 +33,7 @@ export default function SettingsPanel({
   onBlur: () => void
 }) {
   const needsOptions = ['multiple_choice'].includes(type)
+  const [showAreaPicker, setShowAreaPicker] = useState(false)
 
   const handleSettingsField = <K extends keyof SlideSettings>(key: K, value: SlideSettings[K]) => {
     onSettingsChange({ ...settings, [key]: value })
@@ -86,7 +89,8 @@ export default function SettingsPanel({
           </div>
         )}
 
-        <div className="mb-5">
+        {type !== 'guess_number' && (
+          <div className="mb-5">
             <label className="text-xs font-semibold text-gray-500 mb-2 block">Response timer</label>
             <div className="flex gap-1.5 mb-2">
               {[0, 15, 30, 60].map((sec) => (
@@ -123,6 +127,7 @@ export default function SettingsPanel({
               <span className="text-xs text-gray-400 font-medium shrink-0">sec</span>
             </div>
           </div>
+        )}
 
         {type === 'scales' && (
           <>
@@ -201,8 +206,74 @@ export default function SettingsPanel({
         {type === 'pin_on_image' && (
           <div className="mb-5">
             <label className="text-xs font-semibold text-gray-500 mb-2 block">Background image</label>
-            <p className="text-[10px] text-gray-400 mb-2">Upload an image below. Audience members will tap on it to pin their answer.</p>
+            <p className="text-[10px] text-gray-400 mb-2">Audience members will tap on it to pin their answer.</p>
+            <ImageUpload
+              imageUrl={settings.pinImageUrl}
+              onUpload={(url) => {
+                onSettingsChange({ ...settings, pinImageUrl: url })
+                onBlur()
+              }}
+              onRemove={() => {
+                onSettingsChange({ ...settings, pinImageUrl: undefined, correctArea: undefined })
+                onBlur()
+              }}
+            />
           </div>
+        )}
+
+        {type === 'pin_on_image' && (
+          <div className="mb-5">
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Correct area</label>
+            {!settings.pinImageUrl ? (
+              <p className="text-[10px] text-gray-400">Upload an image first to set a correct area.</p>
+            ) : settings.correctArea ? (
+              <div className="flex flex-col gap-2">
+                <div className="relative rounded-lg overflow-hidden border border-green-200">
+                  <img src={settings.pinImageUrl} alt="" className="w-full object-cover" />
+                  <div
+                    className="absolute pointer-events-none border-2 border-green-500"
+                    style={{
+                      left: `${settings.correctArea.x}%`,
+                      top: `${settings.correctArea.y}%`,
+                      width: `${settings.correctArea.width}%`,
+                      height: `${settings.correctArea.height}%`,
+                      backgroundColor: 'rgba(34,197,94,0.2)',
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowAreaPicker(true)}
+                    className="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 text-gray-600 cursor-pointer transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => { onSettingsChange({ ...settings, correctArea: undefined }); onBlur() }}
+                    className="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-red-100 hover:border-red-200 text-red-400 cursor-pointer transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAreaPicker(true)}
+                className="w-full text-xs font-semibold py-2 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-300 text-gray-400 hover:text-primary-500 cursor-pointer transition-colors"
+              >
+                + Set correct area
+              </button>
+            )}
+          </div>
+        )}
+
+        {showAreaPicker && settings.pinImageUrl && (
+          <CorrectAreaPicker
+            imageUrl={settings.pinImageUrl}
+            value={settings.correctArea}
+            onChange={(area) => { onSettingsChange({ ...settings, correctArea: area }); onBlur() }}
+            onClose={() => setShowAreaPicker(false)}
+          />
         )}
 
         {type === 'guess_number' && (
@@ -218,7 +289,7 @@ export default function SettingsPanel({
               placeholder="Enter the correct number"
             />
             <label className="text-xs font-semibold text-gray-500 mb-2 block">Number range</label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-5">
               <div className="flex-1">
                 <label className="text-[11px] text-gray-400 font-medium mb-1 block">Min</label>
                 <input
@@ -240,11 +311,51 @@ export default function SettingsPanel({
                 />
               </div>
             </div>
+            <label className="text-xs font-semibold text-gray-500 mb-2 block">Response timer</label>
+            <div className="flex gap-1.5 mb-2">
+              {[0, 15, 30, 60].map((sec) => (
+                <button
+                  key={sec}
+                  onClick={() => {
+                    onSettingsChange({ ...settings, timer: sec === 0 ? undefined : sec })
+                    onBlur()
+                  }}
+                  className={`flex-1 text-xs font-semibold py-1.5 rounded-lg border-2 cursor-pointer transition-colors ${
+                    (settings.timer ?? 0) === sec
+                      ? 'border-primary-500 bg-primary-50 text-primary-600'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-500'
+                  }`}
+                >
+                  {sec === 0 ? 'Off' : `${sec}s`}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={5}
+                max={300}
+                value={settings.timer ?? ''}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  onSettingsChange({ ...settings, timer: v > 0 ? v : undefined })
+                }}
+                onBlur={onBlur}
+                placeholder="Custom (sec)"
+                className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+              />
+              <span className="text-xs text-gray-400 font-medium shrink-0">sec</span>
+            </div>
           </div>
         )}
 
         <div className="mb-5">
           <label className="text-xs font-semibold text-gray-500 mb-2 block">Image</label>
+          <p className="text-[10px] text-gray-400 mb-2">
+            {type === 'pin_on_image'
+              ? 'Optional decorative image shown alongside the pin area (not interactive).'
+              : 'Optional image shown alongside the question.'}
+          </p>
           <ImageUpload
             imageUrl={settings.imageUrl}
             onUpload={(url) => {
