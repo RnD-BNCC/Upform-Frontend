@@ -10,6 +10,7 @@ import { useCreatePoll } from "@/hooks/polls";
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
   { label: "Live Polls", path: "/polls" },
+  { label: "Gallery", path: "/gallery" },
 ];
 
 export default function Navbar() {

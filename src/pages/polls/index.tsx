@@ -363,16 +363,28 @@ export default function PollsPage() {
           />
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
-          <p className="text-primary-300 text-sm font-bold mb-1">
-            Live Polling
-          </p>
-          <h1 className="text-[1.75rem] sm:text-[2rem] font-bold text-white leading-tight">
-            My Polls
-          </h1>
-          <p className="text-white text-sm mt-1.5">
-            Create interactive live polls for your audience.
-          </p>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
+          <div>
+            <p className="text-primary-300 text-sm font-bold mb-1">
+              Live Polling
+            </p>
+            <h1 className="text-[1.75rem] sm:text-[2rem] font-bold text-white leading-tight">
+              My Polls
+            </h1>
+            <p className="text-white text-sm mt-1.5">
+              Create interactive live polls for your audience.
+            </p>
+          </div>
+          <div className="flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm shrink-0 w-full sm:w-auto">
+            <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
+              <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
+                {meta?.total ?? 0}
+              </span>
+              <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
+                Total Polls
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

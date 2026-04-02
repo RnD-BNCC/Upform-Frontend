@@ -40,4 +40,9 @@ export const Api = {
   // Upload
   upload: '/upload',
   uploadFile: '/upload/file',
+
+  // Gallery
+  galleryFiles: '/gallery/files',
+  galleryMedia: '/gallery/media',
+  galleryFileDelete: '/gallery/file',
 } as const
