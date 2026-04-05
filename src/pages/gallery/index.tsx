@@ -1,7 +1,12 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar, Footer } from "@/components/layout";
-import { ConfirmModal, LoadingModal, Pagination, StatusModal } from "@/components/ui";
+import {
+  ConfirmModal,
+  LoadingModal,
+  Pagination,
+  StatusModal,
+} from "@/components/ui";
 import {
   useQueryGalleryFiles,
   useQueryGalleryMedia,
@@ -29,14 +34,6 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { Breadcrumb, type FolderView } from "@/components/gallery/Breadcrumb";
-
-function fileIcon(filename: string) {
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  if (ext === "pdf") return <FilePdf size={16} className="shrink-0 text-red-400" />;
-  if (["png", "jpg", "jpeg", "gif", "webp", "avif", "svg", "heic"].includes(ext))
-    return <FileImage size={16} className="shrink-0 text-blue-400" />;
-  return <File size={16} className="shrink-0 text-gray-400" />;
-}
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -83,15 +80,28 @@ function FolderItem({
         </span>
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-semibold text-gray-800 truncate leading-snug">{name}</p>
-        {meta && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{meta}</p>}
+        <p className="text-xs font-semibold text-gray-800 truncate leading-snug">
+          {name}
+        </p>
+        {meta && (
+          <p className="text-[10px] text-gray-400 mt-0.5 truncate">{meta}</p>
+        )}
         <p className="text-[10px] text-gray-400">{countLabel}</p>
       </div>
     </button>
   );
 }
 
-const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "webp", "avif", "svg", "heic"]);
+const IMAGE_EXTS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "avif",
+  "svg",
+  "heic",
+]);
 
 function FileCard({
   url,
@@ -136,7 +146,9 @@ function FileCard({
         )}
       </div>
       <div className="px-2.5 py-2">
-        <p className="text-xs font-semibold text-gray-800 truncate">{filename}</p>
+        <p className="text-xs font-semibold text-gray-800 truncate">
+          {filename}
+        </p>
         <p className="text-[10px] text-gray-400">{fieldLabel}</p>
       </div>
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
@@ -187,8 +199,14 @@ function ImagePreviewModal({
         className="relative max-w-4xl w-full"
         onClick={(e) => e.stopPropagation()}
       >
-        <img src={url} alt={filename} className="max-h-[85vh] w-full object-contain rounded-xl" />
-        <p className="text-white/60 text-xs text-center mt-2 truncate">{filename}</p>
+        <img
+          src={url}
+          alt={filename}
+          className="max-h-[85vh] w-full object-contain rounded-xl"
+        />
+        <p className="text-white/60 text-xs text-center mt-2 truncate">
+          {filename}
+        </p>
         <button
           onClick={onClose}
           className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors cursor-pointer"
@@ -232,19 +250,29 @@ function MediaCard({
       )}
       <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
       <div className="absolute bottom-0 left-0 right-0 p-2.5 translate-y-2 opacity-0 group-hover/card:translate-y-0 group-hover/card:opacity-100 transition-all">
-        <p className="text-[11px] font-semibold text-white truncate">{item.filename}</p>
-        <p className="text-[10px] text-white/60 truncate">{formatSize(item.size)}</p>
+        <p className="text-[11px] font-semibold text-white truncate">
+          {item.filename}
+        </p>
+        <p className="text-[10px] text-white/60 truncate">
+          {formatSize(item.size)}
+        </p>
       </div>
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
         <button
-          onClick={(e) => { e.stopPropagation(); onCopy(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCopy();
+          }}
           className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/90 text-gray-600 hover:text-blue-600 hover:bg-white transition-colors cursor-pointer shadow"
           title="Copy URL"
         >
           <Link size={13} weight="bold" />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/90 text-gray-600 hover:text-red-500 hover:bg-white transition-colors cursor-pointer shadow"
           title="Delete"
         >
@@ -263,9 +291,18 @@ export default function GalleryPage() {
   const [folderView, setFolderView] = useState<FolderView>({ level: "root" });
   const [filesPage, setFilesPage] = useState(1);
   const [mediaPage, setMediaPage] = useState(1);
-  const [deleteTarget, setDeleteTarget] = useState<{ url: string; label: string } | null>(null);
-  const [previewFile, setPreviewFile] = useState<{ url: string; filename: string } | null>(null);
-  const [status, setStatus] = useState<{ type: StatusType; message: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    url: string;
+    label: string;
+  } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{
+    url: string;
+    filename: string;
+  } | null>(null);
+  const [status, setStatus] = useState<{
+    type: StatusType;
+    message: string;
+  } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -291,7 +328,7 @@ export default function GalleryPage() {
   };
 
   const rootEvents = allEvents.filter(
-    (e) => !lowerSearch || e.name.toLowerCase().includes(lowerSearch)
+    (e) => !lowerSearch || e.name.toLowerCase().includes(lowerSearch),
   );
 
   const currentEvent =
@@ -301,7 +338,8 @@ export default function GalleryPage() {
 
   const eventResponses =
     currentEvent?.responses.filter(
-      (r) => !lowerSearch || r.respondentLabel.toLowerCase().includes(lowerSearch)
+      (r) =>
+        !lowerSearch || r.respondentLabel.toLowerCase().includes(lowerSearch),
     ) ?? [];
 
   const currentResponse =
@@ -311,11 +349,11 @@ export default function GalleryPage() {
 
   const respondentFiles =
     currentResponse?.files.filter(
-      (f) => !lowerSearch || f.filename.toLowerCase().includes(lowerSearch)
+      (f) => !lowerSearch || f.filename.toLowerCase().includes(lowerSearch),
     ) ?? [];
 
   const filteredMedia = (mediaQuery.data?.items ?? []).filter(
-    (m) => !lowerSearch || m.filename.toLowerCase().includes(lowerSearch)
+    (m) => !lowerSearch || m.filename.toLowerCase().includes(lowerSearch),
   );
 
   const handleDeleteConfirm = () => {
@@ -324,7 +362,8 @@ export default function GalleryPage() {
     setDeleteTarget(null);
     deleteMutation.mutate(target.url, {
       onSuccess: () => setStatus({ type: "success", message: "File deleted." }),
-      onError: () => setStatus({ type: "error", message: "Failed to delete file." }),
+      onError: () =>
+        setStatus({ type: "error", message: "Failed to delete file." }),
     });
   };
 
@@ -400,17 +439,29 @@ export default function GalleryPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10 pb-6 sm:pb-8">
             <div>
               <p className="text-primary-300 text-sm font-bold mb-1">Storage</p>
-              <h1 className="text-[1.75rem] sm:text-[2rem] font-bold text-white leading-tight">Gallery</h1>
-              <p className="text-white text-sm mt-1.5">Browse, preview, and manage your uploaded files.</p>
+              <h1 className="text-[1.75rem] sm:text-[2rem] font-bold text-white leading-tight">
+                Gallery
+              </h1>
+              <p className="text-white text-sm mt-1.5">
+                Browse, preview, and manage your uploaded files.
+              </p>
             </div>
             <div className="flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm divide-x divide-white/10 shrink-0 w-full sm:w-auto">
               <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
-                <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">{totalFiles}</span>
-                <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">Form Files</span>
+                <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
+                  {totalFiles}
+                </span>
+                <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
+                  Form Files
+                </span>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
-                <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">{totalMedia}</span>
-                <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">Media</span>
+                <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
+                  {totalMedia}
+                </span>
+                <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
+                  Media
+                </span>
               </div>
             </div>
           </div>
@@ -418,7 +469,13 @@ export default function GalleryPage() {
             {(["files", "media"] as Tab[]).map((t) => (
               <button
                 key={t}
-                onClick={() => { setTab(t); setSearch(""); setFolderView({ level: "root" }); setFilesPage(1); setMediaPage(1); }}
+                onClick={() => {
+                  setTab(t);
+                  setSearch("");
+                  setFolderView({ level: "root" });
+                  setFilesPage(1);
+                  setMediaPage(1);
+                }}
                 className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
                   tab === t
                     ? "border-white text-white"
@@ -441,7 +498,11 @@ export default function GalleryPage() {
             />
             <input
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setFilesPage(1); setMediaPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setFilesPage(1);
+                setMediaPage(1);
+              }}
               placeholder={searchPlaceholder}
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
             />
@@ -482,10 +543,15 @@ export default function GalleryPage() {
             >
               {filesQuery.isPending ? (
                 <div className="flex justify-center py-20">
-                  <SpinnerGap size={28} className="animate-spin text-primary-400" />
+                  <SpinnerGap
+                    size={28}
+                    className="animate-spin text-primary-400"
+                  />
                 </div>
               ) : filesQuery.isError ? (
-                <div className="text-center py-20 text-sm text-gray-400">Failed to load files.</div>
+                <div className="text-center py-20 text-sm text-gray-400">
+                  Failed to load files.
+                </div>
               ) : (
                 <>
                   {folderView.level !== "root" && (
@@ -495,12 +561,20 @@ export default function GalleryPage() {
                   <AnimatePresence mode="wait">
                     {/* Root — event folders */}
                     {folderView.level === "root" && (
-                      <motion.div key="root" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
+                      <motion.div
+                        key="root"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        transition={{ duration: 0.15 }}
+                      >
                         {rootEvents.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
                             <FolderOpen size={40} weight="thin" />
                             <p className="text-sm">
-                              {lowerSearch ? "No events found." : "No form file submissions yet."}
+                              {lowerSearch
+                                ? "No events found."
+                                : "No form file submissions yet."}
                             </p>
                           </div>
                         ) : (
@@ -512,8 +586,18 @@ export default function GalleryPage() {
                                   icon={<Folder size={28} weight="fill" />}
                                   name={event.name}
                                   count={event.responses.length}
-                                  countLabel={event.responses.length === 1 ? "respondent" : "respondents"}
-                                  onClick={() => navigate({ level: "event", eventId: event.id, eventName: event.name })}
+                                  countLabel={
+                                    event.responses.length === 1
+                                      ? "respondent"
+                                      : "respondents"
+                                  }
+                                  onClick={() =>
+                                    navigate({
+                                      level: "event",
+                                      eventId: event.id,
+                                      eventName: event.name,
+                                    })
+                                  }
                                 />
                               ))}
                             </div>
@@ -531,11 +615,21 @@ export default function GalleryPage() {
 
                     {/* Event — respondent folders */}
                     {folderView.level === "event" && (
-                      <motion.div key="event" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
+                      <motion.div
+                        key="event"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.15 }}
+                      >
                         {eventResponses.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
                             <FolderOpen size={40} weight="thin" />
-                            <p className="text-sm">{lowerSearch ? "No respondents found." : "No submissions in this event."}</p>
+                            <p className="text-sm">
+                              {lowerSearch
+                                ? "No respondents found."
+                                : "No submissions in this event."}
+                            </p>
                           </div>
                         ) : (
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
@@ -546,7 +640,9 @@ export default function GalleryPage() {
                                 name={response.respondentLabel}
                                 meta={formatDate(response.submittedAt)}
                                 count={response.files.length}
-                                countLabel={response.files.length === 1 ? "file" : "files"}
+                                countLabel={
+                                  response.files.length === 1 ? "file" : "files"
+                                }
                                 onClick={() =>
                                   navigate({
                                     level: "respondent",
@@ -565,11 +661,21 @@ export default function GalleryPage() {
 
                     {/* Respondent — files */}
                     {folderView.level === "respondent" && (
-                      <motion.div key="respondent" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
+                      <motion.div
+                        key="respondent"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.15 }}
+                      >
                         {respondentFiles.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
                             <File size={40} weight="thin" />
-                            <p className="text-sm">{lowerSearch ? "No files found." : "No files submitted."}</p>
+                            <p className="text-sm">
+                              {lowerSearch
+                                ? "No files found."
+                                : "No files submitted."}
+                            </p>
                           </div>
                         ) : (
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -579,8 +685,18 @@ export default function GalleryPage() {
                                 url={f.url}
                                 filename={f.filename}
                                 fieldLabel={f.fieldLabel}
-                                onDelete={() => setDeleteTarget({ url: f.url, label: f.filename })}
-                                onPreview={() => setPreviewFile({ url: f.url, filename: f.filename })}
+                                onDelete={() =>
+                                  setDeleteTarget({
+                                    url: f.url,
+                                    label: f.filename,
+                                  })
+                                }
+                                onPreview={() =>
+                                  setPreviewFile({
+                                    url: f.url,
+                                    filename: f.filename,
+                                  })
+                                }
                               />
                             ))}
                           </div>
@@ -603,15 +719,22 @@ export default function GalleryPage() {
             >
               {mediaQuery.isPending ? (
                 <div className="flex justify-center py-20">
-                  <SpinnerGap size={28} className="animate-spin text-primary-400" />
+                  <SpinnerGap
+                    size={28}
+                    className="animate-spin text-primary-400"
+                  />
                 </div>
               ) : mediaQuery.isError ? (
-                <div className="text-center py-20 text-sm text-gray-400">Failed to load media.</div>
+                <div className="text-center py-20 text-sm text-gray-400">
+                  Failed to load media.
+                </div>
               ) : filteredMedia.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
                   <Images size={40} weight="thin" />
                   <p className="text-sm">
-                    {lowerSearch ? "No results found." : "No media uploaded yet."}
+                    {lowerSearch
+                      ? "No results found."
+                      : "No media uploaded yet."}
                   </p>
                 </div>
               ) : (
@@ -621,9 +744,19 @@ export default function GalleryPage() {
                       <MediaCard
                         key={item.key}
                         item={item}
-                        onDelete={() => setDeleteTarget({ url: item.url, label: item.filename })}
+                        onDelete={() =>
+                          setDeleteTarget({
+                            url: item.url,
+                            label: item.filename,
+                          })
+                        }
                         onCopy={() => handleCopyUrl(item.url)}
-                        onPreview={() => setPreviewFile({ url: item.url, filename: item.filename })}
+                        onPreview={() =>
+                          setPreviewFile({
+                            url: item.url,
+                            filename: item.filename,
+                          })
+                        }
                       />
                     ))}
                   </div>
@@ -662,7 +795,9 @@ export default function GalleryPage() {
       />
 
       <LoadingModal
-        isOpen={(deleteMutation.isPending || uploadMutation.isPending) && !status}
+        isOpen={
+          (deleteMutation.isPending || uploadMutation.isPending) && !status
+        }
         title={uploadMutation.isPending ? "Uploading…" : "Deleting…"}
       />
 
