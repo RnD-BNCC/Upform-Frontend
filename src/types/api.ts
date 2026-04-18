@@ -27,22 +27,32 @@ export type EventListParams = {
 
 export type CreateEventPayload = {
   name?: string
-  description?: string
   color?: string
+  theme?: string
 }
 
 export type UpdateEventPayload = {
   name?: string
-  description?: string
   status?: 'draft' | 'active' | 'closed'
   color?: string
   image?: string | null
+  theme?: string
+}
+
+export type UpdateSectionWithPageTypePayload = {
+  title?: string
+  description?: string
+  order?: number
+  fields?: FormField[]
+  pageType?: string
 }
 
 // Section payloads
 export type CreateSectionPayload = {
   title?: string
   description?: string
+  pageType?: string
+  order?: number
 }
 
 export type UpdateSectionPayload = {
@@ -50,6 +60,10 @@ export type UpdateSectionPayload = {
   description?: string
   order?: number
   fields?: FormField[]
+  pageType?: string
+  settings?: Record<string, unknown>
+  logicX?: number
+  logicY?: number
 }
 
 // Response payloads

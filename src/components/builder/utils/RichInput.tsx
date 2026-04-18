@@ -1,6 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LinkSimpleIcon, ListBulletsIcon, ListNumbersIcon } from '@phosphor-icons/react'
+import {
+  LinkSimpleIcon,
+  ListBulletsIcon,
+  ListNumbersIcon,
+  TextAlignLeftIcon,
+  TextAlignCenterIcon,
+  TextAlignRightIcon,
+  CaretDownIcon,
+} from '@phosphor-icons/react'
 
 const isEmpty = (html: string) =>
   !html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]*>/g, '').trim()
@@ -19,27 +28,40 @@ type Props = {
   value: string
   onChange: (html: string) => void
   placeholder?: string
+  placeholderClassName?: string
   className?: string
   stopPropagation?: boolean
   noLists?: boolean
 }
 
+const HEADINGS = [
+  { label: 'Normal', tag: 'p' },
+  { label: 'H1', tag: 'h1' },
+  { label: 'H2', tag: 'h2' },
+  { label: 'H3', tag: 'h3' },
+  { label: 'H4', tag: 'h4' },
+  { label: 'H5', tag: 'h5' },
+]
+
 export default function RichInput({
   value,
   onChange,
   placeholder,
+  placeholderClassName,
   className = '',
   stopPropagation,
   noLists,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const focusedRef = useRef(false)
   const lastValueRef = useRef(value)
   const undoStackRef = useRef<string[]>([])
   const redoStackRef = useRef<string[]>([])
-  const [showToolbar, setShowToolbar] = useState(false)
+  const [toolbarPos, setToolbarPos] = useState<{ top: number; left: number } | null>(null)
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false })
   const [linkDialog, setLinkDialog] = useState<{ text: string; url: string } | null>(null)
+  const [showHeadingDropdown, setShowHeadingDropdown] = useState(false)
   const linkDialogOpenRef = useRef(false)
   const savedRangeRef = useRef<Range | null>(null)
 
@@ -55,12 +77,31 @@ export default function RichInput({
     lastValueRef.current = value
   }, [value])
 
-  const updateActiveFormats = useCallback(() => {
+  const updateToolbar = useCallback(() => {
     setActiveFormats({
       bold: document.queryCommandState('bold'),
       italic: document.queryCommandState('italic'),
       underline: document.queryCommandState('underline'),
     })
+
+    if (!focusedRef.current || linkDialogOpenRef.current) return
+
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0 || sel.toString().length === 0) {
+      setToolbarPos(null)
+      return
+    }
+
+    const range = sel.getRangeAt(0)
+    const rangeRect = range.getBoundingClientRect()
+    if (!containerRef.current || rangeRect.width === 0) {
+      setToolbarPos(null)
+      return
+    }
+    const left = Math.max(4, Math.min(rangeRect.left + rangeRect.width / 2 - 140, window.innerWidth - 284))
+    const top = Math.max(4, rangeRect.top - 48)
+
+    setToolbarPos({ top, left })
   }, [])
 
   const pushUndoSnapshot = useCallback(() => {
@@ -76,7 +117,18 @@ export default function RichInput({
       lastValueRef.current = ref.current.innerHTML
       onChange(ref.current.innerHTML)
     }
-    updateActiveFormats()
+    updateToolbar()
+  }
+
+  const applyHeading = (tag: string) => {
+    if (document.activeElement !== ref.current) ref.current?.focus()
+    document.execCommand('formatBlock', false, tag)
+    if (ref.current) {
+      lastValueRef.current = ref.current.innerHTML
+      onChange(ref.current.innerHTML)
+    }
+    setShowHeadingDropdown(false)
+    updateToolbar()
   }
 
   const toggleList = useCallback((type: 'ul' | 'ol') => {
@@ -86,7 +138,6 @@ export default function RichInput({
     const sel = window.getSelection()
     if (!sel) return
 
-    // Find if cursor is already inside a list
     let listNode: Element | null = null
     let n: Node | null = sel.rangeCount > 0 ? sel.getRangeAt(0).startContainer : null
     while (n && n !== ref.current) {
@@ -96,112 +147,68 @@ export default function RichInput({
 
     if (listNode) {
       if (listNode.tagName === type.toUpperCase()) {
-        // Same type → toggle off: unwrap items to flat content
         const frag = document.createDocumentFragment()
-        listNode.querySelectorAll('li').forEach((li, i) => {
-          if (i > 0) frag.appendChild(document.createElement('br'))
-          li.childNodes.forEach((c) => frag.appendChild(c.cloneNode(true)))
+        listNode.querySelectorAll('li').forEach((li) => {
+          const p = document.createElement('p')
+          p.innerHTML = li.innerHTML
+          frag.appendChild(p)
         })
         listNode.replaceWith(frag)
       } else {
-        // Different type → convert list type, keep items
         const newList = document.createElement(type)
-        newList.innerHTML = listNode.innerHTML
+        listNode.querySelectorAll('li').forEach((li) => {
+          const newLi = document.createElement('li')
+          newLi.innerHTML = li.innerHTML
+          newList.appendChild(newLi)
+        })
         listNode.replaceWith(newList)
-        const lastLi = newList.querySelector('li:last-child')
-        if (lastLi) {
-          const range = document.createRange()
-          range.selectNodeContents(lastLi)
-          range.collapse(false)
-          sel.removeAllRanges()
-          sel.addRange(range)
-        }
       }
     } else {
-      // Toggle on: split content by <br> and block elements, each becomes an <li>
+      const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null
+      if (!range) return
       const list = document.createElement(type)
-      const children = Array.from(ref.current.childNodes)
-      let li = document.createElement('li')
-
-      const pushLi = () => {
-        if (!li.childNodes.length) li.appendChild(document.createElement('br'))
-        list.appendChild(li)
-        li = document.createElement('li')
-      }
-
-      children.forEach((child) => {
-        if (child.nodeName === 'BR') {
-          pushLi()
-        } else if (child instanceof Element && /^(DIV|P|H[1-6])$/.test(child.tagName)) {
-          child.childNodes.forEach((c) => li.appendChild(c.cloneNode(true)))
-          pushLi()
-        } else {
-          li.appendChild(child.cloneNode(true))
-        }
-      })
-      if (li.childNodes.length || !list.children.length) pushLi()
-
-      ref.current.innerHTML = ''
-      ref.current.appendChild(list)
-
-      // Place cursor in last li
-      const lastLi = list.querySelector('li:last-child')
-      if (lastLi) {
-        const range = document.createRange()
-        range.selectNodeContents(lastLi)
-        range.collapse(false)
-        sel.removeAllRanges()
-        sel.addRange(range)
-      }
+      const li = document.createElement('li')
+      li.appendChild(range.extractContents())
+      list.appendChild(li)
+      range.insertNode(list)
+      const newRange = document.createRange()
+      newRange.setStart(li, 0)
+      newRange.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(newRange)
     }
 
-    lastValueRef.current = ref.current.innerHTML
-    onChange(ref.current.innerHTML)
-    updateActiveFormats()
-  }, [onChange, updateActiveFormats, pushUndoSnapshot])
+    if (ref.current) {
+      lastValueRef.current = ref.current.innerHTML
+      onChange(ref.current.innerHTML)
+    }
+  }, [pushUndoSnapshot, onChange])
 
   const startListAtCursor = useCallback((type: 'ul' | 'ol') => {
     if (!ref.current) return
-    const sel = window.getSelection()
-    if (!sel || sel.rangeCount === 0) return
-    const range = sel.getRangeAt(0)
-    // Walk up to find the direct child of contenteditable containing the cursor
-    let node: Node = range.startContainer
-    while (node.parentNode !== ref.current) {
-      if (!node.parentNode) return
-      node = node.parentNode
-    }
-    // If cursor is already inside a list, convert/toggle it
-    if (node instanceof Element && (node.tagName === 'UL' || node.tagName === 'OL')) {
-      toggleList(type)
-      return
-    }
-    // Replace only the current block/text-node with a new list
     pushUndoSnapshot()
     const list = document.createElement(type)
     const li = document.createElement('li')
-    if (node instanceof Element) {
-      node.childNodes.forEach((c) => li.appendChild(c.cloneNode(true)))
-    } else if (node.textContent) {
-      li.appendChild(node.cloneNode(true))
-    }
-    if (!li.childNodes.length) li.appendChild(document.createElement('br'))
     list.appendChild(li)
-    ;(node as ChildNode).replaceWith(list)
-    const r = document.createRange()
-    r.selectNodeContents(li)
-    r.collapse(false)
-    sel.removeAllRanges()
-    sel.addRange(r)
-    lastValueRef.current = ref.current.innerHTML
-    onChange(ref.current.innerHTML)
-    updateActiveFormats()
-  }, [toggleList, onChange, updateActiveFormats, pushUndoSnapshot])
+    const sel = window.getSelection()
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0)
+      range.insertNode(list)
+      const newRange = document.createRange()
+      newRange.setStart(li, 0)
+      newRange.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(newRange)
+    }
+    if (ref.current) {
+      lastValueRef.current = ref.current.innerHTML
+      onChange(ref.current.innerHTML)
+    }
+  }, [pushUndoSnapshot, onChange])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (stopPropagation) e.stopPropagation()
 
-    // Undo / Redo for list operations
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       if (e.key === 'z' && !e.shiftKey && undoStackRef.current.length > 0) {
         e.preventDefault()
@@ -253,6 +260,7 @@ export default function RichInput({
     const selectedText = sel?.toString() ?? ''
     linkDialogOpenRef.current = true
     setLinkDialog({ text: selectedText, url: '' })
+    setToolbarPos(null)
   }
 
   const applyLink = () => {
@@ -274,120 +282,200 @@ export default function RichInput({
     }
     linkDialogOpenRef.current = false
     setLinkDialog(null)
-    setShowToolbar(false)
+    setToolbarPos(null)
     savedRangeRef.current = null
   }
+
+  // Listen for selection changes while focused
+  useEffect(() => {
+    const handler = () => {
+      if (focusedRef.current) updateToolbar()
+    }
+    document.addEventListener('selectionchange', handler)
+    return () => document.removeEventListener('selectionchange', handler)
+  }, [updateToolbar])
 
   const fmtBtn = (active: boolean, label: React.ReactNode, cmd: string, title?: string) => (
     <button
       type="button"
       title={title}
       onMouseDown={(e) => { e.preventDefault(); execFormat(cmd) }}
-      className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
-        active ? 'bg-primary-50 text-primary-600' : 'text-gray-600 hover:bg-gray-100'
+      className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
+        active ? 'bg-primary-100 text-primary-600' : 'text-gray-200 hover:bg-white/20 hover:text-white'
       }`}
     >
       {label}
     </button>
   )
 
-  return (
-    <div>
-      <div className="relative">
-        {isEmpty(value) && !showToolbar && (
-          <span className="absolute inset-0 text-gray-400 pointer-events-none leading-normal select-none">
-            {placeholder}
-          </span>
-        )}
-        <div
-          ref={ref}
-          contentEditable
-          suppressContentEditableWarning
-          onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
-          onKeyDown={handleKeyDown}
-          onKeyUp={updateActiveFormats}
-          onMouseUp={updateActiveFormats}
-          onPaste={(e) => {
-            e.preventDefault()
-            const html = e.clipboardData.getData('text/html')
-            if (html) {
-              document.execCommand('insertHTML', false, sanitizePaste(html))
-            } else {
-              document.execCommand('insertText', false, e.clipboardData.getData('text/plain'))
-            }
-            if (ref.current) {
-              lastValueRef.current = ref.current.innerHTML
-              onChange(ref.current.innerHTML)
-            }
-          }}
-          onInput={() => {
-            if (ref.current) {
-              lastValueRef.current = ref.current.innerHTML
-              onChange(ref.current.innerHTML)
-            }
-          }}
-          onFocus={() => { focusedRef.current = true; setShowToolbar(true); updateActiveFormats() }}
-          onBlur={() => {
-            focusedRef.current = false
-            if (!linkDialogOpenRef.current) setShowToolbar(false)
-          }}
-          className={`outline-none cursor-text [&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:leading-normal ${className}`}
-        />
-      </div>
+  const toolbarEl = (
+    <AnimatePresence>
+      {toolbarPos && !linkDialog && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 4 }}
+          transition={{ duration: 0.1 }}
+          onMouseDown={(e) => e.preventDefault()}
+          className="fixed z-[9999] flex items-center gap-0.5 bg-gray-900 rounded-xl px-1.5 py-1 shadow-xl border border-white/10"
+          style={{ top: toolbarPos.top, left: toolbarPos.left }}
+        >
+            {/* Heading dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); setShowHeadingDropdown((v) => !v) }}
+                className="flex items-center gap-0.5 h-7 px-1.5 rounded text-gray-200 hover:bg-white/20 hover:text-white transition-colors text-[11px] font-semibold"
+              >
+                <span>T</span>
+                <CaretDownIcon size={9} />
+              </button>
+              <AnimatePresence>
+                {showHeadingDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.1 }}
+                    className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-28 z-50"
+                  >
+                    {HEADINGS.map((h) => (
+                      <button
+                        key={h.tag}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); applyHeading(h.tag) }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        {h.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-      <AnimatePresence>
-        {showToolbar && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.1 }}
-            className="flex items-center gap-0.5 mt-1.5"
-          >
-            {fmtBtn(activeFormats.bold, <span className="text-[15px] font-black font-sans">B</span>, 'bold')}
-            {fmtBtn(activeFormats.italic, <span className="text-[15px] italic">I</span>, 'italic')}
-            {fmtBtn(activeFormats.underline, <span className="text-[15px] underline">U</span>, 'underline')}
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+            {fmtBtn(activeFormats.bold, <span className="text-[13px] font-black font-sans">B</span>, 'bold', 'Bold')}
+            {fmtBtn(activeFormats.italic, <span className="text-[13px] italic font-serif">I</span>, 'italic', 'Italic')}
+            {fmtBtn(activeFormats.underline, <span className="text-[13px] underline">U</span>, 'underline', 'Underline')}
+
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+            {/* Alignment */}
             <button
               type="button"
-              title="Insert link"
-              onMouseDown={handleLinkMouseDown}
-              className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="Align left"
+              onMouseDown={(e) => { e.preventDefault(); execFormat('justifyLeft') }}
+              className="w-7 h-7 flex items-center justify-center text-gray-200 hover:bg-white/20 hover:text-white rounded transition-colors"
             >
-              <LinkSimpleIcon size={14} />
+              <TextAlignLeftIcon size={13} />
             </button>
+            <button
+              type="button"
+              title="Align center"
+              onMouseDown={(e) => { e.preventDefault(); execFormat('justifyCenter') }}
+              className="w-7 h-7 flex items-center justify-center text-gray-200 hover:bg-white/20 hover:text-white rounded transition-colors"
+            >
+              <TextAlignCenterIcon size={13} />
+            </button>
+            <button
+              type="button"
+              title="Align right"
+              onMouseDown={(e) => { e.preventDefault(); execFormat('justifyRight') }}
+              className="w-7 h-7 flex items-center justify-center text-gray-200 hover:bg-white/20 hover:text-white rounded transition-colors"
+            >
+              <TextAlignRightIcon size={13} />
+            </button>
+
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+
             {!noLists && (
               <>
                 <button
                   type="button"
                   title="Bulleted list"
-                  onMouseDown={(e) => { e.preventDefault(); startListAtCursor('ul') }}
-                  className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  onMouseDown={(e) => { e.preventDefault(); toggleList('ul') }}
+                  className="w-7 h-7 flex items-center justify-center text-gray-200 hover:bg-white/20 hover:text-white rounded transition-colors"
                 >
-                  <ListBulletsIcon size={15} />
+                  <ListBulletsIcon size={13} />
                 </button>
                 <button
                   type="button"
                   title="Numbered list"
-                  onMouseDown={(e) => { e.preventDefault(); startListAtCursor('ol') }}
-                  className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  onMouseDown={(e) => { e.preventDefault(); toggleList('ol') }}
+                  className="w-7 h-7 flex items-center justify-center text-gray-200 hover:bg-white/20 hover:text-white rounded transition-colors"
                 >
-                  <ListNumbersIcon size={15} />
+                  <ListNumbersIcon size={13} />
                 </button>
+                <div className="w-px h-4 bg-white/20 mx-0.5" />
               </>
             )}
-            <div className="w-px h-4 bg-gray-200 mx-0.5" />
+
             <button
               type="button"
-              title="Clear formatting"
-              onMouseDown={(e) => { e.preventDefault(); execFormat('removeFormat') }}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded transition-colors"
+              title="Insert link"
+              onMouseDown={handleLinkMouseDown}
+              className="w-7 h-7 flex items-center justify-center text-gray-200 hover:bg-white/20 hover:text-white rounded transition-colors"
             >
-              <span className="text-[15px]">T<sub className="text-[9px]">x</sub></span>
+              <LinkSimpleIcon size={13} />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
+  )
 
+  return (
+    <div ref={containerRef} className="relative overflow-visible" data-rich-container>
+      {createPortal(toolbarEl, document.body)}
+
+      {/* Placeholder */}
+      {isEmpty(value) && (
+        <span className={`absolute inset-0 pointer-events-none leading-normal select-none ${placeholderClassName ?? 'text-gray-400'}`}>
+          {placeholder}
+        </span>
+      )}
+
+      {/* Editable content */}
+      <div
+        ref={ref}
+        contentEditable
+        suppressContentEditableWarning
+        onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
+        onKeyDown={handleKeyDown}
+        onKeyUp={updateToolbar}
+        onMouseUp={updateToolbar}
+        onPaste={(e) => {
+          e.preventDefault()
+          const html = e.clipboardData.getData('text/html')
+          if (html) {
+            document.execCommand('insertHTML', false, sanitizePaste(html))
+          } else {
+            document.execCommand('insertText', false, e.clipboardData.getData('text/plain'))
+          }
+          if (ref.current) {
+            lastValueRef.current = ref.current.innerHTML
+            onChange(ref.current.innerHTML)
+          }
+        }}
+        onInput={() => {
+          if (ref.current) {
+            lastValueRef.current = ref.current.innerHTML
+            onChange(ref.current.innerHTML)
+          }
+        }}
+        onFocus={() => { focusedRef.current = true; updateToolbar() }}
+        onBlur={() => {
+          focusedRef.current = false
+          if (!linkDialogOpenRef.current) {
+            setToolbarPos(null)
+            setShowHeadingDropdown(false)
+          }
+        }}
+        className={`outline-none cursor-text [&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:leading-normal [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_h5]:text-sm [&_h5]:font-semibold ${className}`}
+      />
+
+      {/* Link dialog */}
       <AnimatePresence>
         {linkDialog !== null && (
           <motion.div
@@ -395,7 +483,7 @@ export default function RichInput({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-200 flex items-center justify-center bg-black/30"
-            onClick={() => { linkDialogOpenRef.current = false; setLinkDialog(null); setShowToolbar(false) }}
+            onClick={() => { linkDialogOpenRef.current = false; setLinkDialog(null); }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 8 }}
@@ -405,15 +493,15 @@ export default function RichInput({
               className="bg-white rounded-2xl shadow-2xl w-90 p-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-base font-semibold text-gray-900 mb-4">Tambahkan Link</h3>
-              <label className="block text-xs text-gray-500 mb-1">Teks yang akan ditampilkan</label>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">Add Link</h3>
+              <label className="block text-xs text-gray-500 mb-1">Display text</label>
               <input
                 value={linkDialog.text}
                 onChange={(e) => setLinkDialog(d => d && { ...d, text: e.target.value })}
                 className="w-full border-b border-gray-300 focus:border-primary-500 outline-none pb-1 text-sm mb-4 transition-colors"
               />
               <label className="block text-xs text-gray-500 mb-1">
-                Link ke <span className="text-red-500">*</span>
+                URL <span className="text-red-500">*</span>
               </label>
               <input
                 value={linkDialog.url}
@@ -425,17 +513,17 @@ export default function RichInput({
               />
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => { linkDialogOpenRef.current = false; setLinkDialog(null); setShowToolbar(false) }}
+                  onClick={() => { linkDialogOpenRef.current = false; setLinkDialog(null); }}
                   className="px-4 py-2 text-sm text-primary-600 font-medium hover:bg-primary-50 rounded-lg transition-colors"
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
                   onClick={applyLink}
                   disabled={!linkDialog.url}
                   className="px-4 py-2 text-sm bg-primary-500 text-white font-medium rounded-lg hover:bg-primary-600 disabled:opacity-40 transition-colors"
                 >
-                  Oke
+                  Save
                 </button>
               </div>
             </motion.div>

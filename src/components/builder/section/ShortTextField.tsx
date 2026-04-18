@@ -1,17 +1,23 @@
 type Props = {
   placeholder?: string;
+  defaultValue?: string;
   onChange: (placeholder: string | undefined) => void;
 };
 
-export default function ShortTextField({ placeholder, onChange }: Props) {
+export default function ShortTextField({ placeholder, defaultValue, onChange }: Props) {
   return (
     <input
       type="text"
-      value={placeholder ?? ""}
-      onChange={(e) => onChange(e.target.value || undefined)}
+      value={defaultValue !== undefined ? defaultValue : (placeholder ?? '')}
+      readOnly={defaultValue !== undefined}
+      onChange={defaultValue !== undefined ? undefined : (e) => onChange(e.target.value || undefined)}
       onClick={(e) => e.stopPropagation()}
-      placeholder="Short answer text"
-      className="w-full border-b border-transparent hover:border-gray-300 focus:border-gray-400 pb-1 text-[15px] text-gray-400 bg-transparent outline-none transition-colors"
+      placeholder=""
+      className={`w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-transparent outline-none transition-colors ${
+        defaultValue !== undefined
+          ? 'text-gray-600 cursor-default'
+          : 'text-gray-400 hover:border-gray-300 focus:border-primary-400'
+      }`}
     />
   );
 }

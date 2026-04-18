@@ -1,3 +1,26 @@
+export type ConditionOperator =
+  | 'equals'
+  | 'not_equals'
+  | 'contains'
+  | 'not_contains'
+  | 'is_filled'
+  | 'is_empty'
+
+export interface ConditionLeaf {
+  type: 'condition'
+  fieldId: string
+  operator: ConditionOperator
+  value?: string
+}
+
+export interface ConditionGroup {
+  type: 'group'
+  logic: 'and' | 'or'
+  items: ConditionNode[]
+}
+
+export type ConditionNode = ConditionLeaf | ConditionGroup
+
 export type FieldType =
   | 'short_text'
   | 'paragraph'
@@ -12,6 +35,14 @@ export type FieldType =
   | 'linear_scale'
   | 'title_block'
   | 'image_block'
+  | 'banner_block'
+  | 'ranking'
+  | 'opinion_scale'
+  | 'rich_text'
+  | 'phone'
+  | 'address'
+  | 'number'
+  | 'currency'
 
 export interface FormField {
   id: string
@@ -19,6 +50,7 @@ export interface FormField {
   label: string
   required: boolean
   placeholder?: string
+  defaultValue?: string
   options?: string[]
   /** Maps option value → target sectionId | 'end'. Only for multiple_choice / dropdown. */
   branches?: Record<string, string>
@@ -58,6 +90,34 @@ export interface FormField {
   maxFileCount?: number
   /** Maximum file size in MB. Default 10. Only for file_upload. */
   maxFileSizeMb?: number
+  /** When true, field is always hidden from respondent. */
+  hideAlways?: boolean
+  /** Whether conditions control showing or hiding this field. */
+  conditionMode?: 'show' | 'hide'
+  /** Nested conditional logic tree. */
+  conditionTree?: ConditionGroup
+  /** @deprecated use conditionTree. Legacy flat conditions array. */
+  conditions?: Array<{
+    fieldId: string
+    operator: ConditionOperator
+    value?: string
+  }>
+  /** Alert type for banner_block. */
+  bannerType?: 'info' | 'warning' | 'error' | 'success'
+  /** Half-width layout for side-by-side fields. */
+  fieldWidth?: 'half'
+  /** Per-sub-field placeholders for address type. */
+  addressSubPlaceholders?: { street?: string; city?: string; state?: string; zip?: string }
+  /** Per-sub-field default values for address type. */
+  addressSubDefaults?: { street?: string; city?: string; state?: string; zip?: string }
+  /** Minimum character/value length for validation. */
+  validationMinLength?: number
+  /** Maximum character/value length for validation. */
+  validationMaxLength?: number
+  /** Validation pattern preset or custom regex. */
+  validationPattern?: 'none' | 'email' | 'url' | 'number' | string
+  /** Custom error message shown when validation fails. */
+  validationErrorMessage?: string
 }
 
 export interface FormSection {
@@ -65,6 +125,10 @@ export interface FormSection {
   title: string
   description?: string
   fields: FormField[]
+  pageType?: 'cover' | 'page' | 'ending'
+  settings?: Record<string, unknown>
+  logicX?: number
+  logicY?: number
 }
 
 export interface FormResponse {
@@ -92,11 +156,12 @@ export interface PieSectorProps {
 export interface FormEvent {
   id: string
   name: string
-  description: string
+  description?: string
   status: 'draft' | 'active' | 'closed'
   updatedAt: string
   responseCount: number
   color: string
+  theme?: string
   image?: string | null
   sections: FormSection[]
   responses?: FormResponse[]

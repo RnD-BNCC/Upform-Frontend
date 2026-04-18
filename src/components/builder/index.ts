@@ -1,7 +1,18 @@
-export { default as BuilderHeader } from "./layout/BuilderHeader";
-export { default as FieldTypeSidebar } from "./layout/FieldTypeSidebar";
-export { default as FormCover } from "./layout/FormCover";
-export { default as SectionCard } from "./card/SectionCard";
-export { default as RichInput } from "./utils/RichInput";
-export { default as QuestionCard } from "./section";
-export { default as ShareDialog } from "./ShareDialog";
+export { default as BuilderHeader } from './layout/BuilderHeader'
+export { default as CoverSettingsPanel } from './layout/CoverSettingsPanel'
+export { default as EndingSettingsPanel } from './layout/EndingSettingsPanel'
+export { default as FieldTypeSidebar } from './layout/FieldTypeSidebar'
+export { default as FieldCategoryPanel } from './layout/FieldCategoryPanel'
+export { default as ThemeSidebar } from './layout/ThemeSidebar'
+export { default as PageTabBar } from './layout/PageTabBar'
+export { default as FieldPropertiesPanel } from './layout/FieldPropertiesPanel'
+export { default as FormCover } from './layout/FormCover'
+export { default as SectionCard } from './card/SectionCard'
+export { default as RichInput } from './utils/RichInput'
+export { default as QuestionCard } from './section'
+export { default as ShareDialog } from './ShareDialog'
+export { default as ThemePickerModal } from './modals/ThemePickerModal'
+export { default as RenameFormModal } from './modals/RenameFormModal'
+export { default as LogicModal } from './modals/LogicModal'
+export type { ThemeKey } from './modals/ThemePickerModal'
+export { THEMES } from './modals/ThemePickerModal'

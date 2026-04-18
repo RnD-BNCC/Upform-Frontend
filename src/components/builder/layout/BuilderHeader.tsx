@@ -1,38 +1,40 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeftIcon,
+  HouseIcon,
+  CaretDownIcon,
   EyeIcon,
-  FloppyDiskIcon,
-  SpinnerGapIcon,
   RocketLaunchIcon,
+  SpinnerGapIcon,
   ShareNetworkIcon,
-  DotsThreeVerticalIcon,
   ProhibitIcon,
   LockIcon,
-  ShuffleIcon,
-  PaperPlaneTiltIcon,
-} from "@phosphor-icons/react";
+  DotsThreeVerticalIcon,
+} from '@phosphor-icons/react'
 
-type Tab = "questions" | "responses";
+type Tab = 'questions' | 'responses'
 
 type BuilderHeaderProps = {
-  formTitle: string;
-  onTitleChange: (v: string) => void;
-  activeTab: Tab;
-  onTabChange: (tab: Tab) => void;
-  onBack: () => void;
-  onPreview: () => void;
-  onSave?: () => void;
-  isSaving?: boolean;
-  isDirty?: boolean;
-  eventStatus?: "draft" | "active" | "closed";
-  onPublish?: () => void;
-  isPublishing?: boolean;
-  onShare?: () => void;
-  onUnpublish?: () => void;
-  onClose?: () => void;
-};
+  formTitle: string
+  onTitleChange: (v: string) => void
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+  onBack: () => void
+  onPreview: () => void
+  isSaving?: boolean
+  isDirty?: boolean
+  eventStatus?: 'draft' | 'active' | 'closed'
+  onPublish?: () => void
+  isPublishing?: boolean
+  onShare?: () => void
+  onUnpublish?: () => void
+  onClose?: () => void
+}
+
+const NAV_TABS: { key: Tab; label: string }[] = [
+  { key: 'questions', label: 'Edit' },
+  { key: 'responses', label: 'Results' },
+]
 
 export default function BuilderHeader({
   formTitle,
@@ -41,7 +43,6 @@ export default function BuilderHeader({
   onTabChange,
   onBack,
   onPreview,
-  onSave,
   isSaving,
   isDirty,
   eventStatus,
@@ -51,251 +52,175 @@ export default function BuilderHeader({
   onUnpublish,
   onClose,
 }: BuilderHeaderProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [titleEditing, setTitleEditing] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+        setMenuOpen(false)
       }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
-  const showOverflow =
-    (eventStatus === "active" && (onUnpublish || onClose)) ||
-    (eventStatus === "closed" && onClose);
+  useEffect(() => {
+    if (titleEditing) titleRef.current?.select()
+  }, [titleEditing])
 
-  const toolBtn = (active: boolean) =>
-    `flex flex-col items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors shrink-0 ${
-      active
-        ? "text-white/60 hover:text-white hover:bg-white/10 cursor-pointer"
-        : "text-white/20 cursor-default"
-    }`;
-
-  const titleInput =
-    "flex-1 text-xs font-semibold text-white placeholder:text-white/40 outline-none bg-transparent min-w-0 border-b border-white/20 hover:border-white/40 focus:border-white/60 px-1.5 py-1 transition-colors";
-
-  const ctaBase =
-    "flex items-center gap-1.5 bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 transition-colors rounded-lg shrink-0";
+  const showOverflow = eventStatus === 'active' && (onUnpublish || onClose)
 
   return (
-    <header className="bg-primary-800 sticky top-0 z-60">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 pt-3 pb-5">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors shrink-0"
-          >
-            <ArrowLeftIcon size={14} weight="bold" />
-            <span className="hidden sm:inline text-xs font-medium">Back</span>
-          </button>
+    <header className="h-12 bg-white border-b border-gray-200 flex items-center px-3 gap-2 shrink-0 z-30 relative">
+      {/* Left: home + form name */}
+      <div className="flex items-center gap-1 shrink-0 w-52 min-w-0">
+        <button
+          onClick={onBack}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors shrink-0"
+          title="Home"
+        >
+          <HouseIcon size={16} weight="fill" />
+        </button>
 
-          <input
-            type="text"
-            value={formTitle}
-            onChange={(e) => onTitleChange(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Untitled Form"
-            className={`hidden sm:block ml-2 rounded ${titleInput}`}
-          />
-          <div className="flex-1 sm:hidden" />
-
-          <div className="flex items-end gap-0.5 shrink-0">
-            {onSave && (
-              <motion.button
-                whileTap={isDirty ? { scale: 0.92 } : undefined}
-                onClick={isDirty && !isSaving ? onSave : undefined}
-                className={toolBtn(!!isDirty)}
-              >
-                {isSaving ? (
-                  <SpinnerGapIcon size={16} className="animate-spin" />
-                ) : (
-                  <FloppyDiskIcon size={16} />
-                )}
-                <span className="text-[10px] sm:text-[11px] font-medium leading-none">
-                  {isSaving ? "Saving" : "Save"}
-                </span>
-              </motion.button>
-            )}
-
-            <button onClick={onPreview} className={toolBtn(true)}>
-              <EyeIcon size={16} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">
-                Preview
-              </span>
-            </button>
-
-            <button disabled className={toolBtn(false)}>
-              <ShuffleIcon size={16} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">
-                Random
-              </span>
-            </button>
-
-            <button disabled className={toolBtn(false)}>
-              <PaperPlaneTiltIcon size={16} />
-              <span className="text-[10px] sm:text-[11px] font-medium leading-none">
-                Email
-              </span>
-            </button>
-
-            {showOverflow && (
-              <div ref={menuRef} className="relative">
-                <button
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className={toolBtn(true)}
-                >
-                  <DotsThreeVerticalIcon size={16} weight="bold" />
-                  <span className="text-[10px] sm:text-[11px] font-medium leading-none">
-                    More
-                  </span>
-                </button>
-
-                <AnimatePresence>
-                  {menuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                      transition={{ duration: 0.1 }}
-                      className="absolute right-0 py-2 top-full w-44 bg-white rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 overflow-hidden z-50"
-                    >
-                      <div>
-                        {onUnpublish && (
-                          <button
-                            onClick={() => {
-                              setMenuOpen(false);
-                              onUnpublish();
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600 hover:font-semibold transition-colors text-left"
-                          >
-                            <ProhibitIcon size={14} />
-                            Unpublish
-                          </button>
-                        )}
-                        {onClose && (
-                          <button
-                            onClick={() => {
-                              setMenuOpen(false);
-                              onClose();
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600 hover:font-semibold transition-colors text-left"
-                          >
-                            <LockIcon size={14} />
-                            Close form
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-
-          {(eventStatus === "draft" || eventStatus === "closed") &&
-            onPublish && (
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={onPublish}
-                disabled={isPublishing}
-                className={`hidden sm:flex px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${ctaBase}`}
-              >
-                {isPublishing ? (
-                  <SpinnerGapIcon size={13} className="animate-spin" />
-                ) : (
-                  <RocketLaunchIcon size={13} />
-                )}
-                <span>
-                  {isPublishing
-                    ? "Publishing..."
-                    : eventStatus === "closed"
-                      ? "Reopen"
-                      : "Publish"}
-                </span>
-              </motion.button>
-            )}
-          {eventStatus === "active" && onShare && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onShare}
-              className={`hidden sm:flex px-4 py-2 ${ctaBase}`}
+        <div className="flex items-center gap-1 min-w-0">
+          {titleEditing ? (
+            <input
+              ref={titleRef}
+              type="text"
+              value={formTitle}
+              onChange={(e) => onTitleChange(e.target.value)}
+              onBlur={() => setTitleEditing(false)}
+              onKeyDown={(e) => { if (e.key === 'Enter') setTitleEditing(false) }}
+              className="text-sm font-semibold text-gray-900 outline-none border-b-2 border-primary-400 bg-transparent min-w-0 max-w-[200px]"
+              maxLength={80}
+            />
+          ) : (
+            <button
+              onClick={() => setTitleEditing(true)}
+              className="text-sm font-semibold text-gray-800 hover:text-gray-900 truncate max-w-[200px] flex items-center gap-1"
             >
-              <ShareNetworkIcon size={13} />
-              <span>Share</span>
-            </motion.button>
+              <span className="truncate">{formTitle || 'Untitled Form'}</span>
+              <CaretDownIcon size={12} className="text-gray-400 shrink-0" />
+            </button>
           )}
-        </div>
-
-        <div className="sm:hidden flex items-center justify-between gap-3 px-4 pb-3">
-          <input
-            type="text"
-            value={formTitle}
-            onChange={(e) => onTitleChange(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Untitled Form"
-            className={`rounded ${titleInput}`}
-          />
-          {(eventStatus === "draft" || eventStatus === "closed") &&
-            onPublish && (
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={onPublish}
-                disabled={isPublishing}
-                className={`px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${ctaBase}`}
-              >
-                {isPublishing ? (
-                  <SpinnerGapIcon size={13} className="animate-spin" />
-                ) : (
-                  <RocketLaunchIcon size={13} />
-                )}
-                <span>
-                  {isPublishing
-                    ? "Publishing..."
-                    : eventStatus === "closed"
-                      ? "Reopen"
-                      : "Publish"}
-                </span>
-              </motion.button>
-            )}
-          {eventStatus === "active" && onShare && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onShare}
-              className={`px-3.5 py-2 ${ctaBase}`}
-            >
-              <ShareNetworkIcon size={13} />
-              <span>Share</span>
-            </motion.button>
-          )}
-        </div>
-
-        <div className="flex justify-center gap-8">
-          <button
-            onClick={() => onTabChange("questions")}
-            className={`pt-1.5 pb-2.5 text-xs sm:text-sm font-semibold transition-colors ${
-              activeTab === "questions"
-                ? "text-white border-b-3 border-white"
-                : "text-white/40 hover:text-white/60"
-            }`}
-          >
-            Questions
-          </button>
-          <button
-            onClick={() => onTabChange("responses")}
-            className={`pt-1.5 pb-2.5 text-xs sm:text-sm font-semibold transition-colors ${
-              activeTab === "responses"
-                ? "text-white border-b-3 border-white"
-                : "text-white/40 hover:text-white/60"
-            }`}
-          >
-            Responses
-          </button>
         </div>
       </div>
+
+      {/* Save indicator — absolute so it doesn't push center tabs */}
+      {isDirty && (
+        <span className="absolute left-9 bottom-1 text-[9px] text-gray-400 font-medium pointer-events-none whitespace-nowrap">
+          {isSaving ? (
+            <span className="flex items-center gap-1">
+              <SpinnerGapIcon size={10} className="animate-spin" />
+              Saving
+            </span>
+          ) : '● Unsaved'}
+        </span>
+      )}
+
+      {/* Center: nav tabs */}
+      <div className="flex-1 flex items-center justify-center">
+        <nav className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+          {NAV_TABS.map((tab) => {
+            const isActive = tab.key === activeTab
+            return (
+              <button
+                key={tab.key}
+                onClick={() => onTabChange(tab.key)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                  isActive
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* Right: actions */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={onPreview}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <EyeIcon size={14} />
+          Preview
+        </button>
+
+        {/* Overflow menu for active forms */}
+        {showOverflow && (
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors"
+            >
+              <DotsThreeVerticalIcon size={15} weight="bold" />
+            </button>
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ duration: 0.1 }}
+                  className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.13)] border border-gray-100 py-1.5 z-50"
+                >
+                  {onUnpublish && (
+                    <button
+                      onClick={() => { setMenuOpen(false); onUnpublish() }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <ProhibitIcon size={14} />
+                      Unpublish
+                    </button>
+                  )}
+                  {onClose && (
+                    <button
+                      onClick={() => { setMenuOpen(false); onClose() }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <LockIcon size={14} />
+                      Close form
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Publish / Share CTA */}
+        {(eventStatus === 'draft' || eventStatus === 'closed') && onPublish && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={onPublish}
+            disabled={isPublishing}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPublishing
+              ? <SpinnerGapIcon size={13} className="animate-spin" />
+              : <RocketLaunchIcon size={13} />
+            }
+            {isPublishing ? 'Publishing...' : eventStatus === 'closed' ? 'Reopen' : 'Publish'}
+          </motion.button>
+        )}
+        {eventStatus === 'active' && onShare && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={onShare}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-colors"
+          >
+            <ShareNetworkIcon size={13} />
+            Share
+          </motion.button>
+        )}
+      </div>
     </header>
-  );
+  )
 }
