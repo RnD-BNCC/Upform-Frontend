@@ -1,6 +1,6 @@
 import type { PinOnImageResult, SlideSettings } from '@/types/polling'
 import { PIN_COLORS } from '@/config/polling'
-import MapPinIcon from '@/components/ui/MapPinIcon'
+import { MapPinIcon } from '@/components/icons'
 
 function inCorrectArea(
   pin: { x: number; y: number },
