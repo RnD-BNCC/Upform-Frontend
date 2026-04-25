@@ -128,13 +128,26 @@ body {
 
 .upform-theme-scope .theme-question-title [contenteditable] {
   color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  text-align: inherit !important;
 }
 
 .upform-theme-scope .theme-question-caption {
   color: var(--upform-theme-question-caption, #6b7280) !important;
   font-size: var(--upform-theme-question-caption-size, 0.875rem) !important;
+  font-weight: var(--upform-theme-question-caption-font-weight, 400) !important;
   line-height: var(--upform-theme-question-caption-line-height, 1.375rem) !important;
   text-align: var(--upform-theme-question-align, left) !important;
+}
+
+.upform-theme-scope .theme-question-caption [contenteditable] {
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  text-align: inherit !important;
 }
 
 .upform-theme-scope .theme-answer-input {
@@ -149,6 +162,16 @@ body {
 }
 
 .upform-theme-scope .theme-answer-input::placeholder {
+  color: var(--upform-theme-answer-placeholder, #9ca3af) !important;
+}
+
+.upform-theme-scope .theme-answer-multiline {
+  border-radius: var(--upform-theme-answer-multiline-radius, 0.75rem) !important;
+}
+
+.upform-theme-scope .theme-answer-addon {
+  background: var(--upform-theme-answer-addon-bg, rgba(156, 163, 175, 0.12)) !important;
+  border-color: var(--upform-theme-answer-border, #d1d5db) !important;
   color: var(--upform-theme-answer-placeholder, #9ca3af) !important;
 }
 
