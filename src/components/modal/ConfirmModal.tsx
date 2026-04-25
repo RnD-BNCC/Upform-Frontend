@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { XIcon } from "@phosphor-icons/react";
-import { TrashIcon, WarningIcon, CheckRingIcon } from "./icons";
+import { TrashIcon, WarningIcon, CheckRingIcon } from "@/components/icons";
 
 type ConfirmModalProps = {
   isOpen: boolean;
@@ -47,39 +47,39 @@ export default function ConfirmModal({
 
   return (
     <div
-      className="text-black fixed inset-0 bg-black/50 flex justify-center items-center z-[9999]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 text-black"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-md shadow-xl w-full max-w-[18rem] relative"
+        className="relative w-full max-w-[18rem] rounded-md bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-end items-center p-4">
+        <div className="flex items-center justify-end p-4">
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-gray-100"
           >
             <XIcon size={18} weight="bold" className="text-gray-500" />
           </button>
         </div>
 
-        <div className="flex flex-col justify-center items-center pt-3 pb-6 px-6 text-center gap-6">
+        <div className="flex flex-col items-center justify-center gap-6 px-6 pt-3 pb-6 text-center">
           <div className="relative flex size-12">{config.icon}</div>
           <div>
-            <h1 className="text-lg font-bold leading-loose">{title}</h1>
+            <h1 className="text-lg leading-loose font-bold">{title}</h1>
             <h2 className="text-base leading-[1.15] text-center">
               {description}
             </h2>
-            <div className="flex flex-col gap-3 mt-8">
+            <div className="mt-8 flex flex-col gap-3">
               <button
                 onClick={onConfirm}
-                className={`${config.confirmClass} py-2 rounded-[4px] font-bold text-sm hover:opacity-90`}
+                className={`${config.confirmClass} rounded-[4px] py-2 text-sm font-bold hover:opacity-90`}
               >
                 {confirmText}
               </button>
               <button
                 onClick={onClose}
-                className={`${config.cancelClass} py-2 rounded-[4px] font-bold text-sm hover:bg-opacity-10`}
+                className={`${config.cancelClass} rounded-[4px] py-2 text-sm font-bold hover:bg-opacity-10`}
               >
                 {cancelText}
               </button>

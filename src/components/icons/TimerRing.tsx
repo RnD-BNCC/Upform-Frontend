@@ -1,3 +1,5 @@
+import TimerRingSvg from "./TimerRingSvg";
+
 export function TimerRing({
   remaining,
   total,
@@ -20,28 +22,14 @@ export function TimerRing({
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" style={{ position: 'absolute' }}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(0,0,0,0.08)"
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashOffset}
-          style={{ transition: 'stroke-dashoffset 0.8s linear, stroke 0.5s ease' }}
-        />
-      </svg>
+      <TimerRingSvg
+        size={size}
+        radius={radius}
+        strokeWidth={strokeWidth}
+        circumference={circumference}
+        dashOffset={dashOffset}
+        color={color}
+      />
       <span
         className="relative font-black tabular-nums"
         style={{ fontSize: size < 50 ? 11 : size < 70 ? 14 : 18, color, transition: 'color 0.5s ease' }}

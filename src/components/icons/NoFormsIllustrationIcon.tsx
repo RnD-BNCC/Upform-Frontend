@@ -1,4 +1,4 @@
-export default function NoFormsIllustration() {
+export default function NoFormsIllustrationIcon() {
   return (
     <svg
       width="180"
@@ -9,15 +9,7 @@ export default function NoFormsIllustration() {
       aria-hidden="true"
     >
       <ellipse cx="90" cy="72" rx="75" ry="63" fill="#F3F4F6" />
-      <rect
-        x="58"
-        y="35"
-        width="60"
-        height="80"
-        rx="6"
-        fill="#D1D5DB"
-        opacity="0.5"
-      />
+      <rect x="58" y="35" width="60" height="80" rx="6" fill="#D1D5DB" opacity="0.5" />
       <rect
         x="54"
         y="30"

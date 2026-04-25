@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { XIcon } from "@phosphor-icons/react";
-import { SuccessIcon, FailedIcon } from "./icons";
+import { SuccessIcon, FailedIcon } from "@/components/icons";
 
 export type StatusType = "success" | "error";
 
@@ -42,37 +42,37 @@ export default function StatusModal({
 
   return (
     <div
-      className="text-black fixed inset-0 bg-black/50 flex justify-center items-center z-[100002]"
+      className="fixed inset-0 z-[100002] flex items-center justify-center bg-black/50 text-black"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-md shadow-xl w-full max-w-[18rem] relative"
+        className="relative w-full max-w-[18rem] rounded-md bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-end items-center p-4">
+        <div className="flex items-center justify-end p-4">
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-gray-100"
           >
             <XIcon size={18} weight="bold" className="text-gray-500" />
           </button>
         </div>
 
-        <div className="flex flex-col justify-center items-center pt-3 pb-6 px-6 text-center gap-6">
+        <div className="flex flex-col items-center justify-center gap-6 px-6 pt-3 pb-6 text-center">
           <div className="relative flex size-12">
             <span
-              className={`absolute animate-ping ${config.pingColor} rounded-full h-full w-full opacity-50`}
+              className={`absolute h-full w-full animate-ping rounded-full opacity-50 ${config.pingColor}`}
             />
             <div className="relative">{config.icon}</div>
           </div>
           <div>
-            <h1 className="text-xl font-bold leading-loose">{title}</h1>
+            <h1 className="text-xl leading-loose font-bold">{title}</h1>
             <h2 className="text-base leading-[1.15] text-center">
               {description}
             </h2>
             <div
               onClick={onButtonClick ?? onClose}
-              className={`${config.buttonClass} flex justify-center items-center font-semibold rounded-[4px] py-2 mt-8 cursor-pointer select-none`}
+              className={`${config.buttonClass} mt-8 flex cursor-pointer select-none items-center justify-center rounded-[4px] py-2 font-semibold`}
             >
               {buttonText}
             </div>
