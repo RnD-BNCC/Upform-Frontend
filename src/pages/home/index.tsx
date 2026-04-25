@@ -1,72 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { gsap } from "gsap";
 import { motion, AnimatePresence } from "framer-motion";
-import { Navbar, Footer } from "@/components/layout";
-import { EventCard, ContextMenu } from "@/components/events";
-import { ConfirmModal, LoadingModal, NoFormsIllustration, Pagination, StatusModal } from "@/components/ui";
+import { EventCard } from "@/components/card";
+import { Navbar, Footer, PageGridShell } from "@/components/layout";
+import { ConfirmModal, LoadingModal, StatusModal, type StatusType } from "@/components/modal";
+import { NoFormsIllustration } from "@/components/icons";
+import { ContextMenu } from "@/context";
+import { Pagination } from "@/components/utils";
 import { useGetEvents, useDeleteEvent, useUpdateEvent } from "@/hooks/events";
 import type { FormEvent } from "@/types/form";
-import type { StatusType } from "@/components/ui/StatusModal";
 import { MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
+import { HomeHero } from "./components";
 
 type Filter = "All" | "Active" | "Draft" | "Closed";
 const FILTERS: Filter[] = ["All", "Active", "Draft", "Closed"];
 
-function useAnimatedNumber(target: number, duration = 800) {
-  const [display, setDisplay] = useState(0);
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (target === 0) {
-      setDisplay(0);
-      return;
-    }
-
-    const start = performance.now();
-    const from = 0;
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-      setDisplay(Math.round(from + (target - from) * eased));
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [target, duration]);
-
-  return display;
-}
-
-function formatCompact(n: number) {
-  if (n < 1000) return String(n);
-  const k = n / 1000;
-  return (k % 1 === 0 ? k : k.toFixed(1)) + 'k';
-}
-
-function AnimatedStat({ value, label }: { value: number; label: string }) {
-  const display = useAnimatedNumber(value);
-
-  return (
-    <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
-      <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
-        {formatCompact(display)}
-      </span>
-      <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
-        {label}
-      </span>
-    </div>
-  );
-}
-
 export default function HomePage() {
   const navigate = useNavigate();
-  const heroRef = useRef<HTMLDivElement>(null);
 
   const [filter, setFilter] = useState<Filter>("All");
   const [search, setSearch] = useState("");
@@ -193,84 +143,15 @@ export default function HomePage() {
     ? (events.find((e) => e.id === ctxMenu.id) ?? null)
     : null;
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".hero-text", {
-        opacity: 0,
-        y: 20,
-        duration: 0.55,
-        ease: "power3.out",
-      });
-      gsap.from(".stat-card", {
-        opacity: 0,
-        x: 20,
-        duration: 0.6,
-        ease: "power3.out",
-        delay: 0.2,
-      });
-    }, heroRef);
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div
-      className="min-h-screen bg-gray-50 flex flex-col"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }}
-    >
+    <PageGridShell>
       <Navbar />
 
-      <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
-        <div className="absolute inset-0 overflow-hidden rounded-b-4xl pointer-events-none">
-          <div
-            className="absolute inset-0 "
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse at 18% 80%, rgba(0,30,70,0.45)] 0%, transparent 55%), radial-gradient(ellipse at 85% 10%, rgba(0,18,42,0.65) 0%, transparent 50%)",
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse at 0% 100%, rgba(255,255,255,0.18) 0%, transparent 50%)",
-            }}
-          />
-          <div
-            className="absolute inset-0 opacity-[0.015]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
-              backgroundSize: "10px 10px",
-            }}
-          />
-        </div>
-
-        <div ref={heroRef} className="relative">
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
-            <div className="hero-text">
-              <p className="text-primary-300 text-sm font-bold mb-1">
-                Welcome back
-              </p>
-              <h1 className="text-[1.75rem] sm:text-[2rem] font-bold text-white leading-tight">
-                My Forms
-              </h1>
-              <p className="text-white text-sm mt-1.5">
-                Build, share, and analyze forms with ease.
-              </p>
-            </div>
-
-            <div className="stat-card flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm divide-x divide-white/10 w-full sm:w-auto shrink-0">
-              <AnimatedStat value={counts?.total ?? 0} label="Total Forms" />
-              <AnimatedStat value={counts?.active ?? 0} label="Active" />
-              <AnimatedStat value={counts?.totalResponses ?? 0} label="Responses" />
-            </div>
-          </div>
-        </div>
-      </div>
+      <HomeHero
+        totalForms={counts?.total ?? 0}
+        activeForms={counts?.active ?? 0}
+        totalResponses={counts?.totalResponses ?? 0}
+      />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6">
@@ -441,6 +322,6 @@ export default function HomePage() {
         title={statusResult?.title ?? ""}
         description={statusResult?.description ?? ""}
       />
-    </div>
+    </PageGridShell>
   );
 }

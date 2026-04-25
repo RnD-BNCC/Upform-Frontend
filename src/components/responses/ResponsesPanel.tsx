@@ -1,112 +1,188 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { ClipboardTextIcon, ArrowSquareOutIcon, SpinnerGapIcon, TableIcon } from '@phosphor-icons/react'
-import type { FormField, FormResponse } from '@/types/form'
-import { useConnectSheet } from '@/hooks/events'
-import SummaryTab from './SummaryTab'
-import QuestionsTab from './QuestionsTab'
-import IndividualTab from './IndividualTab'
-
-type SubTab = 'summary' | 'questions' | 'individual'
+import { useState } from "react";
+import {
+  ChartBarIcon,
+  ChartPieSliceIcon,
+  ClockIcon,
+  DatabaseIcon,
+  FileTextIcon,
+} from "@phosphor-icons/react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useQueryAnalyticsEvents,
+  useQueryResponseProgress,
+  useQueryResponses,
+} from "@/api/responses";
+import { QUERY_KEYS } from "@/api/queryKeys";
+import type { FormField, FormResponse, FormSection } from "@/types/form";
+import type { ResultsSection } from "@/types/results";
+import type { ShareToast } from "@/types/builderShare";
+import AnalyticsTab from "./analytics/AnalyticsTab";
+import { DatabaseView } from "./database";
+import SummaryTab from "./SummaryTab";
 
 interface ResponsesPanelProps {
-  responses: FormResponse[]
-  allFields: FormField[]
-  eventId: string
-  spreadsheetUrl?: string | null
+  responses: FormResponse[];
+  allFields: FormField[];
+  eventId: string;
+  sections: FormSection[];
+  showToast?: ShareToast;
+  spreadsheetUrl?: string | null;
 }
 
-const SUB_TABS: Array<{ key: SubTab; label: string }> = [
-  { key: 'summary', label: 'Summary' },
-  { key: 'questions', label: 'Questions' },
-  { key: 'individual', label: 'Individual' },
-]
+const RESULT_SECTIONS: Array<{
+  key: ResultsSection;
+  label: string;
+  icon: typeof DatabaseIcon;
+}> = [
+  { key: "database", label: "Database", icon: DatabaseIcon },
+  { key: "submissions", label: "Submissions", icon: FileTextIcon },
+  { key: "inProgress", label: "In progress", icon: ClockIcon },
+  { key: "summary", label: "Summary", icon: ChartPieSliceIcon },
+  { key: "analytics", label: "Analytics", icon: ChartBarIcon },
+];
 
-export default function ResponsesPanel({ responses, allFields, eventId, spreadsheetUrl }: ResponsesPanelProps) {
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('summary')
-  const connectSheet = useConnectSheet(eventId)
+export default function ResponsesPanel({
+  responses,
+  allFields,
+  eventId,
+  sections,
+  showToast,
+}: ResponsesPanelProps) {
+  const [activeSection, setActiveSection] =
+    useState<ResultsSection>("database");
+  const queryClient = useQueryClient();
+  const responsesQuery = useQueryResponses(eventId);
+  const progressQuery = useQueryResponseProgress(eventId);
+  const analyticsEventsQuery = useQueryAnalyticsEvents(eventId);
+  const currentResponses = responsesQuery.data ?? responses;
+  const progressResponses = progressQuery.data ?? [];
+  const analyticsEvents = analyticsEventsQuery.data ?? [];
 
-  if (responses.length === 0) {
-    return (
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-col items-center justify-center gap-3 h-64">
-          <ClipboardTextIcon size={44} weight="light" className="text-gray-300" />
-          <div className="text-center">
-            <p className="text-sm font-bold text-gray-400">No responses yet</p>
-            <p className="text-xs text-gray-300 mt-0.5">Share your form to start collecting responses.</p>
-          </div>
+  const refreshResults = () => {
+    if (!eventId) return Promise.resolve();
+
+    return Promise.all([
+      responsesQuery.refetch(),
+      progressQuery.refetch(),
+      analyticsEventsQuery.refetch(),
+      queryClient.refetchQueries({
+        queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId],
+      }),
+    ]).then(() => undefined);
+  };
+
+  const renderContent = () => {
+    if (activeSection === "database") {
+      return (
+        <DatabaseView
+          key="database"
+          allFields={allFields}
+          eventId={eventId}
+          mode="database"
+          onRefresh={refreshResults}
+          progressResponses={progressResponses}
+          responses={currentResponses}
+          showToast={showToast}
+          title="My form database"
+        />
+      );
+    }
+
+    if (activeSection === "submissions") {
+      return (
+        <DatabaseView
+          key="submissions"
+          allFields={allFields}
+          eventId={eventId}
+          mode="submissions"
+          onRefresh={refreshResults}
+          responses={currentResponses}
+          showToast={showToast}
+          title="Submissions"
+        />
+      );
+    }
+
+    if (activeSection === "summary") {
+      return (
+        <div className="h-full overflow-y-auto bg-gray-50 p-6">
+          <SummaryTab responses={currentResponses} allFields={allFields} />
         </div>
-      </div>
-    )
-  }
+      );
+    }
+
+    if (activeSection === "analytics") {
+      return (
+        <AnalyticsTab
+          allFields={allFields}
+          analyticsEvents={analyticsEvents}
+          onRefresh={refreshResults}
+          sections={sections}
+        />
+      );
+    }
+
+    return (
+      <DatabaseView
+        key="inProgress"
+        allFields={allFields}
+        eventId={eventId}
+        mode="inProgress"
+        onRefresh={refreshResults}
+        progressResponses={progressResponses}
+        responses={[]}
+        showToast={showToast}
+        title="In progress"
+      />
+    );
+  };
 
   return (
-    <div className="flex-1 min-w-0 space-y-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-5 pt-5 pb-0 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {responses.length} response{responses.length !== 1 ? 's' : ''}
-          </h2>
+    <div className="flex h-full min-w-0 bg-white">
+      <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-gray-50 px-2 py-2">
+        <nav className="space-y-1">
+          {RESULT_SECTIONS.map(({ icon: Icon, key, label }) => {
+            const isActive = activeSection === key;
+            const count =
+              key === "submissions"
+                ? currentResponses.length
+                : key === "inProgress"
+                  ? progressResponses.length
+                  : null;
 
-          {spreadsheetUrl ? (
-            <a
-              href={spreadsheetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              <TableIcon size={16} weight="bold" />
-              Open Google Sheet
-              <ArrowSquareOutIcon size={14} />
-            </a>
-          ) : (
-            <button
-              onClick={() => connectSheet.mutate(eventId)}
-              disabled={connectSheet.isPending}
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {connectSheet.isPending ? (
-                <SpinnerGapIcon size={16} className="animate-spin" />
-              ) : (
-                <TableIcon size={16} />
-              )}
-              {connectSheet.isPending ? 'Connecting...' : 'Connect to Google Sheets'}
-            </button>
-          )}
-        </div>
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveSection(key)}
+                className={`flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "bg-white text-gray-950 shadow-sm"
+                    : "text-gray-700 hover:bg-white hover:text-gray-950"
+                }`}
+              >
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded ${
+                    isActive
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-gray-200 text-gray-500"
+                  }`}
+                >
+                  <Icon size={13} weight="fill" />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+                {count !== null ? (
+                  <span className="rounded-full bg-gray-200 px-1.5 text-xs font-semibold text-gray-700">
+                    {count}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
 
-        <div className="flex gap-0 px-5 mt-4">
-          {SUB_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveSubTab(tab.key)}
-              className={`relative px-4 pb-3 text-sm font-medium transition-colors ${
-                activeSubTab === tab.key
-                  ? 'text-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-              {activeSubTab === tab.key && (
-                <motion.div
-                  layoutId="response-tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary-500 rounded-t-full"
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {activeSubTab === 'summary' && (
-        <SummaryTab responses={responses} allFields={allFields} />
-      )}
-      {activeSubTab === 'questions' && (
-        <QuestionsTab responses={responses} allFields={allFields} />
-      )}
-      {activeSubTab === 'individual' && (
-        <IndividualTab responses={responses} allFields={allFields} />
-      )}
+      <main className="min-w-0 flex-1 overflow-hidden">{renderContent()}</main>
     </div>
-  )
+  );
 }

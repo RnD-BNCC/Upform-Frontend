@@ -15,7 +15,7 @@ import {
   ChatTeardropText,
   Timer,
 } from "@phosphor-icons/react";
-import { TimerRing } from "@/components/ui/TimerRing";
+import { TimerRing } from "@/components/icons";
 import type React from "react";
 import type { PresentControlsProps } from "./types";
 
@@ -88,26 +88,23 @@ export default function PresentControls({
   const hasCorrectAnswer =
     (slideType === "multiple_choice" && !!slideSettings?.correctAnswer) ||
     (slideType === "guess_number" && slideSettings?.correctNumber !== undefined) ||
-    (slideType === "word_cloud" && !!slideSettings?.correctAnswers?.length);
+    (slideType === "word_cloud" && !!slideSettings?.correctAnswers?.length) ||
+    (slideType === "pin_on_image" && !!slideSettings?.correctArea);
 
   const primaryButtonClass = isLeaderboardSlide
     ? "bg-red-500 hover:bg-red-600 text-white"
     : isWaitingRoom
       ? "bg-emerald-500 hover:bg-emerald-600 text-white"
-      : revealPhase
-        ? "bg-primary-500 hover:bg-primary-600 text-white"
-        : hasCorrectAnswer
-          ? "bg-amber-500 hover:bg-amber-600 text-white"
-          : isLastQuestionSlide
-            ? "bg-amber-500 hover:bg-amber-600 text-white"
-            : "bg-gray-100 hover:bg-gray-200 text-gray-700";
+      : isLastQuestionSlide && (!hasCorrectAnswer || revealPhase)
+        ? "bg-amber-500 hover:bg-amber-600 text-white"
+        : "bg-primary-500 hover:bg-primary-600 text-white";
 
   const primaryLabel = isLeaderboardSlide
     ? "End poll"
     : isWaitingRoom
       ? "Start quiz"
       : revealPhase
-        ? "Next question"
+        ? isLastQuestionSlide ? "Leaderboard" : "Next question"
         : hasCorrectAnswer
           ? "Reveal answer"
           : isLastQuestionSlide
@@ -145,8 +142,10 @@ export default function PresentControls({
               {isLeaderboardSlide ? (
                 <X size={14} weight="bold" />
               ) : revealPhase ? (
-                <ArrowRight size={14} weight="bold" />
-              ) : isLastQuestionSlide && !isWaitingRoom ? (
+                isLastQuestionSlide
+                  ? <Trophy size={14} weight="fill" />
+                  : <ArrowRight size={14} weight="bold" />
+              ) : isLastQuestionSlide && !isWaitingRoom && !hasCorrectAnswer ? (
                 <Trophy size={14} weight="fill" />
               ) : (
                 <ArrowRight size={14} weight="bold" />

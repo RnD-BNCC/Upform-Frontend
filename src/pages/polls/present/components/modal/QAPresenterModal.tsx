@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ThumbsUp, Check, ArrowCounterClockwise } from '@phosphor-icons/react'
-import QAFeed from '@/components/polling/visualizations/QAFeed'
+import { QAFeed } from '@/components/polling'
 import type { QAResult } from '@/types/polling'
 
 interface QAPresenterModalProps {

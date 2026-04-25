@@ -9,8 +9,19 @@ export const Api = {
   responses: (eventId: string) => `/events/${eventId}/responses`,
   responseDetail: (eventId: string, responseId: string) =>
     `/events/${eventId}/responses/${responseId}`,
+  responseProgress: (eventId: string) =>
+    `/events/${eventId}/response-progress`,
+  responseProgressDetail: (eventId: string, progressId: string) =>
+    `/events/${eventId}/response-progress/${progressId}`,
+  eventAnalytics: (eventId: string) => `/events/${eventId}/analytics`,
   publicEventDetail: (id: string) => `/public/events/${id}`,
   publicResponses: (eventId: string) => `/public/events/${eventId}/responses`,
+  publicEventAnalytics: (eventId: string) =>
+    `/public/events/${eventId}/analytics`,
+  publicResponseProgress: (eventId: string) =>
+    `/public/events/${eventId}/response-progress`,
+  publicResponseProgressDetail: (eventId: string, progressId: string) =>
+    `/public/events/${eventId}/response-progress/${progressId}`,
 
   // Polls
   polls: '/polls',
@@ -40,4 +51,15 @@ export const Api = {
   // Upload
   upload: '/upload',
   uploadFile: '/upload/file',
+
+  // Gallery
+  galleryFiles: '/gallery/files',
+  galleryMedia: '/gallery/media',
+  galleryFileDelete: '/gallery/file',
+
+  // Email blasts
+  emailBlasts: '/email-blasts',
+  emailBlastDetail: (id: string) => `/email-blasts/${id}`,
+  emailBlastDraft: (eventId: string) =>
+    `/email-blasts/events/${eventId}/draft`,
 } as const

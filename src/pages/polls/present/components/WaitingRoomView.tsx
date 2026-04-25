@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { PASTEL_COLORS } from "@/utils/response-aggregation";
+import { PASTEL_COLORS } from "@/utils/form/responseAggregation";
 import type { Participant } from "@/types/polling";
 import type { WaitingRoomViewProps } from "./types";
 

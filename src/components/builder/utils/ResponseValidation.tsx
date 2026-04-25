@@ -27,7 +27,9 @@ export const ResponseValidation = memo(function ResponseValidation({
         )}
       </div>
 
-      {(field.type === "multiple_choice" || field.type === "checkbox") && (
+      {(field.type === "multiple_choice" ||
+        field.type === "checkbox" ||
+        field.type === "multiselect") && (
         <>
           <p className="text-xs text-gray-400 mb-2">Tap an option to mark it as the correct answer</p>
           {(field.options ?? []).map((opt, i) => {

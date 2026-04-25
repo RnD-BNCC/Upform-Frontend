@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import cloud from 'd3-cloud'
+import { WordCloudSvg } from '@/components/icons'
 import type { WordCloudResult } from '@/types/polling'
 import { WORD_CLOUD_COLORS as COLORS } from '@/config/polling'
 
@@ -113,42 +113,15 @@ export default function WordCloudViz({
           Waiting for responses...
         </div>
       ) : width > 0 && height > 0 ? (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-          <g transform={`translate(${width / 2},${height / 2})`}>
-            <AnimatePresence>
-              {words.map((w) => {
-                const isCorrect = isRevealing && normalizedCorrect.includes(w.text.trim().toLowerCase())
-                const fillColor = isCorrect ? '#10b981' : w.color
-                const opacity = isRevealing && !isCorrect ? 0.3 : 1
-
-                return (
-                  <motion.g
-                    key={w.text}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <text
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      transform={`translate(${w.x},${w.y}) rotate(${w.rotate})`}
-                      style={{
-                        fontSize: w.size,
-                        fill: fillColor,
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontWeight: 800,
-                      }}
-                      className="select-none"
-                    >
-                      {w.text}
-                    </text>
-                  </motion.g>
-                )
-              })}
-            </AnimatePresence>
-          </g>
-        </svg>
+        <WordCloudSvg
+          width={width}
+          height={height}
+          words={words}
+          className="w-full h-full"
+          animated
+          isRevealing={isRevealing}
+          normalizedCorrect={normalizedCorrect}
+        />
       ) : null}
     </div>
   )

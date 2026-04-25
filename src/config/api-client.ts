@@ -1,5 +1,5 @@
 import axios from "axios";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib";
 
 const baseURL = `${import.meta.env.VITE_API_URL}/api`;
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { ScaleWaveSvg } from '@/components/icons'
 import type { ScaleResult, ScaleStatementResult, SlideSettings } from '@/types/polling'
 import { SCALE_COLORS as STATEMENT_COLORS } from '@/config/polling'
 
@@ -152,30 +153,18 @@ function StatementRow({
         {/* Wave overlay */}
         {item.responseCount > 0 && (
           <div className={`absolute left-0 right-0 pointer-events-none ${compact ? '-top-8' : '-top-12'}`} style={{ height: svgHeight }}>
-            <svg
-              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              preserveAspectRatio="none"
+            <ScaleWaveSvg
+              svgWidth={svgWidth}
+              svgHeight={svgHeight}
+              fillPath={fillPath}
+              strokePath={strokePath}
+              color={color}
               className="w-full h-full"
-            >
-              <motion.path
-                d={fillPath}
-                fill={color}
-                fillOpacity={0.15}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.1 + 0.3 }}
-              />
-              <motion.path
-                d={strokePath}
-                stroke={color}
-                strokeWidth={2.5}
-                fill="none"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.8, delay: index * 0.1 + 0.3 }}
-              />
-            </svg>
+              fillOpacity={0.15}
+              strokeWidth={2.5}
+              animated
+              animationDelay={index * 0.1 + 0.3}
+            />
           </div>
         )}
 

@@ -8,8 +8,13 @@ import {
   SCALE_COLORS,
 } from "@/config/polling";
 import cloud from "d3-cloud";
-import CaretIcon from "@/components/ui/CaretIcon";
-import ColorPickerDropdown from "@/components/ui/ColorPickerDropdown";
+import {
+  CaretIcon,
+  GuessNumberChartSvg,
+  ScaleWaveSvg,
+  WordCloudSvg,
+} from "@/components/icons";
+import { ColorPickerDropdown } from "@/components/ui";
 import {
   TextB,
   TextItalic,
@@ -76,28 +81,7 @@ function MiniWordCloud() {
   }, []);
 
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-      <g transform={`translate(${W / 2},${H / 2})`}>
-        {words.map((w) => (
-          <text
-            key={w.text}
-            textAnchor="middle"
-            dominantBaseline="central"
-            transform={`translate(${w.x},${w.y}) rotate(${w.rotate})`}
-            style={{
-              fontSize: w.size,
-              fill: w.color,
-              fontFamily: "Montserrat, sans-serif",
-              fontWeight: 800,
-              opacity: 0.85,
-            }}
-            className="select-none"
-          >
-            {w.text}
-          </text>
-        ))}
-      </g>
-    </svg>
+    <WordCloudSvg width={W} height={H} words={words} opacity={0.85} />
   );
 }
 
@@ -127,8 +111,11 @@ export default function SlidePreview({
   const currentHtmlRef = useRef(question);
   const onChangeRef = useRef(onQuestionChange);
   const onBlurRef = useRef(onQuestionBlur);
-  onChangeRef.current = onQuestionChange;
-  onBlurRef.current = onQuestionBlur;
+
+  useEffect(() => {
+    onChangeRef.current = onQuestionChange;
+    onBlurRef.current = onQuestionBlur;
+  }, [onBlurRef, onChangeRef, onQuestionBlur, onQuestionChange]);
 
   useEffect(() => {
     if (!editing && editorRef.current) {
@@ -265,7 +252,7 @@ export default function SlidePreview({
         {editing && (
           <span
             ref={counterRef}
-            className="absolute top-2 right-2 text-[10px] font-semibold text-white bg-primary-400 rounded-full w-7 h-5 flex items-center justify-center"
+            className="absolute bottom-2 right-2 text-[10px] font-semibold text-white bg-primary-400 rounded-full w-7 h-5 flex items-center justify-center"
           >
             0
           </span>
@@ -454,7 +441,7 @@ export default function SlidePreview({
                 const color =
                   settings.scaleColors?.[i] ||
                   SCALE_COLORS[i % SCALE_COLORS.length];
-                const { fill, stroke, avgX: _avgX } = miniCurve(
+                const { fill, stroke } = miniCurve(
                   fakePeaks[i % fakePeaks.length],
                 );
                 return (
@@ -480,20 +467,16 @@ export default function SlidePreview({
                         className="absolute left-0 right-0 pointer-events-none"
                         style={{ top: -SVG_H + 2, height: SVG_H }}
                       >
-                        <svg
-                          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-                          preserveAspectRatio="none"
+                        <ScaleWaveSvg
+                          svgWidth={SVG_W}
+                          svgHeight={SVG_H}
+                          fillPath={fill}
+                          strokePath={stroke}
+                          color={color}
                           className="w-full h-full"
-                        >
-                          <path d={fill} fill={color} fillOpacity={0.18} />
-                          <path
-                            d={stroke}
-                            stroke={color}
-                            strokeWidth={1.5}
-                            fill="none"
-                            strokeLinecap="round"
-                          />
-                        </svg>
+                          fillOpacity={0.18}
+                          strokeWidth={1.5}
+                        />
                       </div>
                       {/* Average badge */}
                       <div
@@ -619,101 +602,70 @@ export default function SlidePreview({
           if (ticks[ticks.length - 1] !== gnMax) ticks.push(gnMax);
           return (
             <div className="flex-1 flex flex-col justify-end px-3 pb-1">
-              <svg
-                viewBox={`0 0 ${W} ${H}`}
-                preserveAspectRatio="xMidYMid meet"
+              <GuessNumberChartSvg
+                svgWidth={W}
+                svgHeight={H}
+                fillPath={fill}
+                strokePath={stroke}
+                baseline={baseline}
+                ticks={ticks}
+                textColor={tc}
+                xForValue={xS}
                 className="w-full"
                 style={{ height: 80 }}
-              >
-                <defs>
-                  <linearGradient
-                    id="gnPreviewFill"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="0%" stopColor="#818cf8" stopOpacity="0.5" />
-                    <stop
-                      offset="100%"
-                      stopColor="#818cf8"
-                      stopOpacity="0.03"
-                    />
-                  </linearGradient>
-                </defs>
-                <path d={fill} fill="url(#gnPreviewFill)" />
-                <path
-                  d={stroke}
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                {cn !== undefined && (
-                  <line
-                    x1={xS(cn)}
-                    y1={PT - 4}
-                    x2={xS(cn)}
-                    y2={baseline}
-                    stroke="#10b981"
-                    strokeWidth={1.5}
-                    strokeDasharray="3 2"
-                  />
-                )}
-                <line
-                  x1={PL}
-                  y1={baseline}
-                  x2={W - PR}
-                  y2={baseline}
-                  stroke={tc}
-                  strokeOpacity={0.12}
-                  strokeWidth={1}
-                />
-                {ticks.map((v) => (
-                  <g key={v} transform={`translate(${xS(v)}, ${baseline})`}>
-                    <line
-                      y1={0}
-                      y2={3}
-                      stroke={tc}
-                      strokeOpacity={0.25}
-                      strokeWidth={1}
-                    />
-                    <text
-                      y={11}
-                      textAnchor="middle"
-                      fontSize={8}
-                      fill={tc}
-                      fillOpacity={0.45}
-                      fontWeight="600"
-                    >
-                      {v}
-                    </text>
-                  </g>
-                ))}
-              </svg>
+                gradientId="gnPreviewFill"
+                fillTopOpacity={0.5}
+                fillBottomOpacity={0.03}
+                strokeWidth={2}
+                showCorrectAnswer={cn !== undefined}
+                correctNumber={cn}
+                lineTop={PT - 4}
+                axisStrokeOpacity={0.12}
+                axisStrokeWidth={1}
+                tickLineLength={3}
+                tickStrokeWidth={1}
+                tickFontSize={8}
+                tickLabelOffset={11}
+                tickFillOpacity={0.45}
+                correctLineStrokeWidth={1.5}
+                correctLineStrokeDasharray="3 2"
+              />
             </div>
           );
         })()}
       {type === "pin_on_image" && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          {settings.imageUrl ? (
+          {settings.pinImageUrl ? (
             <div className="relative w-full max-h-40 overflow-hidden rounded-lg">
               <img
-                src={settings.imageUrl}
+                src={settings.pinImageUrl}
                 alt=""
                 className="w-full object-cover rounded-lg"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/80 rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
-                  Audience will pin here
+              {settings.correctArea ? (
+                <div
+                  className="absolute pointer-events-none border-2 border-green-500"
+                  style={{
+                    left: `${settings.correctArea.x}%`,
+                    top: `${settings.correctArea.y}%`,
+                    width: `${settings.correctArea.width}%`,
+                    height: `${settings.correctArea.height}%`,
+                    backgroundColor: 'rgba(34,197,94,0.15)',
+                  }}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-white/80 rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
+                    Audience will pin here
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <div className="text-gray-300 text-sm text-center">
-              Upload an image above
+              Upload a background image
               <br />
-              to enable pinning
+              in the settings to enable pinning
             </div>
           )}
         </div>

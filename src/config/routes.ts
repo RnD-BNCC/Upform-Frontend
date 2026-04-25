@@ -1,5 +1,6 @@
 import type { Route } from '@/types/route'
 import HomePage from '@/pages/home'
+import GalleryPage from '@/pages/gallery'
 import LoginPage from '@/pages/login'
 import EventDetailPage from '@/pages/events/detail'
 import EventPreviewPage from '@/pages/events/preview'
@@ -53,6 +54,14 @@ export const publicRoutes: Route[] = [
     isEnabled: true,
     noLayout: true,
     isUnguarded: true,
+  },
+  {
+    key: 'gallery',
+    title: 'Gallery',
+    path: '/gallery',
+    component: GalleryPage,
+    isEnabled: true,
+    noLayout: true,
   },
   {
     key: 'polls',

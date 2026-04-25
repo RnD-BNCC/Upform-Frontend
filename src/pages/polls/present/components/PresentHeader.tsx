@@ -9,6 +9,7 @@ export default function PresentHeader({
   participantCount,
   joinUrl,
   textColor,
+  showInstructionsBar = true,
 }: PresentHeaderProps) {
   return (
     <div className="flex items-center justify-between px-5 py-3 z-10 relative">
@@ -42,19 +43,21 @@ export default function PresentHeader({
         </div>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 top-3">
-        <div className="flex items-center gap-1 text-[9px] font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
-          <span className="text-[10px]">
-            Join at{" "}
-            <span className="font-semibold text-gray-700">{joinUrl}</span>
-          </span>
-          <span className="text-gray-300">|</span>
-          <span className="text-[10px]">use code</span>
-          <span className="text-gray-900 font-bold tracking-wider text-[12px]">
-            {code}
-          </span>
+      {showInstructionsBar && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-3">
+          <div className="flex items-center gap-1 text-[9px] font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+            <span className="text-[10px]">
+              Join at{" "}
+              <span className="font-semibold text-gray-700">{joinUrl}</span>
+            </span>
+            <span className="text-gray-300">|</span>
+            <span className="text-[10px]">use code</span>
+            <span className="text-gray-900 font-bold tracking-wider text-[12px]">
+              {code}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       <span className="text-[11px] font-bold italic text-primary-500">
         UpForm

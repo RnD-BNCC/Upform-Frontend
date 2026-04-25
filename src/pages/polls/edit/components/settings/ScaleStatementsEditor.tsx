@@ -1,5 +1,5 @@
 import { SCALE_COLORS } from '@/config/polling'
-import ColorPickerDropdown from '@/components/ui/ColorPickerDropdown'
+import { ColorPickerDropdown } from '@/components/ui'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -28,20 +28,20 @@ function SortableStatement({ id, value, color, onChange, onColorChange, onBlur, 
         align="left"
         showCaret={false}
         swatchSize="sm"
-        triggerClassName="w-5 h-5 rounded-full shrink-0 cursor-pointer hover:scale-110 transition-transform border-2 border-white shadow-sm"
+        triggerClassName="h-6 w-6 shrink-0 cursor-pointer rounded-sm border border-gray-200 shadow-sm transition-transform hover:scale-105"
       />
-      <div {...listeners} className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0 p-0.5">
+      <div {...listeners} className="shrink-0 cursor-grab rounded-md p-0.5 text-gray-300 transition-colors hover:bg-gray-100 hover:text-gray-500 active:cursor-grabbing">
         <DotsSixVertical size={14} weight="bold" />
       </div>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
-        className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+        className="h-9 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300 placeholder:text-gray-400"
         placeholder="Statement text..."
       />
       {canDelete && (
-        <button onClick={onDelete} className="text-gray-300 hover:text-red-500 transition-colors cursor-pointer p-1 shrink-0">
+        <button onClick={onDelete} className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500">
           <Trash size={14} weight="bold" />
         </button>
       )}
@@ -105,7 +105,7 @@ export default function ScaleStatementsEditor({ statements, colors, onChange, on
           onChange([...statements, ''])
           onColorsChange([...effectiveColors, SCALE_COLORS[statements.length % SCALE_COLORS.length]])
         }}
-        className="text-xs text-primary-600 font-bold hover:text-primary-700 self-start mt-1 cursor-pointer flex items-center gap-1"
+        className="mt-1 flex cursor-pointer items-center gap-1 text-xs font-medium text-primary-600 transition-colors hover:text-primary-700"
       >
         <Plus size={12} weight="bold" /> Add statement
       </button>

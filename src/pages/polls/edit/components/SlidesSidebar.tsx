@@ -28,11 +28,11 @@ function SlideItemContent({
 }) {
   return (
     <div
-      className={`relative flex flex-col gap-1 px-3 py-2.5 rounded-xl text-left group ${
+      className={`relative flex flex-col gap-1 rounded-sm px-3 py-2.5 text-left group ${
         elevated
           ? 'bg-white border border-gray-200 shadow-xl'
           : isSelected
-            ? 'bg-primary-50 border-l-3 border-l-primary-500 border border-primary-100'
+            ? 'bg-white border border-primary-300 shadow-sm'
             : 'border border-transparent'
       }`}
     >
@@ -139,7 +139,8 @@ export default function SlidesSidebar({
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
-    setLocalSlides((prev) => {
+    const timer = window.setTimeout(() => {
+      setLocalSlides((prev) => {
       const prevIds = prev.map((s) => s.id)
       const newIds = slides.map((s) => s.id)
       // Same set of IDs (just data update, not add/remove) → preserve local order
@@ -147,7 +148,10 @@ export default function SlidesSidebar({
         return prev.map((s) => slides.find((ss) => ss.id === s.id) ?? s)
       }
       return slides
-    })
+      })
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [slides])
 
   useEffect(() => {
@@ -174,15 +178,15 @@ export default function SlidesSidebar({
   }
 
   return (
-    <aside className="hidden sm:flex w-64 bg-white border-r border-gray-100 flex-col h-screen sticky top-0 shrink-0 overflow-y-auto">
-      <div className="flex items-center gap-2.5 px-4 pt-4 pb-2">
+    <aside className="hidden h-screen w-72 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50 sm:flex">
+      <div className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3">
         <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
           <ArrowLeft size={16} weight="bold" />
         </button>
         <span className="text-sm font-bold italic text-gray-900">UpForm</span>
       </div>
 
-      <div className="px-4 pb-3">
+      <div className="px-4 py-3">
         <input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
@@ -192,8 +196,8 @@ export default function SlidesSidebar({
         />
       </div>
 
-      <div className="px-4 pb-4 flex flex-col gap-2.5">
-        <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+      <div className="flex flex-col gap-2.5 px-4 pb-4">
+        <div className="flex items-center justify-between rounded-sm border border-gray-200 bg-white px-3 py-2">
           <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <span className="font-medium">Code:</span>
             <span className="font-bold text-gray-800 tracking-wider">{pollCode}</span>
@@ -204,7 +208,7 @@ export default function SlidesSidebar({
         </div>
         <button
           onClick={onPresent}
-          className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-600 transition-colors cursor-pointer"
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-emerald-500 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-600"
         >
           <Presentation size={14} weight="bold" />
           Present
@@ -217,14 +221,14 @@ export default function SlidesSidebar({
         <button
           onClick={onAddSlide}
           disabled={isAddPending}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-white px-3 text-xs font-bold text-primary-600 shadow-sm ring-1 ring-gray-200 transition-colors hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus size={14} weight="bold" />
           New slide
         </button>
       </div>
 
-      <div className="flex flex-col gap-1.5 px-3 flex-1">
+      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-3">
         <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <SortableContext items={slideIds} strategy={verticalListSortingStrategy}>
             {localSlides.map((slide, i) => (
@@ -259,10 +263,10 @@ export default function SlidesSidebar({
         </DndContext>
       </div>
 
-      <div className="p-3 border-t border-gray-100 mt-auto">
+      <div className="mt-auto border-t border-gray-100 p-3">
         <button
           onClick={onSave}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 px-3 py-2.5 rounded-xl transition-colors cursor-pointer"
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-primary-500 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-600"
         >
           <FloppyDisk size={14} weight="bold" />
           Save

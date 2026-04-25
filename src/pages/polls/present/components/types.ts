@@ -15,6 +15,7 @@ export interface PresentHeaderProps {
   participantCount: number;
   joinUrl: string;
   textColor: string;
+  showInstructionsBar?: boolean;
 }
 
 export interface WaitingRoomViewProps {
