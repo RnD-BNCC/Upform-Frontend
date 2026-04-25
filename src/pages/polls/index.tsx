@@ -1,15 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Navbar, Footer } from "@/components/layout";
-import {
-  ConfirmModal,
-  LoadingModal,
-  Pagination,
-  StatusModal,
-} from "@/components/ui";
+import { Navbar, Footer, PageGridShell, PageHeroBanner } from "@/components/layout";
+import { ConfirmModal, LoadingModal, StatusModal, type StatusType } from "@/components/modal";
+import { Pagination } from "@/components/utils";
 import { useGetPolls, useDeletePoll } from "@/hooks/polls";
-import type { StatusType } from "@/components/ui/StatusModal";
 import type { Poll } from "@/types/polling";
 import {
   Presentation,
@@ -327,43 +322,11 @@ export default function PollsPage() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 flex flex-col"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }}
-    >
+    <PageGridShell>
       <Navbar />
 
-      <div className="bg-primary-800 rounded-b-4xl shadow-[0_12px_40px_-8px_rgba(0,30,70,0.45)] relative">
-        <div className="absolute inset-0 overflow-hidden rounded-b-4xl pointer-events-none">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse at 18% 80%, rgba(0,30,70,0.45)] 0%, transparent 55%), radial-gradient(ellipse at 85% 10%, rgba(0,18,42,0.65) 0%, transparent 50%)",
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(ellipse at 0% 100%, rgba(255,255,255,0.18) 0%, transparent 50%)",
-            }}
-          />
-          <div
-            className="absolute inset-0 opacity-[0.015]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
-              backgroundSize: "10px 10px",
-            }}
-          />
-        </div>
-
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
+      <PageHeroBanner contentClassName="py-8 sm:py-12">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
           <div>
             <p className="text-primary-300 text-sm font-bold mb-1">
               Live Polling
@@ -386,7 +349,7 @@ export default function PollsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageHeroBanner>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6">
@@ -538,6 +501,6 @@ export default function PollsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageGridShell>
   );
 }

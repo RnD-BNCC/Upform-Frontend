@@ -74,7 +74,7 @@ export default function CorrectAreaPicker({ imageUrl, value, onChange, onClose }
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] w-full max-w-2xl overflow-hidden">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-sm bg-white shadow-2xl">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-sm font-bold text-gray-800">Mark out the correct area</h2>
           <p className="text-xs text-gray-400 mt-0.5">Click and drag on the image to select the correct area</p>
@@ -83,7 +83,7 @@ export default function CorrectAreaPicker({ imageUrl, value, onChange, onClose }
         <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-gray-50">
           <div
             ref={containerRef}
-            className="relative select-none rounded-lg overflow-hidden shadow-md max-w-full"
+            className="relative max-w-full select-none overflow-hidden rounded-sm shadow-md"
             style={{ cursor: 'crosshair', maxHeight: '60vh' }}
             onMouseDown={handleMouseDown}
           >
@@ -119,14 +119,14 @@ export default function CorrectAreaPicker({ imageUrl, value, onChange, onClose }
           <div className="flex gap-2">
             <button
               onClick={() => setDraft(undefined)}
-              className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg cursor-pointer transition-colors"
+              className="h-8 cursor-pointer rounded-sm border border-gray-200 px-3 text-xs font-semibold text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
             >
               Reset
             </button>
             <button
               onClick={handleConfirm}
               disabled={!draft || draft.width <= 1 || draft.height <= 1}
-              className="px-4 py-1.5 text-xs font-semibold text-white bg-gray-900 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-8 cursor-pointer rounded-sm bg-gray-900 px-4 text-xs font-semibold text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Confirm
             </button>

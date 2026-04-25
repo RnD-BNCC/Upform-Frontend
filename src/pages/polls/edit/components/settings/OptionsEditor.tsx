@@ -1,5 +1,5 @@
 import { BAR_COLORS_HEX } from '@/config/polling'
-import ColorPickerDropdown from '@/components/ui/ColorPickerDropdown'
+import { ColorPickerDropdown } from '@/components/ui'
 import { Trash, Plus, Check } from '@phosphor-icons/react'
 
 export default function OptionsEditor({
@@ -39,10 +39,10 @@ export default function OptionsEditor({
               align="left"
               showCaret={false}
               swatchSize="sm"
-              triggerClassName="w-6 h-6 rounded-full shrink-0 cursor-pointer hover:scale-110 transition-transform border-2 border-white shadow-sm"
+              triggerClassName="h-6 w-6 shrink-0 cursor-pointer rounded-sm border border-gray-200 shadow-sm transition-transform hover:scale-105"
             />
           ) : (
-            <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary-100 text-[10px] font-bold text-primary-600">
               {String.fromCharCode(65 + i)}
             </div>
           )}
@@ -58,13 +58,13 @@ export default function OptionsEditor({
               }
             }}
             onBlur={onBlur}
-            className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300 placeholder:text-gray-400"
             placeholder={`Option ${i + 1}`}
           />
           {onCorrectAnswerChange && (
             <button
               onClick={() => onCorrectAnswerChange(opt === correctAnswer ? undefined : opt)}
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+              className={`flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors ${
                 opt && opt === correctAnswer
                   ? 'border-emerald-500 bg-emerald-500 text-white'
                   : 'border-gray-200 hover:border-emerald-300'
@@ -87,7 +87,7 @@ export default function OptionsEditor({
                   onCorrectAnswerChange(undefined)
                 }
               }}
-              className="text-gray-300 hover:text-red-500 transition-colors cursor-pointer p-1"
+              className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500"
             >
               <Trash size={14} weight="bold" />
             </button>
@@ -101,7 +101,7 @@ export default function OptionsEditor({
             onColorsChange([...effectiveColors, BAR_COLORS_HEX[options.length % BAR_COLORS_HEX.length]])
           }
         }}
-        className="text-xs text-primary-600 font-bold hover:text-primary-700 self-start mt-1 cursor-pointer flex items-center gap-1"
+        className="mt-1 flex cursor-pointer items-center gap-1 text-xs font-medium text-primary-600 transition-colors hover:text-primary-700"
       >
         <Plus size={12} weight="bold" /> Add option
       </button>

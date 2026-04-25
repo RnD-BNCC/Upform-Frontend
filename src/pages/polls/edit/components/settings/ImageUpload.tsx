@@ -26,20 +26,20 @@ export default function ImageUpload({
   if (imageUrl) {
     return (
       <div className="flex flex-col gap-2">
-        <div className="relative rounded-xl overflow-hidden border border-gray-200">
+        <div className="relative overflow-hidden rounded-sm border border-gray-200">
           <img src={imageUrl} alt="" className="w-full h-28 object-cover" />
         </div>
         <div className="flex items-center justify-between">
           <button
             onClick={() => inputRef.current?.click()}
-            className="text-xs text-primary-600 font-medium flex items-center gap-1 cursor-pointer hover:text-primary-700"
+            className="flex cursor-pointer items-center gap-1 text-xs font-medium text-primary-600 transition-colors hover:text-primary-700"
           >
             <PencilSimple size={12} weight="bold" />
             Update image
           </button>
           <button
             onClick={onRemove}
-            className="text-xs text-gray-400 hover:text-red-500 cursor-pointer flex items-center gap-1 transition-colors"
+            className="flex cursor-pointer items-center gap-1 text-xs text-gray-400 transition-colors hover:text-red-500"
           >
             <Trash size={12} weight="bold" />
           </button>
@@ -53,7 +53,7 @@ export default function ImageUpload({
     <div>
       <div
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-gray-300 transition-colors cursor-pointer"
+        className="cursor-pointer rounded-sm border border-dashed border-gray-200 bg-white p-4 text-center transition-colors hover:border-gray-300"
       >
         {uploadMutation.isPending ? (
           <SpinnerGap size={24} className="text-primary-400 animate-spin mx-auto mb-1.5" />

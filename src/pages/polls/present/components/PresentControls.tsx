@@ -15,7 +15,7 @@ import {
   ChatTeardropText,
   Timer,
 } from "@phosphor-icons/react";
-import { TimerRing } from "@/components/ui/TimerRing";
+import { TimerRing } from "@/components/icons";
 import type React from "react";
 import type { PresentControlsProps } from "./types";
 

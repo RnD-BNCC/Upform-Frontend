@@ -10,10 +10,10 @@ import {
 import { useMutationUpdatePoll, useQuerySlideResults } from "@/api/polls";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQAQuestions } from "@/api/questions";
-import { useQASocket } from "@/hooks/useQASocket";
+import { useQASocket } from "@/hooks";
 import { apiClient } from "@/config/api-client";
 import { Api } from "@/constants/api";
-import Leaderboard from "@/components/polling/Leaderboard";
+import { Leaderboard } from "@/components/polling";
 import type {
   SlideSettings,
   ImageLayout,

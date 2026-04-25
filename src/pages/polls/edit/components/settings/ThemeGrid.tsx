@@ -14,9 +14,9 @@ export default function ThemeGrid({ settings, onApply }: { settings: SlideSettin
           <button
             key={theme.id}
             onClick={() => onApply(theme)}
-            className={`relative flex flex-col rounded-xl border-2 p-2.5 cursor-pointer transition-all hover:scale-[1.02] ${isActive ? 'border-primary-500 shadow-md' : 'border-gray-200 hover:border-gray-300'}`}
+            className={`relative flex cursor-pointer flex-col rounded-sm border p-2.5 transition-all hover:border-gray-300 ${isActive ? 'border-primary-500 shadow-sm' : 'border-gray-200'}`}
           >
-            <div className="w-full aspect-16/10 rounded-lg flex items-end gap-1 p-2" style={{ backgroundColor: theme.bgColor }}>
+            <div className="flex aspect-16/10 w-full items-end gap-1 rounded-sm p-2" style={{ backgroundColor: theme.bgColor }}>
               {theme.barColors.map((color, i) => (
                 <div key={i} className="flex-1 rounded-sm" style={{ backgroundColor: color, height: `${40 + i * 20}%` }} />
               ))}
