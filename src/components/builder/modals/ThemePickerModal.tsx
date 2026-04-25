@@ -1,65 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRightIcon } from "@phosphor-icons/react";
-
-export type ThemeKey = "light" | "dark" | "eco-friendly" | "charcoal";
-
-export const THEMES: {
-  key: ThemeKey;
-  label: string;
-  canvasBg: string;
-  bg: string;
-  inputBg: string;
-  inputBorder: string;
-  btnBg: string;
-  textColor: string;
-  inputText: string;
-}[] = [
-  {
-    key: "light",
-    label: "Light",
-    canvasBg: "#f5f5f5",
-    bg: "#ffffff",
-    inputBg: "#f9fafb",
-    inputBorder: "#d1d5db",
-    btnBg: "#0054a5",
-    textColor: "#111827",
-    inputText: "#6b7280",
-  },
-  {
-    key: "dark",
-    label: "Dark",
-    canvasBg: "#111827",
-    bg: "#1a1a2e",
-    inputBg: "#16213e",
-    inputBorder: "#374151",
-    btnBg: "#3b82f6",
-    textColor: "#f9fafb",
-    inputText: "#9ca3af",
-  },
-  {
-    key: "eco-friendly",
-    label: "Eco-friendly",
-    canvasBg: "#e8eee8",
-    bg: "#f0f4f0",
-    inputBg: "#ffffff",
-    inputBorder: "#86efac",
-    btnBg: "#16a34a",
-    textColor: "#14532d",
-    inputText: "#4b7c5a",
-  },
-  {
-    key: "charcoal",
-    label: "Charcoal",
-    canvasBg: "#2d3748",
-    bg: "#374151",
-    inputBg: "#1f2937",
-    inputBorder: "#4b5563",
-    btnBg: "#111827",
-    textColor: "#f9fafb",
-    inputText: "#9ca3af",
-  },
-];
+import { SelectPreviewIcon, ThemeCheckIcon } from "@/components/icons";
+import { THEMES, type ThemeKey } from "@/utils/form/themeConfig";
 
 type Props = {
   isOpen: boolean;
@@ -91,7 +34,7 @@ export default function ThemePickerModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.18 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col"
+            className="bg-white rounded-sm shadow-2xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col"
             style={{ maxHeight: "90vh" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -111,7 +54,7 @@ export default function ThemePickerModal({
                     key={theme.key}
                     onClick={() => setSelected(theme.key)}
                     whileTap={{ scale: 0.98 }}
-                    className={`relative rounded-xl border-2 p-4 text-left transition-all ${
+                    className={`relative rounded-sm border-2 p-4 text-left transition-all ${
                       isSelected
                         ? "border-primary-500 ring-2 ring-primary-400 ring-offset-2 shadow-lg"
                         : "border-gray-200 hover:border-gray-300 shadow-sm"
@@ -121,9 +64,7 @@ export default function ThemePickerModal({
                     {/* Checkmark badge */}
                     {isSelected && (
                       <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center shadow-sm">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                          <path d="M5 12l5 5 9-9" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        <ThemeCheckIcon className="text-white" />
                       </div>
                     )}
 
@@ -142,10 +83,7 @@ export default function ThemePickerModal({
                           color: theme.inputText,
                         }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                          <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
-                          <path d="M8 10l4 4 4-4" stroke="currentColor" strokeWidth="2" />
-                        </svg>
+                        <SelectPreviewIcon style={{ flexShrink: 0 }} />
                         <span>Text</span>
                       </div>
                       <div
@@ -173,7 +111,7 @@ export default function ThemePickerModal({
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onContinue(selected)}
-                className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-gray-900 font-semibold text-sm px-5 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm px-5 py-2 rounded-sm transition-colors"
               >
                 Create form
                 <ArrowRightIcon size={14} weight="bold" />

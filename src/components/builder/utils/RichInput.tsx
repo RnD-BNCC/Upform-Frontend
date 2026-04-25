@@ -9,9 +9,26 @@ import {
   TextAlignCenterIcon,
   TextAlignRightIcon,
   CaretDownIcon,
+  TextBolderIcon,
+  TextItalicIcon,
+  TextUnderlineIcon,
+  TextStrikethroughIcon,
+  CodeSimpleIcon,
 } from '@phosphor-icons/react'
+import type { FormField } from '@/types/form'
+import ReferencePickerPopover from '@/components/builder/layout/reference/ReferencePickerPopover'
+import {
+  createCalculationReferenceTokenHtml,
+  createDateReferenceTokenHtml,
+  createFieldReferenceTokenHtml,
+  hydrateReferenceTokenElements,
+  stripHtmlToText,
+  type DateReferenceOption,
+} from '@/utils/form/referenceTokens'
+import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
 
 const isEmpty = (html: string) =>
+  !/<(ul|ol|li)\b/i.test(html) &&
   !html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]*>/g, '').trim()
 
 const sanitizePaste = (html: string): string => {
@@ -24,14 +41,36 @@ const sanitizePaste = (html: string): string => {
   return tmp.innerHTML
 }
 
+const hasActiveReferenceTrigger = (root: HTMLElement | null) => {
+  if (!root) return false
+
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return false
+
+  const range = selection.getRangeAt(0)
+  if (!root.contains(range.startContainer)) return false
+
+  const prefixRange = range.cloneRange()
+  prefixRange.selectNodeContents(root)
+  prefixRange.setEnd(range.startContainer, range.startOffset)
+
+  return /(^|\s)@[^\s@]*$/.test(prefixRange.toString())
+}
+
 type Props = {
   value: string
   onChange: (html: string) => void
   placeholder?: string
   placeholderClassName?: string
   className?: string
+  containerClassName?: string
+  readOnly?: boolean
   stopPropagation?: boolean
   noLists?: boolean
+  staticToolbar?: boolean
+  referenceFields?: FormField[]
+  referenceFieldGroups?: ConditionFieldGroup[]
+  allowDateUtilities?: boolean
 }
 
 const HEADINGS = [
@@ -49,8 +88,14 @@ export default function RichInput({
   placeholder,
   placeholderClassName,
   className = '',
+  containerClassName = 'w-full',
+  readOnly = false,
   stopPropagation,
   noLists,
+  staticToolbar,
+  referenceFields = [],
+  referenceFieldGroups,
+  allowDateUtilities = true,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -62,17 +107,23 @@ export default function RichInput({
   const [activeFormats, setActiveFormats] = useState({ bold: false, italic: false, underline: false })
   const [linkDialog, setLinkDialog] = useState<{ text: string; url: string } | null>(null)
   const [showHeadingDropdown, setShowHeadingDropdown] = useState(false)
+  const [referencePickerOpen, setReferencePickerOpen] = useState(false)
   const linkDialogOpenRef = useRef(false)
   const savedRangeRef = useRef<Range | null>(null)
+  const referenceRangeRef = useRef<Range | null>(null)
 
   useEffect(() => {
-    if (ref.current) ref.current.innerHTML = value
+    if (ref.current) {
+      ref.current.innerHTML = value
+      hydrateReferenceTokenElements(ref.current)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // mount only
 
   useEffect(() => {
     if (!focusedRef.current && ref.current && lastValueRef.current !== value) {
       ref.current.innerHTML = value
+      hydrateReferenceTokenElements(ref.current)
     }
     lastValueRef.current = value
   }, [value])
@@ -114,6 +165,7 @@ export default function RichInput({
     if (document.activeElement !== ref.current) ref.current?.focus()
     document.execCommand(cmd, false, val)
     if (ref.current) {
+      hydrateReferenceTokenElements(ref.current)
       lastValueRef.current = ref.current.innerHTML
       onChange(ref.current.innerHTML)
     }
@@ -124,6 +176,7 @@ export default function RichInput({
     if (document.activeElement !== ref.current) ref.current?.focus()
     document.execCommand('formatBlock', false, tag)
     if (ref.current) {
+      hydrateReferenceTokenElements(ref.current)
       lastValueRef.current = ref.current.innerHTML
       onChange(ref.current.innerHTML)
     }
@@ -179,6 +232,7 @@ export default function RichInput({
     }
 
     if (ref.current) {
+      hydrateReferenceTokenElements(ref.current)
       lastValueRef.current = ref.current.innerHTML
       onChange(ref.current.innerHTML)
     }
@@ -187,24 +241,81 @@ export default function RichInput({
   const startListAtCursor = useCallback((type: 'ul' | 'ol') => {
     if (!ref.current) return
     pushUndoSnapshot()
-    const list = document.createElement(type)
-    const li = document.createElement('li')
-    list.appendChild(li)
-    const sel = window.getSelection()
-    if (sel && sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0)
-      range.insertNode(list)
-      const newRange = document.createRange()
-      newRange.setStart(li, 0)
-      newRange.collapse(true)
-      sel.removeAllRanges()
-      sel.addRange(newRange)
-    }
+    const cmd = type === 'ul' ? 'insertUnorderedList' : 'insertOrderedList'
+    document.execCommand(cmd, false)
     if (ref.current) {
+      hydrateReferenceTokenElements(ref.current)
       lastValueRef.current = ref.current.innerHTML
       onChange(ref.current.innerHTML)
     }
   }, [pushUndoSnapshot, onChange])
+
+  const closeReferencePicker = useCallback(() => {
+    setReferencePickerOpen(false)
+    referenceRangeRef.current = null
+  }, [])
+
+  const syncReferencePickerToSelection = useCallback(() => {
+    if (!referencePickerOpen) return
+    if (!hasActiveReferenceTrigger(ref.current)) {
+      closeReferencePicker()
+    }
+  }, [closeReferencePicker, referencePickerOpen])
+
+  const insertReferenceToken = useCallback((tokenHtml: string) => {
+    if (!ref.current) return
+
+    ref.current.focus()
+    const selection = window.getSelection()
+    if (!selection) return
+
+    const targetRange =
+      referenceRangeRef.current?.cloneRange() ??
+      (selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null)
+
+    if (!targetRange) return
+
+    selection.removeAllRanges()
+    selection.addRange(targetRange)
+
+    const range = selection.getRangeAt(0)
+    const startContainer = range.startContainer
+
+    if (startContainer.nodeType === Node.TEXT_NODE) {
+      const textNode = startContainer as Text
+      const startOffset = range.startOffset
+      if (startOffset > 0 && textNode.data[startOffset - 1] === '@') {
+        textNode.deleteData(startOffset - 1, 1)
+        range.setStart(textNode, startOffset - 1)
+        range.collapse(true)
+      }
+    }
+
+    const tokenContainer = document.createElement('div')
+    tokenContainer.innerHTML = tokenHtml
+    const tokenElement = tokenContainer.firstElementChild
+    if (!tokenElement) return
+
+    hydrateReferenceTokenElements(tokenContainer)
+    range.insertNode(tokenElement)
+
+    const spacerNode = document.createTextNode(' ')
+    tokenElement.after(spacerNode)
+
+    const nextRange = document.createRange()
+    nextRange.setStart(spacerNode, spacerNode.data.length)
+    nextRange.collapse(true)
+    selection.removeAllRanges()
+    selection.addRange(nextRange)
+
+    if (ref.current) {
+      hydrateReferenceTokenElements(ref.current)
+      lastValueRef.current = ref.current.innerHTML
+      onChange(ref.current.innerHTML)
+    }
+
+    closeReferencePicker()
+  }, [closeReferencePicker, onChange])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (stopPropagation) e.stopPropagation()
@@ -308,7 +419,7 @@ export default function RichInput({
     </button>
   )
 
-  const toolbarEl = (
+  const toolbarEl = readOnly ? null : (
     <AnimatePresence>
       {toolbarPos && !linkDialog && (
         <motion.div
@@ -356,9 +467,9 @@ export default function RichInput({
 
             <div className="w-px h-4 bg-white/20 mx-0.5" />
 
-            {fmtBtn(activeFormats.bold, <span className="text-[13px] font-black font-sans">B</span>, 'bold', 'Bold')}
-            {fmtBtn(activeFormats.italic, <span className="text-[13px] italic font-serif">I</span>, 'italic', 'Italic')}
-            {fmtBtn(activeFormats.underline, <span className="text-[13px] underline">U</span>, 'underline', 'Underline')}
+            {fmtBtn(activeFormats.bold, <TextBolderIcon size={13} />, 'bold', 'Bold')}
+            {fmtBtn(activeFormats.italic, <TextItalicIcon size={13} />, 'italic', 'Italic')}
+            {fmtBtn(activeFormats.underline, <TextUnderlineIcon size={13} />, 'underline', 'Underline')}
 
             <div className="w-px h-4 bg-white/20 mx-0.5" />
 
@@ -425,59 +536,183 @@ export default function RichInput({
       </AnimatePresence>
   )
 
+  const staticToolbarEl = staticToolbar ? (
+    <div
+      className={`flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 ${
+        readOnly ? "pointer-events-none" : ""
+      }`}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      <button type="button" title="Bold" onMouseDown={(e) => { e.preventDefault(); execFormat('bold') }}
+        className={`w-6 h-6 flex items-center justify-center rounded text-xs font-bold transition-colors ${activeFormats.bold ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}>
+        <TextBolderIcon size={12} />
+      </button>
+      <button type="button" title="Italic" onMouseDown={(e) => { e.preventDefault(); execFormat('italic') }}
+        className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${activeFormats.italic ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}>
+        <TextItalicIcon size={12} />
+      </button>
+      <button type="button" title="Strikethrough" onMouseDown={(e) => { e.preventDefault(); execFormat('strikeThrough') }}
+        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        <TextStrikethroughIcon size={12} />
+      </button>
+      <button type="button" title="Code" onMouseDown={(e) => { e.preventDefault(); execFormat('formatBlock', 'pre') }}
+        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        <CodeSimpleIcon size={12} />
+      </button>
+      <div className="w-px h-3.5 bg-gray-200 mx-0.5" />
+      {(['h1', 'h2', 'h3'] as const).map((tag, i) => (
+        <button key={tag} type="button" title={tag.toUpperCase()} onMouseDown={(e) => { e.preventDefault(); applyHeading(tag) }}
+          className="h-6 px-1 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors text-[10px] font-semibold">
+          H<sub>{i + 1}</sub>
+        </button>
+      ))}
+      <div className="w-px h-3.5 bg-gray-200 mx-0.5" />
+      <button type="button" title="Bulleted list" onMouseDown={(e) => { e.preventDefault(); toggleList('ul') }}
+        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        <ListBulletsIcon size={12} />
+      </button>
+      <button type="button" title="Numbered list" onMouseDown={(e) => { e.preventDefault(); toggleList('ol') }}
+        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        <ListNumbersIcon size={12} />
+      </button>
+    </div>
+  ) : null
+
+  const displayPlaceholder = placeholder
+    ? stripHtmlToText(placeholder) || placeholder
+    : ''
+
   return (
-    <div ref={containerRef} className="relative overflow-visible" data-rich-container>
-      {createPortal(toolbarEl, document.body)}
+    <div
+      ref={containerRef}
+      className={`relative overflow-visible ${containerClassName}`}
+      data-rich-container
+    >
+      {!readOnly ? createPortal(toolbarEl, document.body) : null}
+      {staticToolbarEl}
 
-      {/* Placeholder */}
-      {isEmpty(value) && (
-        <span className={`absolute inset-0 pointer-events-none leading-normal select-none ${placeholderClassName ?? 'text-gray-400'}`}>
-          {placeholder}
-        </span>
-      )}
+      <div className="relative">
+        {/* Placeholder */}
+        {isEmpty(value) && (
+          <span className={`absolute inset-0 pointer-events-none leading-normal select-none ${placeholderClassName ?? 'text-gray-400'}`}>
+            {displayPlaceholder}
+          </span>
+        )}
 
-      {/* Editable content */}
-      <div
-        ref={ref}
-        contentEditable
-        suppressContentEditableWarning
-        onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
-        onKeyDown={handleKeyDown}
-        onKeyUp={updateToolbar}
-        onMouseUp={updateToolbar}
-        onPaste={(e) => {
-          e.preventDefault()
-          const html = e.clipboardData.getData('text/html')
-          if (html) {
-            document.execCommand('insertHTML', false, sanitizePaste(html))
-          } else {
-            document.execCommand('insertText', false, e.clipboardData.getData('text/plain'))
+        {/* Editable content */}
+        <div
+          ref={ref}
+          contentEditable={!readOnly}
+          suppressContentEditableWarning
+          onClick={
+            readOnly
+              ? undefined
+              : stopPropagation
+                ? (e) => e.stopPropagation()
+                : undefined
           }
-          if (ref.current) {
-            lastValueRef.current = ref.current.innerHTML
-            onChange(ref.current.innerHTML)
+          onKeyDown={readOnly ? undefined : handleKeyDown}
+          onKeyUp={
+            readOnly
+              ? undefined
+              : (event) => {
+                  updateToolbar()
+                  if (event.key === '@') {
+                    const sel = window.getSelection()
+                    if (sel && sel.rangeCount > 0) {
+                      referenceRangeRef.current = sel.getRangeAt(0).cloneRange()
+                      setReferencePickerOpen(true)
+                    }
+                    return
+                  }
+
+                  syncReferencePickerToSelection()
+                }
           }
-        }}
-        onInput={() => {
-          if (ref.current) {
-            lastValueRef.current = ref.current.innerHTML
-            onChange(ref.current.innerHTML)
+          onMouseUp={
+            readOnly
+              ? undefined
+              : () => {
+                  updateToolbar()
+                  syncReferencePickerToSelection()
+                }
           }
-        }}
-        onFocus={() => { focusedRef.current = true; updateToolbar() }}
-        onBlur={() => {
-          focusedRef.current = false
-          if (!linkDialogOpenRef.current) {
-            setToolbarPos(null)
-            setShowHeadingDropdown(false)
+          onPaste={
+            readOnly
+              ? undefined
+              : (e) => {
+                  e.preventDefault()
+                  const html = e.clipboardData.getData('text/html')
+                  if (html) {
+                    document.execCommand('insertHTML', false, sanitizePaste(html))
+                  } else {
+                    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'))
+                  }
+                  if (ref.current) {
+                    hydrateReferenceTokenElements(ref.current)
+                    lastValueRef.current = ref.current.innerHTML
+                    onChange(ref.current.innerHTML)
+                  }
+                  syncReferencePickerToSelection()
+                }
           }
-        }}
-        className={`outline-none cursor-text [&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:leading-normal [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_h5]:text-sm [&_h5]:font-semibold ${className}`}
-      />
+          onInput={
+            readOnly
+              ? undefined
+              : () => {
+                  if (ref.current) {
+                    hydrateReferenceTokenElements(ref.current)
+                    lastValueRef.current = ref.current.innerHTML
+                    onChange(ref.current.innerHTML)
+                  }
+                  syncReferencePickerToSelection()
+                }
+          }
+          onFocus={
+            readOnly
+              ? undefined
+              : () => {
+                  focusedRef.current = true
+                  updateToolbar()
+                }
+          }
+          onBlur={
+            readOnly
+              ? undefined
+              : () => {
+                  focusedRef.current = false
+                  if (!linkDialogOpenRef.current) {
+                    setToolbarPos(null)
+                    setShowHeadingDropdown(false)
+                  }
+                }
+          }
+          className={`relative z-1 outline-none ${readOnly ? 'cursor-default select-text' : 'cursor-text'} [&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:leading-normal [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_h5]:text-sm [&_h5]:font-semibold ${className}`}
+        />
+      </div>
+
+      {!readOnly ? (
+        <ReferencePickerPopover
+          allowDateUtilities={allowDateUtilities}
+          anchorEl={containerRef.current}
+          autoFocusSearch={false}
+          availableFields={referenceFields}
+          fieldGroups={referenceFieldGroups}
+          open={referencePickerOpen}
+          onClose={closeReferencePicker}
+          onSelectField={(field) => insertReferenceToken(createFieldReferenceTokenHtml(field))}
+          onSelectCalculation={(calculation) =>
+            insertReferenceToken(createCalculationReferenceTokenHtml(calculation))
+          }
+          onSelectDate={(option: DateReferenceOption, amount?: number) =>
+            insertReferenceToken(createDateReferenceTokenHtml(option, amount))
+          }
+        />
+      ) : null}
 
       {/* Link dialog */}
       <AnimatePresence>
-        {linkDialog !== null && (
+        {!readOnly && linkDialog !== null && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

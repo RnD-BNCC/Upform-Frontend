@@ -10,17 +10,25 @@ type Props = {
   required?: boolean
 }
 
-export default function RenameFormModal({ isOpen, onClose, onCreate, isLoading, required }: Props) {
+export default function RenameFormModal({
+  isOpen,
+  onClose,
+  onCreate,
+  isLoading,
+  required,
+}: Props) {
   const [name, setName] = useState('My form')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return
+
+    const timer = window.setTimeout(() => {
       setName('My form')
-      setTimeout(() => {
-        inputRef.current?.select()
-      }, 100)
-    }
+      inputRef.current?.select()
+    }, 100)
+
+    return () => window.clearTimeout(timer)
   }, [isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +52,7 @@ export default function RenameFormModal({ isOpen, onClose, onCreate, isLoading, 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.15 }}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+            className="bg-white rounded-sm shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-6 pt-6 pb-4">
@@ -55,7 +63,7 @@ export default function RenameFormModal({ isOpen, onClose, onCreate, isLoading, 
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full border border-primary-400 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 outline-none focus:ring-2 focus:ring-primary-300"
+                  className="w-full border border-primary-400 rounded-sm px-3 py-2 text-sm font-medium text-gray-900 outline-none focus:ring-2 focus:ring-primary-300"
                   maxLength={80}
                   autoComplete="off"
                 />
@@ -67,7 +75,7 @@ export default function RenameFormModal({ isOpen, onClose, onCreate, isLoading, 
                 <button
                   onClick={onClose}
                   disabled={isLoading}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -76,7 +84,7 @@ export default function RenameFormModal({ isOpen, onClose, onCreate, isLoading, 
                 whileTap={{ scale: 0.97 }}
                 onClick={handleSubmit}
                 disabled={isLoading || !name.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-sm hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading && <SpinnerGapIcon size={14} className="animate-spin" />}
                 Continue
