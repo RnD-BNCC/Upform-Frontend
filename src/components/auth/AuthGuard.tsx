@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks'
 
 export default function AuthGuard({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useAuth()

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { authClient } from "@/lib/auth-client";
-import GoogleIcon from "@/components/ui/GoogleIcon";
+import { GoogleIcon, SpinnerArcIcon } from "@/components/icons";
+import { authClient } from "@/lib";
 
 const GREETINGS = [
   "Hello",
@@ -91,29 +91,7 @@ export default function LoginPage() {
             className="flex w-full font-bold items-center justify-center gap-3 border border-gray-200 bg-white px-4 py-2.5 text-sm  text-gray-400 transition-colors duration-150 hover:border-primary-500 hover:bg-primary-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700"
           >
             {loading ? (
-              <svg
-                width={16}
-                height={16}
-                viewBox="0 0 24 24"
-                className="animate-spin"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                  opacity="0.2"
-                />
-                <path
-                  d="M12 2a10 10 0 0 1 10 10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              </svg>
+              <SpinnerArcIcon size={16} className="animate-spin" />
             ) : (
               <GoogleIcon />
             )}
