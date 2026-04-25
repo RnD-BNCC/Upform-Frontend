@@ -234,7 +234,10 @@ export default function LiveVotePage() {
   ) {
     return (
       <div className="min-h-screen flex">
-        <Leaderboard scores={leaderboardScores} />
+        <Leaderboard
+          currentParticipantId={getParticipantId()}
+          scores={leaderboardScores}
+        />
       </div>
     );
   }
