@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion } from "framer-motion";
-import { CheckCircleIcon } from "@phosphor-icons/react";
+import {
+  CheckCircleIcon,
+  InfoIcon,
+  WarningCircleIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 import { useMutationUploadFile } from "@/api/upload";
 import AddressField from "@/components/builder/section/AddressField";
 import { BuilderMultiselectField } from "@/components/builder/section/BuilderMultiselectField";
@@ -27,6 +32,7 @@ import TimeField from "@/components/builder/section/TimeField";
 import { SelectionCheckIcon } from "@/components/icons";
 import type { FormCalculation, FormField } from "@/types/form";
 import {
+  formatAllowedFileTypes,
   getAcceptedFileMimeList,
   isAllowedFileType,
 } from "@/utils/form/fileTypes";
@@ -45,6 +51,51 @@ const shakeVariants = {
   },
   idle: { opacity: 1, y: 0, x: 0 },
 };
+
+const BANNER_STYLES = {
+  info: {
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    icon: "text-blue-500",
+    text: "text-blue-900",
+  },
+  warning: {
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    icon: "text-amber-500",
+    text: "text-amber-900",
+  },
+  error: {
+    bg: "bg-red-50",
+    border: "border-red-200",
+    icon: "text-red-500",
+    text: "text-red-900",
+  },
+  success: {
+    bg: "bg-green-50",
+    border: "border-green-200",
+    icon: "text-green-500",
+    text: "text-green-900",
+  },
+} as const;
+
+function BannerIcon({ type }: { type: FormField["bannerType"] }) {
+  const iconType = type ?? "info";
+
+  if (iconType === "warning") {
+    return <WarningIcon size={16} weight="fill" />;
+  }
+
+  if (iconType === "error") {
+    return <WarningCircleIcon size={16} weight="fill" />;
+  }
+
+  if (iconType === "success") {
+    return <CheckCircleIcon size={16} weight="fill" />;
+  }
+
+  return <InfoIcon size={16} weight="fill" />;
+}
 
 function parseFileValue(value: string): { name: string; url: string } {
   const separatorIndex = value.indexOf("::");
@@ -245,12 +296,16 @@ function RuntimeFileUploadField({
 
     for (const file of filesToUpload) {
       if (!isAllowedFileType(file, field.allowedFileTypes)) {
-        setUploadError(`"${file.name}" - jenis file tidak diizinkan.`);
+        setUploadError(
+          `"${file.name}" is not allowed. Only ${formatAllowedFileTypes(
+            field.allowedFileTypes,
+          )} files are allowed.`,
+        );
         return;
       }
 
       if ((field.limitFileSize ?? false) && file.size > maxSizeMb * 1024 * 1024) {
-        setUploadError(`"${file.name}" - ukuran file melebihi ${maxSizeMb} MB.`);
+        setUploadError(`"${file.name}" exceeds the ${maxSizeMb} MB file size limit.`);
         return;
       }
     }
@@ -324,13 +379,13 @@ function RuntimeFileUploadField({
           }
 
           console.error("[handleFileUpload]:", error);
-          setUploadError("Gagal mengupload file. Silakan coba lagi.");
+          setUploadError("Failed to upload the file. Please try again.");
           setUploadItems((current) =>
             current.map((entry) =>
               entry.id === item.id
                 ? {
                     ...entry,
-                    errorMessage: "Upload gagal",
+                    errorMessage: "Upload failed",
                     progress: entry.progress ?? 0,
                     status: "error" as const,
                   }
@@ -433,6 +488,7 @@ export default function PreviewField({
   const getResolvedPlaceholder = (fallback: string) =>
     hasConfiguredPlaceholder ? resolvedPlaceholder : fallback;
   const cardSurfaceClass = "theme-question-card rounded-xl bg-white";
+  const displaySurfaceClass = "rounded-xl bg-transparent";
   const responseCardClass = `${cardSurfaceClass} p-5 sm:p-6 ${
     hasError ? "ring-1 ring-red-300" : ""
   }`;
@@ -535,7 +591,7 @@ export default function PreviewField({
 
   if (field.type === "thank_you_block") {
     return (
-      <div className={`${cardSurfaceClass} flex flex-col items-center gap-2 px-5 py-6 text-center`}>
+      <div className={`${displaySurfaceClass} flex flex-col items-center gap-2 px-5 py-6 text-center`}>
         <CheckCircleIcon size={40} weight="fill" className="text-emerald-500" />
         <h3
           className="theme-question-title text-lg font-bold text-gray-900 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
@@ -551,28 +607,37 @@ export default function PreviewField({
   }
 
   if (field.type === "banner_block") {
+    const bannerStyle = BANNER_STYLES[field.bannerType ?? "info"];
+
     return (
-      <div className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
+      <div className="px-5 sm:px-6">
         <div
-          className="text-sm leading-relaxed text-blue-900 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-          dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "" }}
-        />
+          className={`${bannerStyle.bg} ${bannerStyle.border} flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5`}
+        >
+          <span className={`${bannerStyle.icon} shrink-0`}>
+            <BannerIcon type={field.bannerType} />
+          </span>
+          <div
+            className={`${bannerStyle.text} min-w-0 flex-1 text-sm leading-normal [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
+            dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "" }}
+          />
+        </div>
       </div>
     );
   }
 
   if (field.type === "paragraph") {
     return (
-      <div className={`${cardSurfaceClass} px-5 pb-4 pt-5`}>
+      <div className={`${displaySurfaceClass} px-5 pb-4 pt-5`}>
         {resolvedLabelHtml ? (
           <p
-            className="mb-1 text-base leading-snug text-gray-900"
+            className="theme-question-title mb-1 text-base leading-snug text-gray-900"
             dangerouslySetInnerHTML={{ __html: resolvedLabelHtml }}
           />
         ) : null}
         {resolvedDefaultHtml ? (
           <div
-            className="text-sm leading-relaxed text-gray-700 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="theme-question-caption text-sm leading-relaxed text-gray-700 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: resolvedDefaultHtml }}
           />
         ) : null}
@@ -619,7 +684,7 @@ export default function PreviewField({
 
   if (field.type === "title_block") {
     return (
-      <div className={`${cardSurfaceClass} px-5 pb-4 pt-5`}>
+      <div className={`${displaySurfaceClass} px-5 pb-4 pt-5`}>
         {field.headerImage ? (
           <img
             src={field.headerImage}

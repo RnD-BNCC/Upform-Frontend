@@ -173,6 +173,7 @@ export default function SectionPreview({
   return (
     <ThemeFormLayout
       formEndRef={questionsEndRef}
+      logoPlacement="absolute"
       pageType={pageType}
       surfaceClassName={contentClassName}
       themeConfig={themeConfig}

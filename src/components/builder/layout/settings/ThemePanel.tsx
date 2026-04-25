@@ -18,7 +18,6 @@ import {
   resolveTheme,
   serializeCustomTheme,
   type ThemeConfig,
-  type ThemeButtonAnimation,
   type ThemeButtonRounding,
   type ThemeFormAlignment,
   type ThemeFormPosition,
@@ -121,14 +120,6 @@ const BUTTON_ROUNDING_OPTIONS: Array<{
   { label: "Default", value: "default" },
   { label: "Full", value: "full" },
   { label: "None", value: "none" },
-];
-
-const BUTTON_ANIMATION_OPTIONS: Array<{
-  label: string;
-  value: ThemeButtonAnimation;
-}> = [
-  { label: "Default", value: "default" },
-  { label: "Grow", value: "grow" },
 ];
 
 const FORM_ALIGNMENT_OPTIONS: Array<{
@@ -940,41 +931,6 @@ export default function ThemePanel({
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-1.5">
-                  <span className={fieldLabelClassName}>Animation</span>
-                  <HelpTooltip>Choose how buttons animate on hover.</HelpTooltip>
-                </div>
-                <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  {BUTTON_ANIMATION_OPTIONS.map((option, index) => {
-                    const isSelected =
-                      currentTheme.buttonAnimation === option.value;
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          updateCurrentCustomTheme((theme) => ({
-                            ...theme,
-                            buttonAnimation: option.value,
-                          }))
-                        }
-                        className={`h-9 border-r border-gray-200 px-4 text-xs font-medium transition-colors last:border-r-0 ${getSegmentRadiusClassName(
-                          index,
-                          BUTTON_ANIMATION_OPTIONS.length,
-                        )} ${
-                          isSelected
-                            ? advancedSegmentSelectedClassName
-                            : advancedSegmentIdleClassName
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           </ThemeAdvancedSection>
 
