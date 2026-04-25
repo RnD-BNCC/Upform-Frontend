@@ -7,9 +7,14 @@ import IndividualResponseCard from './IndividualResponseCard'
 interface IndividualTabProps {
   responses: FormResponse[]
   allFields: FormField[]
+  emptyLabel?: string
 }
 
-export default function IndividualTab({ responses, allFields }: IndividualTabProps) {
+export default function IndividualTab({
+  responses,
+  allFields,
+  emptyLabel = 'No responses to display',
+}: IndividualTabProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -24,15 +29,17 @@ export default function IndividualTab({ responses, allFields }: IndividualTabPro
   }, [])
 
   if (responses.length === 0) {
-    return <p className="text-sm text-gray-400 text-center py-8">No responses to display</p>
+    return <p className="text-sm text-gray-400 text-center py-8">{emptyLabel}</p>
   }
+
+  const safeIndex = Math.min(currentIndex, responses.length - 1)
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-3">
         <button
           onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-          disabled={currentIndex === 0}
+          disabled={safeIndex === 0}
           className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <CaretLeftIcon size={18} className="text-gray-600" />
@@ -43,7 +50,7 @@ export default function IndividualTab({ responses, allFields }: IndividualTabPro
             onClick={() => setDropdownOpen((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1 text-sm text-gray-700 font-medium hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
           >
-            {currentIndex + 1} of {responses.length}
+            {safeIndex + 1} of {responses.length}
             <CaretDownIcon
               size={12}
               className={`text-gray-400 transition-transform duration-150 ${dropdownOpen ? 'rotate-180' : ''}`}
@@ -66,7 +73,7 @@ export default function IndividualTab({ responses, allFields }: IndividualTabPro
                       setDropdownOpen(false)
                     }}
                     className={`w-full px-4 py-2 text-sm text-center transition-colors cursor-pointer ${
-                      currentIndex === i
+                      safeIndex === i
                         ? 'text-primary-600 bg-primary-50 font-medium'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
@@ -81,7 +88,7 @@ export default function IndividualTab({ responses, allFields }: IndividualTabPro
 
         <button
           onClick={() => setCurrentIndex((i) => Math.min(responses.length - 1, i + 1))}
-          disabled={currentIndex === responses.length - 1}
+          disabled={safeIndex === responses.length - 1}
           className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <CaretRightIcon size={18} className="text-gray-600" />
@@ -89,8 +96,8 @@ export default function IndividualTab({ responses, allFields }: IndividualTabPro
       </div>
 
       <IndividualResponseCard
-        key={responses[currentIndex].id}
-        response={responses[currentIndex]}
+        key={responses[safeIndex].id}
+        response={responses[safeIndex]}
         allFields={allFields}
       />
     </div>
