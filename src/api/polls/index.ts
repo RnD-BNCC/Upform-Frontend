@@ -1,6 +1,7 @@
 export {
   useQueryPolls,
   useQueryPollDetail,
+  useQueryPollScores,
   useQueryPublicPoll,
   useMutationCreatePoll,
   useMutationUpdatePoll,
