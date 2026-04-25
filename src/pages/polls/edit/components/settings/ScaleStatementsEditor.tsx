@@ -1,5 +1,5 @@
 import { SCALE_COLORS } from '@/config/polling'
-import { ColorPickerDropdown } from '@/components/ui'
+import { ColorInputField } from '@/components/ui'
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -20,15 +20,9 @@ function SortableStatement({ id, value, color, onChange, onColorChange, onBlur, 
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} className="flex items-center gap-1.5">
-      <ColorPickerDropdown
+      <ColorInputField
         value={color}
         onChange={(c) => { onColorChange(c); onBlur() }}
-        colors={SCALE_COLORS}
-        direction="up"
-        align="left"
-        showCaret={false}
-        swatchSize="sm"
-        triggerClassName="h-6 w-6 shrink-0 cursor-pointer rounded-sm border border-gray-200 shadow-sm transition-transform hover:scale-105"
       />
       <div {...listeners} className="shrink-0 cursor-grab rounded-md p-0.5 text-gray-300 transition-colors hover:bg-gray-100 hover:text-gray-500 active:cursor-grabbing">
         <DotsSixVertical size={14} weight="bold" />

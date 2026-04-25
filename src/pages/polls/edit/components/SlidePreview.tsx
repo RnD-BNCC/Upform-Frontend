@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { SlideType, SlideSettings, ImageLayout } from "@/types/polling";
 import {
-  TOOLBAR_COLORS,
   FORMAT_CMDS,
   BAR_COLORS_HEX,
   WORD_CLOUD_COLORS,
@@ -14,7 +13,7 @@ import {
   ScaleWaveSvg,
   WordCloudSvg,
 } from "@/components/icons";
-import { ColorPickerDropdown } from "@/components/ui";
+import { ColorInputField } from "@/components/ui";
 import {
   TextB,
   TextItalic,
@@ -272,16 +271,9 @@ export default function SlidePreview({
           >
             Default <CaretIcon />
           </button>
-          <ColorPickerDropdown
+          <ColorInputField
             value="#111827"
             onChange={(c) => execCmd("foreColor", c)}
-            colors={TOOLBAR_COLORS}
-            direction="down"
-            align="left"
-            showCaret={false}
-            swatchSize="sm"
-            useMouseDown
-            triggerClassName="w-5 h-5 rounded-full bg-gray-800 ml-1 cursor-pointer border-2 border-gray-200 hover:scale-110 transition-transform"
           />
           <div className="w-px h-4 bg-gray-200 mx-1.5" />
           {[

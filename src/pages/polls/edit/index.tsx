@@ -9,6 +9,7 @@ import {
   useMutationUpdateSlide,
   useMutationDeleteSlide,
   useMutationReorderSlides,
+  useQueryPollScores,
 } from "@/api/polls";
 import { QUERY_KEYS } from "@/api/queryKeys";
 import { apiClient } from "@/config/api-client";
@@ -19,7 +20,12 @@ import {
   StatusModal,
   type StatusType,
 } from "@/components/modal";
-import type { PollSlide, SlideType, SlideSettings } from "@/types/polling";
+import type {
+  LeaderboardEntry,
+  PollSlide,
+  SlideType,
+  SlideSettings,
+} from "@/types/polling";
 import type { Poll } from "@/types/polling";
 import {
   SlidePreview,
@@ -34,6 +40,8 @@ import {
   FloppyDisk,
   SpinnerGap,
   Presentation,
+  ArrowClockwise,
+  Trophy,
 } from "@phosphor-icons/react";
 
 type PollEditorRouteState = {
@@ -41,6 +49,16 @@ type PollEditorRouteState = {
   selectedIndex?: number;
   isNewDraft?: boolean;
 };
+
+const RANK_BADGES = [
+  "bg-amber-400 text-amber-950",
+  "bg-slate-300 text-slate-900",
+  "bg-orange-300 text-orange-950",
+];
+
+function getRankBadgeClass(rank: number) {
+  return RANK_BADGES[rank - 1] ?? "bg-gray-100 text-gray-500";
+}
 
 const DEFAULT_POLL_THEME =
   THEME_PRESETS.find((theme) => theme.id === "upform-light") ??
@@ -107,11 +125,7 @@ function applyThemeToPollSlides(poll: Poll, theme: ThemePreset): Poll {
   };
 }
 
-function PollEditorLargeScreenNotice({
-  onBack,
-}: {
-  onBack: () => void;
-}) {
+function PollEditorLargeScreenNotice({ onBack }: { onBack: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-3 py-6 lg:hidden">
       <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white px-4 py-5 text-center shadow-sm">
@@ -139,7 +153,11 @@ function PollEditorLargeScreenNotice({
   );
 }
 
-function useSlideState(slide: PollSlide, pollId: string, onSaved?: () => void) {
+function useSlideState(
+  slide: PollSlide,
+  pollId: string,
+  onSaved?: () => void,
+) {
   const updateSlide = useMutationUpdateSlide(pollId);
 
   const [question, setQuestionState] = useState(slide.question);
@@ -247,6 +265,7 @@ export default function PollEditPage() {
   const [selectedIndex, setSelectedIndex] = useState(
     routeState?.selectedIndex ?? 0,
   );
+  const [activePanel, setActivePanel] = useState<"edit" | "results">("edit");
   const [title, setTitle] = useState(poll?.title ?? "");
   const [titleInit, setTitleInit] = useState(Boolean(poll));
   const [welcomeThemePicker, setWelcomeThemePicker] = useState(isLocalNewPoll);
@@ -270,6 +289,7 @@ export default function PollEditPage() {
 
     routeIdRef.current = pollId;
     setSelectedIndex(routeState?.selectedIndex ?? 0);
+    setActivePanel("edit");
     setTitleInit(false);
     setWelcomeThemePicker(pollId === "new");
     setWelcomeRename(false);
@@ -318,7 +338,7 @@ export default function PollEditPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [persistedPollId, title, updatePoll, showToast]);
+  }, [persistedPollId, showToast, title, updatePoll]);
 
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
@@ -491,6 +511,13 @@ export default function PollEditPage() {
   };
 
   const copyCode = () => navigator.clipboard.writeText(poll.code);
+  const handlePresent = () => {
+    if (persistedPollId) navigate(`/polls/${persistedPollId}/present`);
+  };
+  const handleSelectSlide = (index: number) => {
+    setSelectedIndex(index);
+    setActivePanel("edit");
+  };
 
   const applyInitialThemeToPersistedPoll = async (
     sourcePoll: Poll,
@@ -573,11 +600,9 @@ export default function PollEditPage() {
 
   return (
     <>
-      <PollEditorLargeScreenNotice
-        onBack={() => navigate("/polls")}
-      />
+      <PollEditorLargeScreenNotice onBack={() => navigate("/polls")} />
       <div
-        className="hidden min-h-screen flex-col bg-gray-50 lg:flex lg:flex-row"
+        className="hidden h-screen min-h-screen flex-col overflow-hidden bg-gray-50 lg:flex lg:flex-row"
         style={{
           backgroundImage:
             "linear-gradient(rgba(0,84,165,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,84,165,0.06) 1px, transparent 1px)",
@@ -585,6 +610,7 @@ export default function PollEditPage() {
         }}
       >
         <SlidesSidebar
+          activePanel={activePanel}
           title={title}
           pollCode={poll.code}
           slides={slides}
@@ -593,20 +619,22 @@ export default function PollEditPage() {
           onBack={() => navigate("/polls")}
           onTitleChange={setTitle}
           onTitleBlur={handleSaveTitle}
-          onSelectSlide={setSelectedIndex}
+          onSelectSlide={handleSelectSlide}
           onAddSlide={handleAddSlide}
           onDeleteSlide={handleDeleteSlide}
           onReorderSlides={handleReorderSlides}
           saveReorderRef={saveReorderRef}
           onCopyCode={copyCode}
-          onPresent={() => {
-            if (persistedPollId) navigate(`/polls/${persistedPollId}/present`);
-          }}
+          onPresent={handlePresent}
           onSave={handleSave}
+          onShowEdit={() => setActivePanel("edit")}
+          onShowResults={() => setActivePanel("results")}
           isAddPending={createSlide.isPending}
         />
 
-        {selectedSlide ? (
+        {activePanel === "results" ? (
+          <PollResultsPanel pollId={persistedPollId} title={title} />
+        ) : selectedSlide ? (
           <SlideEditorBridge
             key={selectedSlide.id}
             slide={selectedSlide}
@@ -679,6 +707,155 @@ export default function PollEditPage() {
         </AnimatePresence>
       </div>
     </>
+  );
+}
+
+function PollResultsPanel({
+  pollId,
+  title,
+}: {
+  pollId: string;
+  title: string;
+}) {
+  const {
+    data: scores = [],
+    isFetching,
+    isLoading,
+    refetch,
+  } = useQueryPollScores(pollId);
+  const totalParticipants = scores.length;
+  const topScore = scores[0]?.score ?? 0;
+  const averageScore =
+    totalParticipants > 0
+      ? Math.round(
+          scores.reduce((total, entry) => total + entry.score, 0) /
+            totalParticipants,
+        )
+      : 0;
+
+  const handleRefresh = () => {
+    void refetch();
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto px-8 py-8">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary-500">
+              Poll Results
+            </p>
+            <h2 className="mt-1 text-2xl font-black text-gray-900">
+              Leaderboard
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Full ranking for {title || "Untitled Poll"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="flex h-9 items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-xs font-bold text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
+            >
+              <ArrowClockwise
+                size={14}
+                weight="bold"
+                className={isFetching ? "animate-spin" : ""}
+              />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400">Participants</p>
+            <p className="mt-1 text-2xl font-black tabular-nums text-gray-900">
+              {totalParticipants}
+            </p>
+          </div>
+          <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400">Top score</p>
+            <p className="mt-1 text-2xl font-black tabular-nums text-gray-900">
+              {topScore}
+            </p>
+          </div>
+          <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400">Average score</p>
+            <p className="mt-1 text-2xl font-black tabular-nums text-gray-900">
+              {averageScore}
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Trophy size={16} weight="fill" className="text-primary-500" />
+              <p className="text-sm font-bold text-gray-900">All rankings</p>
+            </div>
+            <p className="text-xs text-gray-400">
+              {totalParticipants} participant
+              {totalParticipants === 1 ? "" : "s"}
+            </p>
+          </div>
+
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20">
+              <SpinnerGap size={28} className="animate-spin text-primary-500" />
+              <p className="text-sm text-gray-400">Loading rankings...</p>
+            </div>
+          ) : scores.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-20 text-center">
+              <Trophy size={40} className="text-gray-200" weight="duotone" />
+              <p className="text-sm font-bold text-gray-500">No rankings yet</p>
+              <p className="max-w-sm text-xs leading-relaxed text-gray-400">
+                Rankings will appear after participants answer scored poll
+                questions.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {scores.map((entry: LeaderboardEntry, index) => {
+                const rank = index + 1;
+
+                return (
+                  <div
+                    key={entry.id}
+                    className="grid grid-cols-[56px_1fr_110px] items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50"
+                  >
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${getRankBadgeClass(
+                        rank,
+                      )}`}
+                    >
+                      {rank}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-gray-900">
+                        {entry.name || "Anonymous"}
+                      </p>
+                      <p className="truncate text-xs text-gray-400">
+                        ID {entry.id}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black tabular-nums text-gray-900">
+                        {entry.score}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">
+                        points
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

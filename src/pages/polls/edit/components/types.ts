@@ -16,6 +16,7 @@ export interface MobileSlideNavProps {
 }
 
 export interface SlidesSidebarProps {
+  activePanel: "edit" | "results";
   title: string;
   pollCode: string;
   slides: PollSlide[];
@@ -32,6 +33,8 @@ export interface SlidesSidebarProps {
   onCopyCode: () => void;
   onPresent: () => void;
   onSave: () => void;
+  onShowEdit: () => void;
+  onShowResults: () => void;
   isAddPending: boolean;
 }
 
