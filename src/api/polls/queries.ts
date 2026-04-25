@@ -59,9 +59,10 @@ export function useMutationCreatePoll(
       const { data } = await apiClient.post<Poll>(Api.polls, payload)
       return data
     },
-    onSuccess: (...args) => {
+    onSuccess: (data, ...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLLS] })
-      options?.onSuccess?.(...args)
+      queryClient.setQueryData([QUERY_KEYS.POLL_DETAIL, data.id], data)
+      options?.onSuccess?.(data, ...args)
     },
     onError: options?.onError,
   })
@@ -198,7 +199,7 @@ export function useMutationSubmitVote(
   })
 }
 
-export { useMutationUploadImage } from '@/api/upload/queries'
+export { useMutationUploadImage } from '@/api/upload'
 
 export function useQuerySlideResults(pollId: string, slideId: string) {
   return useQuery({

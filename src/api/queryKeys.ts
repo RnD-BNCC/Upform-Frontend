@@ -3,8 +3,13 @@ export const QUERY_KEYS = {
   EVENT_DETAIL: 'event-detail',
   SECTIONS: 'sections',
   RESPONSES: 'responses',
+  RESPONSE_PROGRESS: 'response-progress',
+  ANALYTICS_EVENTS: 'analytics-events',
   PUBLIC_EVENT: 'public-event',
   POLLS: 'polls',
   POLL_DETAIL: 'poll-detail',
   PUBLIC_POLL: 'public-poll',
+  EMAIL_BLASTS: 'email-blasts',
+  EMAIL_BLAST_DETAIL: 'email-blast-detail',
+  EMAIL_BLAST_DRAFT: 'email-blast-draft',
 } as const
