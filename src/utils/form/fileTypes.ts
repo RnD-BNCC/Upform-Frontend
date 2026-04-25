@@ -74,8 +74,46 @@ export const FILE_TYPE_MIME_MAP: Record<string, string[]> = {
   Audio: ["audio/"],
 };
 
+export const FILE_TYPE_EXTENSION_MAP: Record<string, string[]> = {
+  JPEG: ["jpg", "jpeg"],
+  PNG: ["png"],
+  GIF: ["gif"],
+  SVG: ["svg"],
+  WebP: ["webp"],
+  BMP: ["bmp"],
+  PDF: ["pdf"],
+  DOCX: ["docx"],
+  DOC: ["doc"],
+  XLSX: ["xlsx"],
+  XLS: ["xls"],
+  PPTX: ["pptx"],
+  CSV: ["csv"],
+  TXT: ["txt"],
+  MP4: ["mp4"],
+  MOV: ["mov"],
+  MP3: ["mp3"],
+  WAV: ["wav"],
+  ZIP: ["zip"],
+  Document: ["doc", "docx", "txt", "rtf"],
+  Spreadsheet: ["xls", "xlsx", "csv"],
+  Presentation: ["ppt", "pptx"],
+  Drawing: ["svg", "drawio"],
+  Image: ["jpg", "jpeg", "png", "gif", "svg", "webp", "bmp"],
+  Video: ["mp4", "mov"],
+  Audio: ["mp3", "wav"],
+};
+
 function getFileTypeMimeList(type: string) {
   return FILE_TYPE_MIME_MAP[type] ?? [];
+}
+
+function getFileTypeExtensionList(type: string) {
+  return FILE_TYPE_EXTENSION_MAP[type] ?? [];
+}
+
+function getFileExtension(fileName: string) {
+  const segments = fileName.split(".");
+  return segments.length > 1 ? segments.at(-1)?.toLowerCase() ?? "" : "";
 }
 
 export function getAcceptedFileMimeList(allowedTypes?: string[]) {
@@ -83,10 +121,12 @@ export function getAcceptedFileMimeList(allowedTypes?: string[]) {
 
   const accepted = Array.from(
     new Set(
-      allowedTypes.flatMap((type) =>
-        getFileTypeMimeList(type).map((mime) =>
+      allowedTypes.flatMap((type) => [
+        ...getFileTypeMimeList(type).map((mime) =>
           mime.endsWith("/") ? `${mime}*` : mime,
         ),
+        ...getFileTypeExtensionList(type).map((extension) => `.${extension}`),
+      ],
       ),
     ),
   );
@@ -98,12 +138,40 @@ export function isAllowedFileType(file: File, allowedTypes?: string[]) {
   if (!allowedTypes || allowedTypes.length === 0) return true;
 
   const mime = file.type.toLowerCase();
-  return allowedTypes.some((type) =>
-    getFileTypeMimeList(type).some((allowedMime) => {
-      const normalizedMime = allowedMime.toLowerCase();
-      return normalizedMime.endsWith("/")
-        ? mime.startsWith(normalizedMime)
-        : mime === normalizedMime;
-    }),
-  );
+  const extension = getFileExtension(file.name);
+  const canTrustMime = Boolean(mime) && mime !== "application/octet-stream";
+
+  return allowedTypes.some((type) => {
+    const matchesMime = mime
+      ? getFileTypeMimeList(type).some((allowedMime) => {
+          const normalizedMime = allowedMime.toLowerCase();
+          return normalizedMime.endsWith("/")
+            ? mime.startsWith(normalizedMime)
+            : mime === normalizedMime;
+        })
+      : false;
+
+    if (matchesMime) {
+      return true;
+    }
+
+    return !canTrustMime && getFileTypeExtensionList(type).includes(extension);
+  });
+}
+
+export function formatAllowedFileTypes(allowedTypes?: string[]) {
+  if (!allowedTypes || allowedTypes.length === 0) {
+    return "any supported file type";
+  }
+
+  const labels = allowedTypes.map((type) => type.toUpperCase());
+  if (labels.length === 1) {
+    return labels[0];
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} or ${labels[1]}`;
+  }
+
+  return `${labels.slice(0, -1).join(", ")}, or ${labels.at(-1)}`;
 }
