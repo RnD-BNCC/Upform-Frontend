@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CaretLeft,
   ArrowRight,
@@ -15,8 +16,6 @@ import {
   ChatTeardropText,
   Timer,
 } from "@phosphor-icons/react";
-import { TimerRing } from "@/components/icons";
-import type React from "react";
 import type { PresentControlsProps } from "./types";
 
 function ToolbarButton({
@@ -27,7 +26,7 @@ function ToolbarButton({
   title,
   variant,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   active?: boolean;
@@ -82,9 +81,16 @@ export default function PresentControls({
   onToggleSlideGrid,
   onShowHotkeys,
   onSetShowTimerPopover,
-  onStopTimer,
   onStartTimer,
 }: PresentControlsProps) {
+  const [showFloatingTimer, setShowFloatingTimer] = useState(true);
+
+  useEffect(() => {
+    if (timerActive) {
+      setShowFloatingTimer(true);
+    }
+  }, [timerActive]);
+
   const hasCorrectAnswer =
     (slideType === "multiple_choice" && !!slideSettings?.correctAnswer) ||
     (slideType === "guess_number" && slideSettings?.correctNumber !== undefined) ||
@@ -116,6 +122,20 @@ export default function PresentControls({
     !isWaitingRoom &&
     !isLeaderboardSlide &&
     !revealPhase;
+  const timerPct =
+    timerActive && timerRemaining !== null
+      ? timerRemaining / (slideSettings.timer ?? (timerRemaining || 1))
+      : 1;
+  const redIntensity =
+    timerRemaining !== null && timerRemaining <= 10
+      ? Math.max(0, Math.min(1, (10 - timerRemaining) / 10))
+      : 0;
+  const timerColor =
+    timerRemaining !== null && timerRemaining <= 10
+      ? `rgb(${239 - redIntensity * 88}, ${68 - redIntensity * 43}, ${68 - redIntensity * 40})`
+      : timerPct < 0.3
+        ? "#F59E0B"
+        : "#10B981";
 
   return (
     <>
@@ -199,18 +219,27 @@ export default function PresentControls({
               <div className="relative" data-timer-popover>
                 <ToolbarButton
                   onClick={() => {
-                    if (timerActive) onStopTimer();
-                    else onSetShowTimerPopover(!showTimerPopover);
+                    if (timerActive) {
+                      setShowFloatingTimer((value) => !value);
+                    } else {
+                      onSetShowTimerPopover(!showTimerPopover);
+                    }
                   }}
-                  active={timerActive}
-                  title={timerActive ? "Stop timer" : "Set timer"}
+                  active={timerActive && showFloatingTimer}
+                  title={
+                    timerActive
+                      ? showFloatingTimer
+                        ? "Hide timer"
+                        : "Show timer"
+                      : "Set timer"
+                  }
                 >
                   {timerActive && timerRemaining !== null ? (
-                    <TimerRing
-                      remaining={timerRemaining}
-                      total={slideSettings.timer ?? timerRemaining}
-                      size={24}
-                    />
+                    showFloatingTimer ? (
+                      <EyeSlash size={18} weight="bold" />
+                    ) : (
+                      <Eye size={18} weight="bold" />
+                    )
                   ) : (
                     <Timer size={18} weight="bold" />
                   )}
@@ -270,22 +299,25 @@ export default function PresentControls({
         </div>
       </div>
 
-      {timerActive && timerRemaining !== null && (
-        <div className="fixed right-5 bottom-28 z-50 flex items-center gap-2 bg-white rounded-full shadow-lg border border-gray-200 px-3 py-2">
-          <TimerRing
-            remaining={timerRemaining}
-            total={slideSettings.timer ?? timerRemaining}
-            size={30}
-          />
-          <button
-            onClick={onStopTimer}
-            className="w-5 h-5 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-            title="Stop timer"
+      <AnimatePresence>
+        {timerActive && timerRemaining !== null && showFloatingTimer ? (
+          <motion.div
+            key="floating-timer"
+            initial={{ opacity: 0, scale: 0.94, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 6 }}
+            transition={{ duration: 0.18 }}
+            className="fixed bottom-28 right-8 z-50 select-none text-[clamp(40px,5vw,76px)] font-black leading-none tabular-nums"
+            style={{
+              color: timerColor,
+              textShadow:
+                "0 3px 18px rgba(0,0,0,0.35), 0 0 26px currentColor",
+            }}
           >
-            <X size={12} weight="bold" />
-          </button>
-        </div>
-      )}
+            {timerRemaining}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </>
   );
 }
