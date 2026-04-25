@@ -5,6 +5,7 @@ type Props = {
   circumference: number;
   dashOffset: number;
   color: string;
+  trackColor?: string;
 };
 
 export default function TimerRingSvg({
@@ -14,6 +15,7 @@ export default function TimerRingSvg({
   circumference,
   dashOffset,
   color,
+  trackColor = "rgba(0,0,0,0.08)",
 }: Props) {
   return (
     <svg
@@ -27,7 +29,7 @@ export default function TimerRingSvg({
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="rgba(0,0,0,0.08)"
+        stroke={trackColor}
         strokeWidth={strokeWidth}
       />
       <circle
