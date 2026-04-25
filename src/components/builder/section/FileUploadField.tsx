@@ -129,7 +129,7 @@ export function FileUploadFieldCard({
         maxFileSizeMb,
       })
     : "";
-  const dropzoneClassName = `theme-answer-input theme-answer-border theme-answer-text flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition-colors ${
+  const dropzoneClassName = `theme-answer-input theme-answer-multiline theme-answer-border theme-answer-text flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition-colors ${
     isInteractive && !isUploading
       ? "cursor-pointer hover:border-primary-300 hover:bg-primary-50/40"
       : "pointer-events-none select-none"

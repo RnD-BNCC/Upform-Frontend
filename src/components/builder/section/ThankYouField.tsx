@@ -31,7 +31,7 @@ export function ThankYouFieldCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12 }}
       onClickCapture={onSelect}
-      className={`relative cursor-pointer rounded-xl bg-white transition-all duration-150 ${
+      className={`relative cursor-pointer rounded-xl bg-transparent transition-all duration-150 ${
         isSelected
           ? "ring-2 ring-primary-400"
           : "hover:ring-2 hover:ring-primary-200"
@@ -56,7 +56,8 @@ export function ThankYouFieldCard({
             placeholder="Thank you!"
             referenceFields={availableReferenceFields}
             referenceFieldGroups={availableReferenceFieldGroups}
-            className="w-full border-b border-transparent pb-1 text-center text-xl font-bold text-gray-900 transition-colors hover:border-gray-200 focus:border-primary-400"
+            placeholderClassName="theme-question-caption text-center text-sm"
+            className="theme-question-title w-full border-b border-transparent pb-1 text-center text-xl font-bold text-gray-900 transition-colors hover:border-gray-200 focus:border-primary-400"
             stopPropagation
             noLists
           />
@@ -69,7 +70,7 @@ export function ThankYouFieldCard({
             }}
             onClick={(event) => event.stopPropagation()}
             placeholder="Thank you for your response!"
-            className="mt-2 w-full border-b border-transparent bg-transparent pb-0.5 text-center text-sm text-gray-500 outline-none transition-colors hover:border-gray-200 focus:border-primary-400 placeholder:text-gray-300"
+            className="theme-question-caption mt-2 w-full border-b border-transparent bg-transparent pb-0.5 text-center text-sm text-gray-500 outline-none transition-colors hover:border-gray-200 focus:border-primary-400 placeholder:text-gray-300"
           />
         </div>
       </div>

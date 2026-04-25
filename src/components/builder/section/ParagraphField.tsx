@@ -1,4 +1,9 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import { motion } from "framer-motion";
 import { TextAlignLeftIcon } from "@phosphor-icons/react";
 import RichInput from "../utils/RichInput";
@@ -23,15 +28,33 @@ export default function ParagraphField({
   hasError = false,
   onChange,
 }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const resizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+
+  useLayoutEffect(() => {
+    resizeTextarea();
+  }, [defaultValue]);
+
   return (
     <textarea
-      value={defaultValue ?? ''}
-      onChange={(e) => onChange(e.target.value)}
+      ref={textareaRef}
+      value={defaultValue ?? ""}
+      onChange={(e) => {
+        onChange(e.target.value);
+        resizeTextarea();
+      }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
-      placeholder={placeholder || 'Long answer…'}
+      placeholder={placeholder || "Long answer..."}
       rows={3}
-      className={`theme-answer-input w-full min-h-16 resize-none rounded-lg border bg-transparent px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors ${
+      className={`theme-answer-input theme-answer-multiline w-full min-h-16 resize-none overflow-hidden rounded-lg border bg-transparent px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors ${
         hasError
           ? "border-red-400 focus:border-red-500"
           : "border-gray-200 hover:border-gray-300 focus:border-primary-400"
@@ -67,7 +90,7 @@ export function ParagraphBlockFieldCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12 }}
       onClickCapture={onSelect}
-      className={`cursor-pointer rounded-xl bg-white transition-all duration-150 ${
+      className={`cursor-pointer rounded-xl bg-transparent transition-all duration-150 ${
         isSelected
           ? "ring-2 ring-primary-400"
           : "hover:ring-2 hover:ring-primary-200"
@@ -85,7 +108,8 @@ export function ParagraphBlockFieldCard({
             placeholder={placeholder || "Write paragraph content here..."}
             referenceFields={availableReferenceFields}
             referenceFieldGroups={availableReferenceFieldGroups}
-            className="w-full border-b border-transparent pb-1 text-sm text-gray-700 transition-colors hover:border-gray-200 focus:border-primary-400"
+            placeholderClassName="theme-question-caption text-sm"
+            className="theme-question-caption w-full border-b border-transparent pb-1 text-sm text-gray-700 transition-colors hover:border-gray-200 focus:border-primary-400"
             stopPropagation
           />
         </div>

@@ -20,6 +20,8 @@ import {
   FieldPluginRequiredValidationField,
 } from "./FieldSettingSections";
 
+const DEFAULT_RANKING_OPTIONS = ["Option 1", "Option 2"];
+
 type RankingItemProps = {
   id: string;
   index: number;
@@ -46,12 +48,14 @@ function RankingFieldItem({ id, index, label }: RankingItemProps) {
         transition,
         opacity: isDragging ? 0.4 : 1,
       }}
-      className="flex cursor-grab touch-none items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 active:cursor-grabbing"
+      className="theme-answer-input theme-answer-border flex cursor-grab touch-none items-center gap-2 rounded-lg border bg-white px-3 py-2 active:cursor-grabbing"
     >
-      <span className="w-4 shrink-0 text-xs font-bold text-gray-300">
+      <span className="theme-answer-placeholder w-4 shrink-0 text-xs font-bold text-gray-300">
         {index + 1}
       </span>
-      <div className="flex-1 text-sm text-gray-500">{label}</div>
+      <div className="theme-answer-text flex-1 text-sm text-gray-500">
+        {label}
+      </div>
     </div>
   );
 }
@@ -121,14 +125,13 @@ export const rankingFieldPlugin = createFieldPlugin({
   ],
   createField: createFieldFactory("ranking", {
     label: "Ranking",
+    options: DEFAULT_RANKING_OPTIONS,
     required: false,
   }),
   renderBuilder: ({ field, onChange }) => (
     <RankingField
       options={
-        field.options?.length
-          ? field.options
-          : ["Option 1", "Option 2", "Option 3"]
+        field.options?.length ? field.options : DEFAULT_RANKING_OPTIONS
       }
       onChange={(options) => onChange({ options })}
     />
@@ -136,7 +139,7 @@ export const rankingFieldPlugin = createFieldPlugin({
   renderSettingsSections: ({ field, onChange }) => ({
     options: (
       <FieldPluginOptionsEditor
-        options={field.options ?? []}
+        options={field.options?.length ? field.options : DEFAULT_RANKING_OPTIONS}
         onChange={(options) => onChange({ options })}
       />
     ),

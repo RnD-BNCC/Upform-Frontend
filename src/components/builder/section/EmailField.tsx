@@ -1,4 +1,4 @@
-import { EnvelopeSimpleIcon } from '@phosphor-icons/react'
+import { EnvelopeSimpleIcon } from "@phosphor-icons/react";
 import {
   createFieldFactory,
   createFieldPlugin,
@@ -20,22 +20,22 @@ export default function EmailField({
 }: Props) {
   return (
     <div
-      className={`theme-answer-input flex items-center overflow-hidden rounded-lg border bg-transparent transition-colors ${
+      className={`theme-answer-input flex min-h-11 items-stretch overflow-hidden rounded-lg border bg-white transition-colors ${
         hasError
           ? "border-red-400 focus-within:border-red-500"
           : "border-gray-200 hover:border-gray-300 focus-within:border-primary-400"
       }`}
     >
-      <div className="flex items-center px-3 py-2.5 bg-gray-50 border-r border-gray-100 shrink-0">
-        <EnvelopeSimpleIcon size={14} className="text-gray-400" />
+      <div className="theme-answer-addon flex w-20 shrink-0 items-center justify-center border-r px-3">
+        <EnvelopeSimpleIcon size={14} className="theme-answer-placeholder" />
       </div>
       <input
         type="text"
-        value={defaultValue ?? ''}
+        value={defaultValue ?? ""}
         onChange={(e) => onChange(e.target.value)}
         onClick={(e) => e.stopPropagation()}
-        placeholder={placeholder || 'Email address…'}
-        className="theme-answer-input flex-1 px-3 py-2.5 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300 placeholder:text-xs"
+        placeholder={placeholder || "Email address..."}
+        className="theme-answer-placeholder theme-answer-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-xs"
       />
     </div>
   );
@@ -86,3 +86,4 @@ export const emailFieldPlugin = createFieldPlugin({
     ),
   }),
 });
+

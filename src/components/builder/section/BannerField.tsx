@@ -78,28 +78,35 @@ export function BannerFieldCard({
         isSelected ? "ring-2 ring-primary-400 ring-offset-1" : ""
       }`}
     >
-      <div
-        className={`${colors.bg} ${colors.border} flex items-start gap-3 rounded-lg border px-4 py-3`}
-      >
+      <div className="flex">
         <div
           {...dragListeners}
-          className={`${colors.icon} mt-0.5 shrink-0 cursor-grab touch-none opacity-30 transition-opacity group-hover:opacity-100 active:cursor-grabbing`}
+          className={`${colors.icon} flex w-6 shrink-0 cursor-grab touch-none items-center justify-center self-stretch opacity-30 transition-opacity group-hover:opacity-100 active:cursor-grabbing`}
         >
           <DotsNineIcon size={14} weight="bold" />
         </div>
-        <span className={`mt-0.5 shrink-0 ${colors.icon}`}>
-          {BANNER_ICONS[field.bannerType ?? "info"]}
-        </span>
-        <div className="min-w-0 flex-1" onClick={(event) => event.stopPropagation()}>
-          <RichInput
-            value={field.label}
-            onChange={(value) => onChange({ label: value })}
-            placeholder="Write banner content here..."
-            referenceFields={availableReferenceFields}
-            referenceFieldGroups={availableReferenceFieldGroups}
-            className={`${colors.text} w-full bg-transparent text-sm`}
-            stopPropagation
-          />
+        <div className="min-w-0 flex-1 pr-5">
+          <div
+            className={`${colors.bg} ${colors.border} flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5`}
+          >
+            <span className={`shrink-0 ${colors.icon}`}>
+              {BANNER_ICONS[field.bannerType ?? "info"]}
+            </span>
+            <div
+              className="min-w-0 flex-1"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <RichInput
+                value={field.label}
+                onChange={(value) => onChange({ label: value })}
+                placeholder="Write banner content here..."
+                referenceFields={availableReferenceFields}
+                referenceFieldGroups={availableReferenceFieldGroups}
+                className={`${colors.text} w-full bg-transparent text-sm leading-normal`}
+                stopPropagation
+              />
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>

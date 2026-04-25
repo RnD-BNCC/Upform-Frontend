@@ -58,11 +58,6 @@ export function UrlButtonFieldCard({
             >
               {field.label || "Visit link"}
             </a>
-            {field.buttonUrl && (
-              <span className="mt-1 block max-w-xs truncate text-xs text-gray-400">
-                {field.buttonUrl}
-              </span>
-            )}
           </div>
         </div>
       </div>

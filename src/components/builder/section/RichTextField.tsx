@@ -25,7 +25,7 @@ export default function RichTextField({
   showToolbar = true,
 }: Props) {
   return (
-    <div className="theme-answer-input overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="theme-answer-input theme-answer-multiline theme-answer-border overflow-hidden rounded-lg border border-gray-200 bg-white">
       <RichInput
         value={defaultValue ?? ""}
         onChange={(value) => onChange(value)}

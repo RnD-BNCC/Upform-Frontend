@@ -87,10 +87,10 @@ export default function CheckboxField({
 
               onChange(formatOptionIndexes(nextIndexes));
             }}
-            className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
+            className={`theme-answer-input flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
               isSelected
                 ? "theme-primary-border theme-primary-soft border-primary-400 bg-primary-50"
-                : "theme-answer-input theme-answer-border border-gray-200 bg-white hover:opacity-90"
+                : "theme-answer-border border-gray-200 bg-white hover:opacity-90"
             }`}
           >
             <span
@@ -155,10 +155,10 @@ export default function CheckboxField({
                 : [...runtimeSelections, `__other__:${resolvedOtherText}`],
             );
           }}
-          className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
+          className={`theme-answer-input flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
             runtimeOtherValue
               ? "theme-primary-border theme-primary-soft border-primary-400 bg-primary-50"
-              : "theme-answer-input theme-answer-border border-gray-200 bg-white hover:opacity-90"
+              : "theme-answer-border border-gray-200 bg-white hover:opacity-90"
           }`}
         >
           <span

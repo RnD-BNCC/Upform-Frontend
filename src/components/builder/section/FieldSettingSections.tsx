@@ -1,7 +1,23 @@
 import { useState } from "react";
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { DotsSixVerticalIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { useSortable } from "@dnd-kit/sortable";
 import type { FormField } from "@/types/form";
 import { FieldPluginLabel } from "./FieldSettingControls";
+import DropdownField from "./DropdownField";
 
 const VALIDATION_PATTERNS: { value: string; label: string }[] = [
   { value: "none", label: "None" },
@@ -9,6 +25,63 @@ const VALIDATION_PATTERNS: { value: string; label: string }[] = [
   { value: "url", label: "URL" },
   { value: "number", label: "Number only" },
 ];
+
+function SortableFieldOptionRow({
+  id,
+  option,
+  onRemove,
+  onUpdate,
+}: {
+  id: string;
+  option: string;
+  onRemove: () => void;
+  onUpdate: (value: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className="group/option-row flex items-center gap-1.5"
+    >
+      <button
+        type="button"
+        {...listeners}
+        className="flex h-7 w-5 shrink-0 cursor-grab items-center justify-center text-gray-300 transition-colors hover:text-gray-500 active:cursor-grabbing"
+        title="Drag to reorder"
+      >
+        <DotsSixVerticalIcon size={14} weight="bold" />
+      </button>
+      <input
+        type="text"
+        value={option}
+        onChange={(event) => onUpdate(event.target.value)}
+        className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="flex h-6 w-6 shrink-0 items-center justify-center text-gray-300 transition-colors hover:text-red-400"
+      >
+        <TrashIcon size={12} />
+      </button>
+    </div>
+  );
+}
 
 export function FieldPluginOptionsEditor({
   onChange,
@@ -19,6 +92,10 @@ export function FieldPluginOptionsEditor({
 }) {
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
+  const optionIds = options.map((_, index) => `option-${index}`);
 
   const updateOption = (index: number, value: string) => {
     const next = [...options];
@@ -32,6 +109,17 @@ export function FieldPluginOptionsEditor({
 
   const addOption = () => {
     onChange([...options, `Option ${options.length + 1}`]);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = optionIds.indexOf(String(active.id));
+    const newIndex = optionIds.indexOf(String(over.id));
+
+    if (oldIndex < 0 || newIndex < 0) return;
+    onChange(arrayMove(options, oldIndex, newIndex));
   };
 
   const applyBulk = () => {
@@ -50,25 +138,25 @@ export function FieldPluginOptionsEditor({
 
   return (
     <>
-      <div className="space-y-1.5">
-        {options.map((option, index) => (
-          <div key={`${option}-${index}`} className="flex items-center gap-1.5">
-            <input
-              type="text"
-              value={option}
-              onChange={(event) => updateOption(index, event.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
-            />
-            <button
-              type="button"
-              onClick={() => removeOption(index)}
-              className="flex h-6 w-6 shrink-0 items-center justify-center text-gray-300 transition-colors hover:text-red-400"
-            >
-              <TrashIcon size={12} />
-            </button>
+      <DndContext
+        collisionDetection={closestCenter}
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={optionIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1.5">
+            {options.map((option, index) => (
+              <SortableFieldOptionRow
+                key={`option-${index}`}
+                id={optionIds[index]}
+                option={option}
+                onRemove={() => removeOption(index)}
+                onUpdate={(value) => updateOption(index, value)}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       <div className="mt-1 flex items-center gap-2">
         <button
@@ -225,23 +313,38 @@ export function FieldPluginTextValidationFields({
 
       <div>
         <FieldPluginLabel>Validation pattern</FieldPluginLabel>
-        <select
-          value={field.validationPattern ?? "none"}
-          onChange={(event) =>
+        <DropdownField
+          defaultValue={field.validationPattern ?? "none"}
+          onChange={(value) =>
             onChange({
-              validationPattern:
-                event.target.value === "none" ? undefined : event.target.value,
+              validationEmailDomain:
+                value === "email" ? field.validationEmailDomain : undefined,
+              validationPattern: value === "none" ? undefined : value,
             })
           }
-          className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
-        >
-          {VALIDATION_PATTERNS.map((pattern) => (
-            <option key={pattern.value} value={pattern.value}>
-              {pattern.label}
-            </option>
-          ))}
-        </select>
+          options={VALIDATION_PATTERNS}
+          size="compact"
+        />
       </div>
+
+      {field.validationPattern === "email" ? (
+        <div>
+          <FieldPluginLabel tooltip="Optional. Example: @binus.ac.id only allows emails ending with that domain. Leave empty to allow any email.">
+            Email domain
+          </FieldPluginLabel>
+          <input
+            type="text"
+            value={field.validationEmailDomain ?? ""}
+            onChange={(event) =>
+              onChange({
+                validationEmailDomain: event.target.value || undefined,
+              })
+            }
+            placeholder="@binus.ac.id"
+            className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300 placeholder:text-gray-400"
+          />
+        </div>
+      ) : null}
 
       <div>
         <FieldPluginLabel tooltip="Shown to the user when their answer fails validation">

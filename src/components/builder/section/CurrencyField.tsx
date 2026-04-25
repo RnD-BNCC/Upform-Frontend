@@ -1,5 +1,8 @@
 import { CurrencyDollarIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import {
+  createFieldFactory,
+  createFieldPlugin,
+} from "./fieldDefinitionHelpers";
 import { FieldPluginTextValidationFields } from "./FieldSettingSections";
 import { FieldPluginLabel } from "./FieldSettingControls";
 
@@ -46,13 +49,13 @@ export default function CurrencyField({
 }: Props) {
   return (
     <div
-      className={`theme-answer-input flex items-center overflow-hidden rounded-lg border bg-white transition-colors ${
+      className={`theme-answer-input flex min-h-11 items-stretch overflow-hidden rounded-lg border bg-white transition-colors ${
         hasError
           ? "border-red-400 focus-within:border-red-500"
           : "border-gray-200 hover:border-gray-300 focus-within:border-primary-400"
       }`}
     >
-      <span className="border-r border-gray-100 bg-gray-50 px-3 py-2.5 text-sm text-gray-400">
+      <span className="theme-answer-addon flex w-20 shrink-0 items-center justify-center border-r px-3 text-sm">
         {CURRENCY_SYMBOLS[currencyCode ?? "USD"] ?? "$"}
       </span>
       <input
@@ -61,7 +64,7 @@ export default function CurrencyField({
         onChange={(event) => onChange(event.target.value)}
         onClick={(event) => event.stopPropagation()}
         placeholder={placeholder || "0.00"}
-        className="theme-answer-input flex-1 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none placeholder:text-xs placeholder:text-gray-300"
+        className="theme-answer-placeholder theme-answer-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-xs"
       />
     </div>
   );
