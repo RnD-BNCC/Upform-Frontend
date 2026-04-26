@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { SpinnerGap } from "@phosphor-icons/react";
+import SubmittingSpinner from "./SubmittingSpinner";
 
 type Props = {
   onSubmit: (value: unknown) => void;
@@ -52,9 +52,7 @@ export default function QAInput({
         className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
         {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
+          <SubmittingSpinner />
         ) : (
           "Ask"
         )}

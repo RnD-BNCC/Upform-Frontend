@@ -1,4 +1,5 @@
-import { Presentation, SpinnerGap } from "@phosphor-icons/react";
+import { Presentation } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 
 type Props = {
   name: string;
@@ -33,7 +34,7 @@ export default function WaitingScreen({
           Hi <span className="font-semibold text-gray-600">{name}</span>!
         </p>
       </div>
-      <SpinnerGap size={24} className="text-primary-400 animate-spin mt-2" />
+      <Spinner size={24} className="text-primary-400 mt-2" />
       <p className="text-xs text-gray-300 mt-2 max-w-xs">
         Please reload your browser or contact us at{" "}
         <span className="font-semibold text-gray-400">contact@bncc.net</span> if

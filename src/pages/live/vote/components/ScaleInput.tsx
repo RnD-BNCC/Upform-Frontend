@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import SubmittingSpinner from "./SubmittingSpinner";
 import { SCALE_COLORS } from "@/config/polling";
 
 type Props = {
@@ -138,9 +138,7 @@ export default function ScaleInput({
         className="w-full bg-primary-500 text-white font-bold py-3.5 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
         {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
+          <SubmittingSpinner />
         ) : (
           "Submit"
         )}
