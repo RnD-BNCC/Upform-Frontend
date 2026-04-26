@@ -3,10 +3,16 @@
   MonitorIcon,
   PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
-import { EmailActivityPanel } from "../email-activity";
+import EmailActivityPanel from "../email-activity/EmailActivityPanel";
 import BrowserIllustration from "../embed/BrowserIllustration";
-import { EMBED_TYPE_OPTIONS } from "../embed/embedOptions";
 import type { EmbedType, ShareTab } from "@/types/builderShare";
+
+const EMBED_TYPE_OPTIONS = [
+  { value: "standard", label: "Standard" },
+  { value: "popup", label: "Popup" },
+  { value: "fullscreen", label: "Full screen" },
+  { value: "slider", label: "Slider" },
+] as const;
 
 type ShareTabPanelProps = {
   activeTab: ShareTab;

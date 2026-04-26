@@ -1,5 +1,15 @@
 import { Users } from "@phosphor-icons/react";
-import type { PresentHeaderProps } from "./types";
+
+type PresentHeaderProps = {
+  title: string
+  code: string
+  currentSlide: number
+  totalSlides: number
+  participantCount: number
+  joinUrl: string
+  textColor: string
+  showInstructionsBar?: boolean
+}
 
 export default function PresentHeader({
   title,
