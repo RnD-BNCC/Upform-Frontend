@@ -1,6 +1,6 @@
 import { Route } from 'react-router-dom'
 import type { Route as RouteConfig } from '@/types/route'
-import { RootLayout } from '@/layouts'
+import RootLayout from '@/layouts/RootLayout'
 import { AuthGuard, GuestGuard } from '@/components/auth'
 
 export function renderRoutes(routes: RouteConfig[]) {
