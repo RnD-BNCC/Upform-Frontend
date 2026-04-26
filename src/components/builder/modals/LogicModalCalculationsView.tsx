@@ -29,11 +29,11 @@ import type {
   CalculationRule,
   CalculationType,
   ConditionGroup,
-  ConditionNode,
   FormCalculation,
   FormField,
 } from "@/types/form";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
+import { countConditionNodes } from "@/components/builder/layout/reference/fieldConditionUtils";
 import type { LogicModalCalculationsController } from "@/hooks/builder/useLogicModalCalculations";
 
 const CALCULATION_TYPE_SELECT_OPTIONS: ConditionSelectOption[] = (
@@ -114,12 +114,6 @@ function getCalculationTypeBadgeClass(type: CalculationType) {
   }
 
   return "bg-sky-100 text-sky-700";
-}
-
-function countConditionNodes(tree: ConditionGroup): number {
-  return tree.items.reduce<number>((count, item: ConditionNode) => {
-    return count + (item.type === "group" ? countConditionNodes(item) : 1);
-  }, 0);
 }
 
 type Props = {
