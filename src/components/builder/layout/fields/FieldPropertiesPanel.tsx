@@ -28,6 +28,10 @@ import {
   fieldSupportsSetting,
   getFieldPlugin,
 } from "@/components/builder/section/fieldRegistry";
+import {
+  formatCurrencyInput,
+  normalizeCurrencyInput,
+} from "@/components/builder/section/CurrencyField";
 import HelpTooltip from "../shared/HelpTooltip";
 
 type Props = {
@@ -284,18 +288,23 @@ export default function FieldPropertiesPanel({
           {hasCaption ? (
             <div>
               <Label tooltip="Shown below the field title">Caption</Label>
-              <ReferenceTextEditor
-                availableFields={availableFields}
-                availableFieldGroups={availableFieldGroups}
-                value={field.description ?? ""}
-                onChange={(nextValue) =>
-                  onChange({
-                    description: normalizeReferenceEditorValue(nextValue),
-                  })
-                }
-                placeholder="Add caption..."
-                multiline
-              />
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <RichInput
+                  referenceFields={availableFields}
+                  referenceFieldGroups={availableFieldGroups}
+                  value={field.description ?? ""}
+                  onChange={(nextValue) =>
+                    onChange({
+                      description: normalizeReferenceEditorValue(nextValue),
+                    })
+                  }
+                  placeholder="Add caption..."
+                  placeholderClassName="px-3 py-2 text-xs text-gray-400"
+                  className="min-h-20 px-3 py-2 text-xs text-gray-700"
+                  staticToolbar
+                  stopPropagation
+                />
+              </div>
             </div>
           ) : null}
 
@@ -337,6 +346,18 @@ export default function FieldPropertiesPanel({
                     stopPropagation
                   />
                 </div>
+              ) : field.type === "currency" ? (
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={formatCurrencyInput(field.defaultValue)}
+                  onChange={(event) => {
+                    const nextValue = normalizeCurrencyInput(event.target.value);
+                    onChange({ defaultValue: nextValue || undefined });
+                  }}
+                  placeholder="Pre-filled value..."
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
+                />
               ) : (
                 <ReferenceTextEditor
                   availableFields={availableFields}

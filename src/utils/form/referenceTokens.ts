@@ -57,7 +57,7 @@ export const DATE_REFERENCE_OPTIONS: DateReferenceOption[] = [
 ];
 
 const REFERENCE_TOKEN_CLASSNAME =
-  "inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[12px] font-medium text-blue-600 align-baseline";
+  "inline-flex items-center rounded !bg-primary-50 px-1.5 py-0 font-medium leading-tight !text-primary-600 align-baseline";
 
 function formatReferenceDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
