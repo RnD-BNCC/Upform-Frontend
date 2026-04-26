@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { ActionToast, Spinner } from "@/components/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreatePoll, useGetPollDetail } from "@/hooks/polls";
 import {
@@ -31,14 +31,13 @@ import {
   SlidePreview,
   SettingsPanel,
   SlidesSidebar,
-  PollRenameModal,
   PollThemePickerModal,
 } from "./components";
+import { RenameModal } from "@/components/ui";
 import { THEME_PRESETS, type ThemePreset } from "@/config/polling";
 import {
   DesktopIcon,
   FloppyDisk,
-  SpinnerGap,
   Presentation,
   ArrowClockwise,
   Trophy,
@@ -366,7 +365,7 @@ export default function PollEditPage() {
       <>
         <PollEditorLargeScreenNotice onBack={() => navigate("/polls")} />
         <div className="hidden min-h-screen items-center justify-center bg-gray-50 lg:flex">
-          <SpinnerGap size={32} className="text-primary-500 animate-spin" />
+          <Spinner size={32} className="text-primary-500" />
         </div>
       </>
     );
@@ -681,30 +680,19 @@ export default function PollEditPage() {
           onContinue={handleThemeContinue}
         />
 
-        <PollRenameModal
+        <RenameModal
           isOpen={welcomeRename}
           onCreate={handleCreatePollFromDraft}
           isLoading={isCreatingPoll || createPoll.isPending}
+          defaultName="My poll"
+          title="Rename your poll"
         />
 
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.2 }}
-              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
-            >
-              <FloppyDisk
-                size={12}
-                weight="bold"
-                className="text-emerald-400"
-              />
-              {toast}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <ActionToast
+          message={toast}
+          icon={<FloppyDisk size={12} weight="bold" className="text-emerald-400" />}
+          bottom="bottom-6"
+        />
       </div>
     </>
   );
@@ -803,7 +791,7 @@ function PollResultsPanel({
 
           {isLoading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-20">
-              <SpinnerGap size={28} className="animate-spin text-primary-500" />
+              <Spinner size={28} className="text-primary-500" />
               <p className="text-sm text-gray-400">Loading rankings...</p>
             </div>
           ) : scores.length === 0 ? (

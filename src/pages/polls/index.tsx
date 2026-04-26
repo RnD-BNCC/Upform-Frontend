@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ActionToast, Spinner } from "@/components/ui";
 import { Navbar, Footer, PageGridShell, PageHeroBanner } from "@/components/layout";
 import { ConfirmModal, LoadingModal, StatusModal, type StatusType } from "@/components/modal";
 import { Pagination } from "@/components/utils";
@@ -11,7 +12,6 @@ import {
   PencilSimple,
   Trash,
   Copy,
-  SpinnerGap,
   DotsThree,
   MagnifyingGlass,
 } from "@phosphor-icons/react";
@@ -389,7 +389,7 @@ export default function PollsPage() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center gap-3 py-16 sm:py-24"
             >
-              <SpinnerGap size={32} className="text-primary-500 animate-spin" />
+              <Spinner size={32} className="text-primary-500" />
               <p className="text-sm text-gray-400">Loading polls...</p>
             </motion.div>
           ) : polls.length === 0 ? (
@@ -487,20 +487,10 @@ export default function PollsPage() {
         description={statusResult?.description ?? ""}
       />
 
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
-          >
-            <Copy size={12} weight="bold" className="text-emerald-400" />
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ActionToast
+        message={toast}
+        icon={<Copy size={12} weight="bold" className="text-emerald-400" />}
+      />
     </PageGridShell>
   );
 }

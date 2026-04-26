@@ -23,7 +23,7 @@ import type {
   SlideResults,
 } from "@/types/polling";
 import { publicApiClient } from "@/config/api-client";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import {
   CountdownOverlay,
   BlankScreenOverlay,
@@ -708,7 +708,7 @@ export default function PollPresentPage() {
   if (!ready || isLoading || !poll) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <SpinnerGap size={32} className="text-primary-500 animate-spin" />
+        <Spinner size={32} className="text-primary-500" />
       </div>
     );
   }
