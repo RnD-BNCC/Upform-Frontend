@@ -8,7 +8,7 @@ import {
 } from "@/config/polling";
 import cloud from "d3-cloud";
 import {
-  CaretIcon,
+  ChevronDownIcon,
   GuessNumberChartSvg,
   ScaleWaveSvg,
   WordCloudSvg,
@@ -269,7 +269,7 @@ export default function SlidePreview({
             }}
             className="text-[11px] text-gray-500 font-medium px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1 cursor-pointer"
           >
-            Default <CaretIcon />
+            Default <ChevronDownIcon size={10} className="text-gray-400" />
           </button>
           <ColorInputField
             value="#111827"

@@ -1,4 +1,3 @@
-export { default as CaretIcon } from "./CaretIcon";
 export { default as TrashIcon } from "./TrashIcon";
 export { default as WarningIcon } from "./WarningIcon";
 export { default as SuccessIcon } from "./SuccessIcon";
@@ -22,11 +21,8 @@ export { default as ThemeCheckIcon } from "./ThemeCheckIcon";
 export { default as SelectPreviewIcon } from "./SelectPreviewIcon";
 export { default as SpinnerArcIcon } from "./SpinnerArcIcon";
 export { default as GoogleBrandIcon } from "./GoogleBrandIcon";
-export { default as GoogleIcon } from "./GoogleIcon";
 export { default as MapPinMarkerIcon } from "./MapPinMarkerIcon";
-export { default as MapPinIcon } from "./MapPinIcon";
 export { default as NoFormsIllustrationIcon } from "./NoFormsIllustrationIcon";
-export { default as NoFormsIllustration } from "./NoFormsIllustration";
 export { default as ImageLayoutIcon } from "./ImageLayoutIcon";
 export { default as TimerRingSvg } from "./TimerRingSvg";
 export { TimerRing } from "./TimerRing";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { GoogleIcon, SpinnerArcIcon } from "@/components/icons";
+import { GoogleBrandIcon, SpinnerArcIcon } from "@/components/icons";
 import { authClient } from "@/lib";
 
 const GREETINGS = [
@@ -93,7 +93,7 @@ export default function LoginPage() {
             {loading ? (
               <SpinnerArcIcon size={16} className="animate-spin" />
             ) : (
-              <GoogleIcon />
+              <GoogleBrandIcon />
             )}
             {loading ? "Signing in..." : "Sign in with Google"}
           </motion.button>
