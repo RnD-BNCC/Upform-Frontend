@@ -30,7 +30,7 @@ export function ImageBlockFieldCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.12 }}
         onClickCapture={onSelect}
-        className={`relative cursor-pointer rounded-xl bg-white transition-all duration-150 ${
+        className={`theme-question-card relative cursor-pointer rounded-xl bg-white transition-all duration-150 ${
           isSelected
             ? "ring-2 ring-primary-400"
             : "hover:ring-2 hover:ring-primary-200"
@@ -63,7 +63,7 @@ export function ImageBlockFieldCard({
                   event.stopPropagation();
                   setIsImagePickerOpen(true);
                 }}
-                className="flex h-28 w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-500"
+                className="theme-answer-input theme-answer-border theme-answer-text flex h-28 w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 text-gray-400 transition-colors hover:opacity-90"
               >
                 <ImageIcon size={20} />
                 <span className="text-sm">Click to add image</span>

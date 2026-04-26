@@ -1,19 +1,22 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import * as PhosphorIcons from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import {
+  ImagesSquareIcon,
   ImageIcon,
   LinkIcon,
   MagnifyingGlassIcon,
   UploadSimpleIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { useQueryGalleryMedia } from "@/api/gallery";
 import { useMutationUploadImage } from "@/api/upload";
 import { Spinner } from "@/components/ui";
 import { createThemeLogoIconValue } from "@/utils/form/themeLogo";
 
-type PickerTab = "unsplash" | "link" | "icon" | "uploads";
+type PickerTab = "unsplash" | "link" | "gallery" | "icon" | "uploads";
 
 type ImagePickerModalProps = {
   isOpen: boolean;
@@ -95,7 +98,13 @@ export default function ImagePickerModal({
   const [search, setSearch] = useState("");
   const [linkValue, setLinkValue] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const queryClient = useQueryClient();
   const uploadImage = useMutationUploadImage();
+  const galleryQuery = useQueryGalleryMedia(
+    1,
+    60,
+    isOpen && activeTab === "gallery",
+  );
   const tabs: Array<{
     Icon: Icon;
     key: PickerTab;
@@ -103,6 +112,7 @@ export default function ImagePickerModal({
   }> = [
     { Icon: ImageIcon, key: "unsplash", label: "Unsplash" },
     { Icon: LinkIcon, key: "link", label: "Link" },
+    { Icon: ImagesSquareIcon, key: "gallery", label: "Gallery" },
     ...(showIconTab
       ? [{ Icon: PhosphorIcons.SmileyIcon, key: "icon" as const, label: "Icon" }]
       : []),
@@ -129,6 +139,15 @@ export default function ImagePickerModal({
         : ICON_OPTIONS,
     [normalizedSearch],
   );
+  const filteredGalleryImages = useMemo(() => {
+    const items = galleryQuery.data?.items ?? [];
+
+    return normalizedSearch
+      ? items.filter((item) =>
+          item.filename.toLowerCase().includes(normalizedSearch),
+        )
+      : items;
+  }, [galleryQuery.data?.items, normalizedSearch]);
 
   if (!isOpen) {
     return null;
@@ -151,6 +170,7 @@ export default function ImagePickerModal({
     setUploadError("");
     uploadImage.mutate(file, {
       onSuccess: ({ url }) => {
+        void queryClient.invalidateQueries({ queryKey: ["gallery-media"] });
         handleSelect(url);
       },
       onError: () => {
@@ -262,6 +282,52 @@ export default function ImagePickerModal({
               {uploadError ? (
                 <p className="text-xs font-medium text-red-500">{uploadError}</p>
               ) : null}
+            </div>
+          ) : null}
+
+          {activeTab === "gallery" ? (
+            <div className="space-y-4">
+              <div className="flex h-10 items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 focus-within:border-primary-500">
+                <MagnifyingGlassIcon size={17} className="text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search gallery"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                />
+              </div>
+
+              {galleryQuery.isLoading ? (
+                <div className="flex h-44 items-center justify-center">
+                  <Spinner size={24} />
+                </div>
+              ) : galleryQuery.isError ? (
+                <div className="flex h-44 items-center justify-center rounded-sm border border-dashed border-gray-200 text-sm text-gray-400">
+                  Failed to load gallery images.
+                </div>
+              ) : filteredGalleryImages.length ? (
+                <div className="grid grid-cols-3 gap-2.5">
+                  {filteredGalleryImages.map((image) => (
+                    <button
+                      key={image.key || image.url}
+                      type="button"
+                      onClick={() => handleSelect(image.url)}
+                      className="group overflow-hidden rounded-sm bg-gray-100"
+                      title={image.filename}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.filename}
+                        className="h-24 w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-44 items-center justify-center rounded-sm border border-dashed border-gray-200 text-sm text-gray-400">
+                  No gallery images found.
+                </div>
+              )}
             </div>
           ) : null}
 
