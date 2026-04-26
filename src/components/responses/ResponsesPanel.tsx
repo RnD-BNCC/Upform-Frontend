@@ -17,7 +17,7 @@ import type { FormField, FormResponse, FormSection } from "@/types/form";
 import type { ResultsSection } from "@/types/results";
 import type { ShareToast } from "@/types/builderShare";
 import AnalyticsTab from "./analytics/AnalyticsTab";
-import { DatabaseView } from "./database";
+import DatabaseView from "./database/DatabaseView";
 import SummaryTab from "./SummaryTab";
 
 interface ResponsesPanelProps {

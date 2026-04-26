@@ -1,4 +1,4 @@
-import { useState, type RefObject } from "react";
+import { type RefObject } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircleIcon,
