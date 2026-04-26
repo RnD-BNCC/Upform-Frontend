@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { Toggle } from "@/components/ui";
 import {
   ArrowRightIcon,
   CaretDownIcon,
@@ -320,31 +321,6 @@ function ThemeRangeField({
   );
 }
 
-function ThemeToggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${
-        checked ? "bg-primary-500" : "bg-gray-200"
-      }`}
-    >
-      <span
-        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${
-          checked ? "translate-x-4" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
 
 function FormPositionIcon({
   isSelected,
@@ -652,7 +628,7 @@ export default function ThemePanel({
                   }
                 </HelpTooltip>
               </div>
-              <ThemeToggle
+              <Toggle
                 checked={currentTheme.logoEnabled}
                 onChange={(checked) =>
                   updateCurrentCustomTheme((theme) => ({
@@ -875,7 +851,7 @@ export default function ThemePanel({
 
               <div className="flex items-center justify-between pt-4">
                 <span className={fieldLabelClassName}>Bold labels</span>
-                <ThemeToggle
+                <Toggle
                   checked={currentTheme.boldLabels}
                   onChange={(checked) =>
                     updateCurrentCustomTheme((theme) => ({
