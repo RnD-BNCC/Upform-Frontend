@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircleIcon,
@@ -6,7 +6,6 @@ import {
   WarningCircleIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
-import { useMutationUploadFile } from "@/api/upload";
 import AddressField from "@/components/builder/section/AddressField";
 import { BuilderMultiselectField } from "@/components/builder/section/BuilderMultiselectField";
 import CheckboxField from "@/components/builder/section/CheckboxField";
@@ -14,10 +13,6 @@ import CurrencyField from "@/components/builder/section/CurrencyField";
 import DatePickerField from "@/components/builder/section/DatePickerField";
 import DropdownField from "@/components/builder/section/DropdownField";
 import EmailField from "@/components/builder/section/EmailField";
-import {
-  FileUploadFieldCard,
-  type FileUploadListItem,
-} from "@/components/builder/section/FileUploadField";
 import { LinearScaleField } from "@/components/builder/section/LinearScaleField";
 import MultipleChoiceField from "@/components/builder/section/MultipleChoiceField";
 import NumberField from "@/components/builder/section/NumberField";
@@ -32,15 +27,11 @@ import TimeField from "@/components/builder/section/TimeField";
 import { SelectionCheckIcon } from "@/components/icons";
 import type { FormCalculation, FormField } from "@/types/form";
 import {
-  formatAllowedFileTypes,
-  getAcceptedFileMimeList,
-  isAllowedFileType,
-} from "@/utils/form/fileTypes";
-import {
   resolveReferenceHtml,
   resolveReferenceText,
   stripHtmlToText,
 } from "@/utils/form/referenceTokens";
+import RuntimeFileUploadField from "./RuntimeFileUploadField";
 
 const shakeVariants = {
   shake: {
@@ -97,16 +88,6 @@ function BannerIcon({ type }: { type: FormField["bannerType"] }) {
   return <InfoIcon size={16} weight="fill" />;
 }
 
-function parseFileValue(value: string): { name: string; url: string } {
-  const separatorIndex = value.indexOf("::");
-  if (separatorIndex === -1) return { name: value, url: "" };
-
-  return {
-    name: value.slice(0, separatorIndex),
-    url: value.slice(separatorIndex + 2),
-  };
-}
-
 function getRankingOptions(value: string | string[] | undefined, field: FormField) {
   if (typeof value === "string" && value.trim()) {
     try {
@@ -146,297 +127,6 @@ function parseAddressValue(value: string | string[] | undefined) {
   }
 
   return {};
-}
-
-type RuntimeFileUploadFieldProps = {
-  field: FormField;
-  hasError: boolean;
-  onAnswer: (value: string | string[]) => void;
-  pendingFilesRef?: RefObject<Record<string, File[]>>;
-  value?: string | string[];
-};
-
-type RuntimeUploadItem = FileUploadListItem & {
-  id: string;
-  localPreviewUrl?: string;
-  storageValue?: string;
-};
-
-function getStoredFileValues(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value : value ? [value] : [];
-}
-
-function isPreviewableFileName(name: string) {
-  return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
-}
-
-function createStoredUploadItem(storedValue: string, index: number): RuntimeUploadItem {
-  const { name, url } = parseFileValue(storedValue);
-  const canPreview = isPreviewableFileName(name);
-
-  return {
-    id: `stored-${index}-${name}`,
-    canPreview,
-    name,
-    previewUrl: canPreview ? url : undefined,
-    progress: 100,
-    status: "complete",
-    storageValue: storedValue,
-    url,
-  };
-}
-
-function revokeUploadPreview(item: RuntimeUploadItem) {
-  if (item.localPreviewUrl?.startsWith("blob:")) {
-    URL.revokeObjectURL(item.localPreviewUrl);
-  }
-}
-
-function getUploadProgressPercent(
-  loaded: number,
-  total: number | undefined,
-  currentProgress: number,
-) {
-  if (typeof total === "number" && total > 0) {
-    return Math.min(99, Math.max(2, Math.round((loaded / total) * 100)));
-  }
-
-  return Math.min(95, Math.max(2, currentProgress + 7));
-}
-
-function RuntimeFileUploadField({
-  field,
-  hasError,
-  onAnswer,
-  pendingFilesRef,
-  value,
-}: RuntimeFileUploadFieldProps) {
-  const [uploadError, setUploadError] = useState("");
-  const [uploadItems, setUploadItems] = useState<RuntimeUploadItem[]>(() =>
-    getStoredFileValues(value).map((file, index) => createStoredUploadItem(file, index)),
-  );
-  const uploadFile = useMutationUploadFile();
-  const uploadControllersRef = useRef<Record<string, AbortController>>({});
-  const uploadItemsRef = useRef<RuntimeUploadItem[]>(uploadItems);
-
-  const maxCount = field.maxFileCount ?? 1;
-  const maxSizeMb = field.maxFileSizeMb ?? 10;
-  const canAddMore = uploadItems.length < maxCount;
-  const acceptTypes = getAcceptedFileMimeList(field.allowedFileTypes);
-  const isUploading = uploadItems.some((item) => item.status === "uploading");
-
-  const syncAnswer = (items: RuntimeUploadItem[]) => {
-    const completedFiles = items
-      .filter((item) => item.status === "complete" && item.storageValue)
-      .map((item) => item.storageValue as string);
-
-    if (completedFiles.length === 0) {
-      onAnswer("");
-      return;
-    }
-
-    onAnswer(maxCount === 1 ? completedFiles[0] : completedFiles);
-  };
-
-  useEffect(() => {
-    uploadItemsRef.current = uploadItems;
-  }, [uploadItems]);
-
-  useEffect(() => {
-    const storedValues = getStoredFileValues(value);
-    const storedValueKey = storedValues.join("\u0000");
-
-    setUploadItems((current) => {
-      const currentStoredKey = current
-        .filter((item) => item.status === "complete" && item.storageValue)
-        .map((item) => item.storageValue as string)
-        .join("\u0000");
-
-      if (storedValueKey === currentStoredKey) {
-        return current;
-      }
-
-      const hasUploadingItems = current.some((item) => item.status === "uploading");
-      if (!storedValues.length && hasUploadingItems) {
-        return current;
-      }
-
-      current.forEach((item) => {
-        if (item.status !== "uploading") {
-          revokeUploadPreview(item);
-        }
-      });
-
-      const preservedUploads = current.filter((item) => item.status === "uploading");
-      const nextStoredItems = storedValues.map((file, index) =>
-        createStoredUploadItem(file, index),
-      );
-
-      return preservedUploads.length > 0
-        ? [...preservedUploads, ...nextStoredItems]
-        : nextStoredItems;
-    });
-  }, [value]);
-
-  useEffect(
-    () => () => {
-      Object.values(uploadControllersRef.current).forEach((controller) =>
-        controller.abort(),
-      );
-      uploadItemsRef.current.forEach(revokeUploadPreview);
-    },
-    [],
-  );
-
-  const handleFiles = async (selectedFiles: FileList) => {
-    setUploadError("");
-
-    const remaining = maxCount - uploadItems.length;
-    const filesToUpload = Array.from(selectedFiles).slice(0, remaining);
-
-    for (const file of filesToUpload) {
-      if (!isAllowedFileType(file, field.allowedFileTypes)) {
-        setUploadError(
-          `"${file.name}" is not allowed. Only ${formatAllowedFileTypes(
-            field.allowedFileTypes,
-          )} files are allowed.`,
-        );
-        return;
-      }
-
-      if ((field.limitFileSize ?? false) && file.size > maxSizeMb * 1024 * 1024) {
-        setUploadError(`"${file.name}" exceeds the ${maxSizeMb} MB file size limit.`);
-        return;
-      }
-    }
-
-    pendingFilesRef?.current && (pendingFilesRef.current[field.id] = []);
-
-    const newItems = filesToUpload.map((file, index) => {
-      const canPreview = file.type.startsWith("image/") || isPreviewableFileName(file.name);
-      const localPreviewUrl = canPreview ? URL.createObjectURL(file) : undefined;
-
-      return {
-        id: `${field.id}-${Date.now()}-${index}-${file.name}`,
-        canPreview,
-        localPreviewUrl,
-        name: file.name,
-        previewUrl: localPreviewUrl,
-        progress: 2,
-        status: "uploading" as const,
-      };
-    });
-
-    setUploadItems((current) => [...current, ...newItems]);
-
-    await Promise.all(
-      newItems.map(async (item, itemIndex) => {
-        const file = filesToUpload[itemIndex];
-        const controller = new AbortController();
-        uploadControllersRef.current[item.id] = controller;
-
-        try {
-          const result = await uploadFile.mutateAsync({
-            file,
-            onUploadProgress: (event) => {
-              setUploadItems((current) =>
-                current.map((entry) =>
-                  entry.id === item.id
-                    ? {
-                        ...entry,
-                        progress: getUploadProgressPercent(
-                          event.loaded,
-                          event.total,
-                          entry.progress ?? 0,
-                        ),
-                      }
-                    : entry,
-                ),
-              );
-            },
-            signal: controller.signal,
-          });
-
-          setUploadItems((current) => {
-            const nextItems = current.map((entry) =>
-              entry.id === item.id
-                ? {
-                    ...entry,
-                    progress: 100,
-                    status: "complete" as const,
-                    storageValue: `${result.filename}::${result.url}`,
-                    url: result.url,
-                  }
-                : entry,
-            );
-
-            syncAnswer(nextItems);
-            return nextItems;
-          });
-        } catch (error) {
-          if (controller.signal.aborted) {
-            return;
-          }
-
-          console.error("[handleFileUpload]:", error);
-          setUploadError("Failed to upload the file. Please try again.");
-          setUploadItems((current) =>
-            current.map((entry) =>
-              entry.id === item.id
-                ? {
-                    ...entry,
-                    errorMessage: "Upload failed",
-                    progress: entry.progress ?? 0,
-                    status: "error" as const,
-                  }
-                : entry,
-            ),
-          );
-        } finally {
-          delete uploadControllersRef.current[item.id];
-        }
-      }),
-    );
-  };
-
-  const removeFile = (index: number) => {
-    const removedItem = uploadItems[index];
-    if (!removedItem) {
-      return;
-    }
-
-    uploadControllersRef.current[removedItem.id]?.abort();
-    delete uploadControllersRef.current[removedItem.id];
-    revokeUploadPreview(removedItem);
-
-    const nextItems = uploadItems.filter((_, itemIndex) => itemIndex !== index);
-    setUploadItems(nextItems);
-    syncAnswer(nextItems);
-  };
-
-  const displayFiles = uploadItems;
-
-  return (
-    <div className={hasError ? "rounded-xl ring-1 ring-red-200 ring-inset" : ""}>
-      <FileUploadFieldCard
-        accept={acceptTypes}
-        allowedFileTypes={field.allowedFileTypes}
-        files={displayFiles}
-        hideDropzone={!canAddMore}
-        isUploading={isUploading}
-        limitFileSize={field.limitFileSize}
-        maxFileCount={field.maxFileCount}
-        maxFileSizeMb={field.maxFileSizeMb}
-        multiple={maxCount > 1}
-        onFilesSelected={(nextFiles) => {
-          void handleFiles(nextFiles);
-        }}
-        onRemoveFile={removeFile}
-        showUploadLimits={field.showUploadLimits}
-        uploadError={uploadError}
-      />
-    </div>
-  );
 }
 
 type Props = {
