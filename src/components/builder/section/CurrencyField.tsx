@@ -5,15 +5,16 @@ import {
 } from "./fieldDefinitionHelpers";
 import { FieldPluginTextValidationFields } from "./FieldSettingSections";
 import { FieldPluginLabel } from "./FieldSettingControls";
+import DropdownField from "./DropdownField";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   AUD: "A$",
-  CNY: "Y",
-  EUR: "EUR",
-  GBP: "GBP",
+  CNY: "¥",
+  EUR: "€",
+  GBP: "£",
   IDR: "Rp",
-  JPY: "JPY",
-  KRW: "KRW",
+  JPY: "¥",
+  KRW: "₩",
   MYR: "RM",
   SGD: "S$",
   USD: "$",
@@ -31,6 +32,38 @@ const CURRENCY_CODES = [
   { code: "CNY", label: "CNY - Chinese Yuan" },
   { code: "KRW", label: "KRW - Korean Won" },
 ] as const;
+
+export function normalizeCurrencyInput(value: string) {
+  const withoutCommas = value.replace(/,/g, "").trim();
+  const isNegative = withoutCommas.startsWith("-");
+  const sign = isNegative ? "-" : "";
+  const unsigned = withoutCommas.replace(/-/g, "");
+  const hasDecimal = unsigned.includes(".");
+  const [integerPart = "", ...decimalParts] = unsigned.split(".");
+  const integerDigits = integerPart.replace(/\D/g, "");
+  const decimalDigits = decimalParts.join("").replace(/\D/g, "");
+
+  if (!integerDigits && !hasDecimal) {
+    return "";
+  }
+
+  return `${sign}${integerDigits}${hasDecimal ? `.${decimalDigits}` : ""}`;
+}
+
+export function formatCurrencyInput(value?: string) {
+  const normalized = normalizeCurrencyInput(value ?? "");
+  if (!normalized) {
+    return "";
+  }
+
+  const sign = normalized.startsWith("-") ? "-" : "";
+  const unsigned = sign ? normalized.slice(1) : normalized;
+  const hasDecimal = unsigned.includes(".");
+  const [integerPart = "", decimalPart = ""] = unsigned.split(".");
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  return `${sign}${formattedInteger}${hasDecimal ? `.${decimalPart}` : ""}`;
+}
 
 type Props = {
   currencyCode?: string;
@@ -59,9 +92,10 @@ export default function CurrencyField({
         {CURRENCY_SYMBOLS[currencyCode ?? "USD"] ?? "$"}
       </span>
       <input
-        type="number"
-        value={defaultValue ?? ""}
-        onChange={(event) => onChange(event.target.value)}
+        type="text"
+        inputMode="decimal"
+        value={formatCurrencyInput(defaultValue)}
+        onChange={(event) => onChange(normalizeCurrencyInput(event.target.value))}
         onClick={(event) => event.stopPropagation()}
         placeholder={placeholder || "0.00"}
         className="theme-answer-placeholder theme-answer-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-xs"
@@ -114,17 +148,15 @@ export const currencyFieldPlugin = createFieldPlugin({
     basic: (
       <div>
         <FieldPluginLabel>Currency</FieldPluginLabel>
-        <select
-          value={field.currencyCode ?? "USD"}
-          onChange={(event) => onChange({ currencyCode: event.target.value })}
-          className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
-        >
-          {CURRENCY_CODES.map((currency) => (
-            <option key={currency.code} value={currency.code}>
-              {currency.label}
-            </option>
-          ))}
-        </select>
+        <DropdownField
+          defaultValue={field.currencyCode ?? "USD"}
+          onChange={(value) => onChange({ currencyCode: value ?? "USD" })}
+          options={CURRENCY_CODES.map((currency) => ({
+            label: currency.label,
+            value: currency.code,
+          }))}
+          size="compact"
+        />
       </div>
     ),
     validation: (
