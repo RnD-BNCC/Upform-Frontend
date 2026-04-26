@@ -166,12 +166,12 @@ export const paragraphBlockFieldPlugin = createFieldPlugin({
     label: "Paragraph",
   },
   settings: {
-    caption: true,
-    defaultValue: true,
+    caption: false,
+    defaultValue: false,
     displayOnly: true,
     halfWidth: true,
     logic: false,
-    placeholder: true,
+    placeholder: false,
   },
   palettes: [
     {

@@ -3,7 +3,10 @@ import { motion } from "framer-motion";
 import { CheckSquareIcon } from "@phosphor-icons/react";
 import { SelectionCheckIcon } from "@/components/icons";
 import RichInput from "../utils/RichInput";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import {
+  createFieldFactory,
+  createFieldPlugin,
+} from "./fieldDefinitionHelpers";
 import { FieldPluginRequiredValidationField } from "./FieldSettingSections";
 import { FieldPluginToggleRow } from "./FieldSettingControls";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
@@ -83,7 +86,9 @@ export function SingleCheckboxFieldCard({
                   referenceFields={availableReferenceFields}
                   referenceFieldGroups={availableReferenceFieldGroups}
                   className={`theme-answer-text w-full border-b border-transparent pb-1 text-sm transition-colors hover:border-gray-200 focus:border-primary-400 ${
-                    isChecked ? "theme-primary-text font-medium" : "text-gray-700"
+                    isChecked
+                      ? "theme-primary-text font-medium"
+                      : "text-gray-700"
                   }`}
                   stopPropagation
                   noLists
@@ -116,7 +121,6 @@ export const singleCheckboxFieldPlugin = createFieldPlugin({
     label: "I agree",
   },
   settings: {
-    caption: true,
     halfWidth: true,
   },
   palettes: [
