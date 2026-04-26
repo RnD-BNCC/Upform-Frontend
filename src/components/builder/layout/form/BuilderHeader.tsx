@@ -5,10 +5,10 @@ import {
   CaretDownIcon,
   EyeIcon,
   RocketLaunchIcon,
-  SpinnerGapIcon,
   ProhibitIcon,
   LockIcon,
 } from '@phosphor-icons/react'
+import { Spinner } from '@/components/ui'
 
 type Tab = 'questions' | 'share' | 'responses'
 
@@ -93,7 +93,7 @@ export default function BuilderHeader({
             <span className="text-[10px] font-medium pointer-events-none whitespace-nowrap leading-none -mt-0.5">
               {isSaving ? (
                 <span className="flex items-center gap-1 text-primary-500">
-                  <SpinnerGapIcon size={9} className="animate-spin" />
+                  <Spinner size={9} />
                   Saving…
                 </span>
               ) : (
@@ -165,7 +165,7 @@ export default function BuilderHeader({
             className="flex items-center gap-1.5 px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPublishing
-              ? <SpinnerGapIcon size={13} className="animate-spin" />
+              ? <Spinner size={13} />
               : <RocketLaunchIcon size={13} />
             }
             {isPublishing ? 'Publishing...' : eventStatus === 'closed' ? 'Reopen' : 'Publish'}

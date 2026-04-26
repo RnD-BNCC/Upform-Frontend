@@ -3,10 +3,10 @@ import {
   CheckCircleIcon,
   FileIcon,
   FolderOpenIcon,
-  SpinnerGapIcon,
   UploadSimpleIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import FileTypeMultiSelect from "../layout/fields/FileTypeMultiSelect";
 import {
   createFieldFactory,
@@ -137,7 +137,7 @@ export function FileUploadFieldCard({
   const dropzoneContent = (
     <>
       {isUploading ? (
-        <SpinnerGapIcon size={28} className="theme-answer-placeholder animate-spin text-gray-400" />
+        <Spinner size={28} className="theme-answer-placeholder text-gray-400" />
       ) : (
         <FolderOpenIcon size={28} className="theme-answer-placeholder text-gray-400" />
       )}
@@ -216,7 +216,7 @@ export function FileUploadFieldCard({
                       </p>
                     </div>
                     {status === "uploading" ? (
-                      <SpinnerGapIcon size={18} className="shrink-0 animate-spin text-white/90" />
+                      <Spinner size={18} className="shrink-0 text-white/90" />
                     ) : status === "complete" ? (
                       <CheckCircleIcon size={18} weight="fill" className="shrink-0 text-white/90" />
                     ) : null}
@@ -285,7 +285,7 @@ export function FileUploadFieldCard({
                       <p className="text-[11px] leading-none text-white/75">{helperText}</p>
                     </div>
                     {status === "uploading" ? (
-                      <SpinnerGapIcon size={18} className="mt-0.5 shrink-0 animate-spin text-white/90" />
+                      <Spinner size={18} className="mt-0.5 shrink-0 text-white/90" />
                     ) : status === "complete" ? (
                       <CheckCircleIcon size={18} weight="fill" className="mt-0.5 shrink-0 text-white/90" />
                     ) : null}

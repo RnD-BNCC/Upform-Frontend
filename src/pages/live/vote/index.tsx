@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { SpinnerGap, ThumbsUp } from "@phosphor-icons/react";
+import { ThumbsUp } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import { useMutationSubmitVote, useQueryPublicPoll } from "@/api/polls";
 import { useQAQuestions } from "@/api/questions";
 import { Leaderboard, QAModal } from "@/components/polling";
@@ -204,7 +205,7 @@ export default function LiveVotePage() {
     return (
       <AudienceShell>
         <div className="flex-1 flex items-center justify-center">
-          <SpinnerGap size={32} className="text-primary-500 animate-spin" />
+          <Spinner size={32} className="text-primary-500" />
         </div>
       </AudienceShell>
     );

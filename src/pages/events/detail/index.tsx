@@ -14,7 +14,6 @@ import {
   FormPagePreview,
   LogicModal,
   PageTabBar,
-  RenameFormModal,
   ThemeImagePositionModal,
   ThemePickerModal,
   ThemePanel,
@@ -26,15 +25,15 @@ import {
   LoadingModal,
   StatusModal,
 } from "@/components/modal";
-import { ResponsesPanel } from "@/components/responses";
-import { ShareToast } from "@/components/toast";
+import { RenameModal, Spinner } from "@/components/ui";
+import ResponsesPanel from "@/components/responses/ResponsesPanel";
+import ShareToast from "@/components/toast/ShareToast";
 import { useEventDetailPage } from "@/hooks/events";
 import {
   DesktopIcon,
   FloppyDiskIcon,
   ImageIcon,
   PencilSimpleIcon,
-  SpinnerGapIcon,
   TrashIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -221,7 +220,7 @@ export default function EventDetailPage() {
         />
         <div className="hidden min-h-screen items-center justify-center bg-gray-50 lg:flex">
           <div className="flex flex-col items-center gap-3">
-            <SpinnerGapIcon size={32} className="text-primary-500 animate-spin" />
+            <Spinner size={32} className="text-primary-500" />
             <p className="text-sm text-gray-400">Loading form...</p>
           </div>
         </div>
@@ -698,7 +697,7 @@ export default function EventDetailPage() {
         }}
       />
 
-      <RenameFormModal
+      <RenameModal defaultName="My form" title="Rename your form"
         isOpen={welcomeRename}
         required
         onClose={() => {}}
@@ -1031,7 +1030,7 @@ export default function EventDetailPage() {
               }`}
             >
               {toastType === "info" ? (
-                <SpinnerGapIcon size={12} className="animate-spin text-sky-300" />
+                <Spinner size={12} className="text-sky-300" />
               ) : (
                 <FloppyDiskIcon
                   size={12}

@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useMutationUploadImage } from '@/api/polls'
-import { Image as ImageIcon, SpinnerGap, PencilSimple, Trash } from '@phosphor-icons/react'
+import { Image as ImageIcon, PencilSimple, Trash } from '@phosphor-icons/react';
+import { Spinner } from "@/components/ui";
 
 export default function ImageUpload({
   imageUrl,
@@ -56,7 +57,7 @@ export default function ImageUpload({
         className="cursor-pointer rounded-sm border border-dashed border-gray-200 bg-white p-4 text-center transition-colors hover:border-gray-300"
       >
         {uploadMutation.isPending ? (
-          <SpinnerGap size={24} className="text-primary-400 animate-spin mx-auto mb-1.5" />
+          <Spinner size={24} className="text-primary-400 mx-auto mb-1.5" />
         ) : (
           <ImageIcon size={24} className="text-gray-300 mx-auto mb-1.5" />
         )}

@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   FloppyDiskIcon,
-  SpinnerGapIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import type { FormCalculation, FormSection } from "@/types/form";
 import type { LogicModalRequestedTab } from "@/utils/form/logicModalEvents";
 import LogicModalCalculationsView from "./LogicModalCalculationsView";
@@ -312,10 +312,7 @@ export default function LogicModal({
                     }`}
                   >
                     {saveToast.type === "info" ? (
-                      <SpinnerGapIcon
-                        size={12}
-                        className="animate-spin text-sky-300"
-                      />
+                      <Spinner size={12} className="text-sky-300" />
                     ) : (
                       <FloppyDiskIcon
                         size={12}

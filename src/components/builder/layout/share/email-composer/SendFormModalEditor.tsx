@@ -21,10 +21,10 @@ import {
   CheckIcon,
   EnvelopeSimpleIcon,
   PaperPlaneTiltIcon,
-  SpinnerGapIcon,
   UsersIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import { ImagePickerModal } from "@/components/modal";
 import {
   useMutationCreateEmailBlast,
@@ -672,7 +672,7 @@ export default function SendFormModalEditor({
               <span className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-amber-500">
                 {saveDraft.isPending ? (
                   <>
-                    <SpinnerGapIcon size={10} className="animate-spin" />
+                    <Spinner size={10} />
                     Saving email...
                   </>
                 ) : (
@@ -688,7 +688,7 @@ export default function SendFormModalEditor({
             className="ml-auto flex h-10 items-center gap-2 rounded-md border border-gray-200 bg-white px-4 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saveDraft.isPending ? (
-              <SpinnerGapIcon size={15} className="animate-spin" />
+              <Spinner size={15} />
             ) : (
               <CheckIcon size={15} weight="bold" />
             )}
@@ -715,7 +715,7 @@ export default function SendFormModalEditor({
               className="flex h-10 items-center gap-2 rounded-md bg-gray-900 px-5 text-sm font-bold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {createBlast.isPending ? (
-                <SpinnerGapIcon size={16} className="animate-spin" />
+                <Spinner size={16} />
               ) : (
                 <PaperPlaneTiltIcon size={16} weight="fill" />
               )}

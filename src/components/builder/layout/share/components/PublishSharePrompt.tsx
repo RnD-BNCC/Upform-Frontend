@@ -1,4 +1,5 @@
-﻿import { RocketLaunchIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+﻿import { RocketLaunchIcon } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import type { EventStatus } from "@/types/builderShare";
 
 type PublishSharePromptProps = {
@@ -38,7 +39,7 @@ export default function PublishSharePrompt({
         className="flex h-12 items-center justify-center gap-2 rounded-sm bg-primary-600 px-8 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPublishing ? (
-          <SpinnerGapIcon size={17} className="animate-spin" />
+          <Spinner size={17} />
         ) : (
           <RocketLaunchIcon size={17} weight="fill" />
         )}
