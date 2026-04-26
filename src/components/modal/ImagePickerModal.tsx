@@ -6,11 +6,11 @@ import {
   ImageIcon,
   LinkIcon,
   MagnifyingGlassIcon,
-  SpinnerGapIcon,
   UploadSimpleIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { useMutationUploadImage } from "@/api/upload";
+import { Spinner } from "@/components/ui";
 import { createThemeLogoIconValue } from "@/utils/form/themeLogo";
 
 type PickerTab = "unsplash" | "link" | "icon" | "uploads";
@@ -238,7 +238,7 @@ export default function ImagePickerModal({
                 }`}
               >
                 {uploadImage.isPending ? (
-                  <SpinnerGapIcon size={20} className="animate-spin" />
+                  <Spinner size={20} />
                 ) : null}
                 <span>
                   {uploadImage.isPending ? "Uploading image..." : "Drag & drop a file or "}
