@@ -418,7 +418,7 @@ export default function PreviewField({
             alt=""
           />
           {field.imageCaption ? (
-            <p className="mt-1 text-center text-xs text-gray-500">
+            <p className="theme-question-caption mt-1 text-center text-xs text-gray-500">
               {field.imageCaption}
             </p>
           ) : null}
@@ -689,15 +689,23 @@ export default function PreviewField({
       ) : null}
 
       {field.type === "single_checkbox" ? (
-        <label className="flex cursor-pointer select-none items-start gap-3">
+        <label
+          className={`theme-answer-input flex w-full cursor-pointer select-none items-start gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
+            val === "true"
+              ? "theme-primary-border theme-primary-soft border-primary-400 bg-primary-50"
+              : hasError
+                ? "border-red-400"
+                : "theme-answer-border border-gray-200 bg-white hover:opacity-90"
+          }`}
+        >
           <div
             onClick={() => onAnswer(val === "true" ? "" : "true")}
-            className={`theme-primary-border mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
               val === "true"
-                ? "bg-primary-500"
+                ? "theme-primary-border bg-primary-500"
                 : hasError
                   ? "border-red-400"
-                  : "border-gray-300 hover:border-gray-400"
+                  : "theme-answer-border border-gray-300 hover:opacity-90"
             }`}
             style={
               val === "true"
@@ -712,7 +720,11 @@ export default function PreviewField({
             {val === "true" ? <SelectionCheckIcon className="text-white" /> : null}
           </div>
           <span
-            className="theme-question-title text-sm leading-snug text-gray-700"
+            className={`text-sm leading-snug ${
+              val === "true"
+                ? "theme-primary-text font-medium text-primary-700"
+                : "theme-answer-text text-gray-500"
+            }`}
             dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "I agree" }}
           />
         </label>
