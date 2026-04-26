@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type RefObject } from 'react'
 import type { PollSlide, SlideType } from '@/types/polling'
 import {
   Copy,
@@ -12,7 +12,28 @@ import {
   Trophy,
 } from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
-import type { SlidesSidebarProps } from './types'
+type SlidesSidebarProps = {
+  activePanel: 'edit' | 'results'
+  title: string
+  pollCode: string
+  slides: PollSlide[]
+  selectedIndex: number
+  liveQuestion: string | null
+  onBack: () => void
+  onTitleChange: (title: string) => void
+  onTitleBlur: () => void
+  onSelectSlide: (index: number) => void
+  onAddSlide: () => void
+  onDeleteSlide: (id: string) => void
+  onReorderSlides: (orderedIds: string[]) => void
+  saveReorderRef: RefObject<(() => void) | null>
+  onCopyCode: () => void
+  onPresent: () => void
+  onSave: () => void
+  onShowEdit: () => void
+  onShowResults: () => void
+  isAddPending: boolean
+}
 import { DndContext, closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'

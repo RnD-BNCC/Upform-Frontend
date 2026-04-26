@@ -16,7 +16,41 @@ import {
   ChatTeardropText,
   Timer,
 } from "@phosphor-icons/react";
-import type { PresentControlsProps } from "./types";
+import type { SlideType, SlideSettings } from "@/types/polling";
+
+type PresentControlsProps = {
+  currentSlide: number
+  totalSlides: number
+  isLeaderboardSlide: boolean
+  isFirstSlide: boolean
+  isWaitingRoom: boolean
+  isLastQuestionSlide: boolean
+  isQASlide: boolean
+  isFullscreen: boolean
+  showQASidebar: boolean
+  showJoinOverlay: boolean
+  hideResponses: boolean
+  showSlideGrid: boolean
+  timerActive: boolean
+  timerRemaining: number | null
+  showTimerPopover: boolean
+  revealPhase: boolean
+  slideType: SlideType | undefined
+  slideSettings: SlideSettings
+  onPrev: () => void
+  onPrimaryAction: () => void
+  onEnd: () => void
+  onRestart: () => void
+  onToggleFullscreen: () => void
+  onToggleQASidebar: () => void
+  onToggleJoinOverlay: () => void
+  onToggleHideResponses: () => void
+  onToggleSlideGrid: () => void
+  onShowHotkeys: () => void
+  onSetShowTimerPopover: (show: boolean) => void
+  onStopTimer: () => void
+  onStartTimer: (seconds: number) => void
+}
 
 function ToolbarButton({
   children,
