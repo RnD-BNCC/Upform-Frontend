@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { FunnelSimpleIcon, XIcon } from "@phosphor-icons/react";
+import { usePopoverClose } from "@/hooks/usePopoverClose";
 import type { FormField } from "@/types/form";
 import type { ResultFilterGroup } from "@/types/results";
 import ResultConditionEditorPanel from "../conditions/ResultConditionEditorPanel";
@@ -40,7 +41,7 @@ export default function FilterPopover({
 }: FilterPopoverProps) {
   const [open, setOpen] = useState(false);
   const [draftGroup, setDraftGroup] = useState(filterGroup);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = usePopoverClose(open, () => setOpen(false), "[data-condition-select-root]");
   const filterCount = useMemo(
     () => countFilterConditions(filterGroup),
     [filterGroup],
@@ -48,17 +49,6 @@ export default function FilterPopover({
   const workingGroup = deferApply ? draftGroup : filterGroup;
   const setWorkingGroup = deferApply ? setDraftGroup : onChange;
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement;
-      if (rootRef.current?.contains(target)) return;
-      if (target.closest("[data-condition-select-root]")) return;
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
 
   const handleTriggerClick = () => {
     setOpen((current) => {

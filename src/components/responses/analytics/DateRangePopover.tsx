@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { CalendarBlankIcon } from "@phosphor-icons/react";
+import { usePopoverClose } from "@/hooks/usePopoverClose";
 
 export type AnalyticsDatePreset =
   | "all"
@@ -38,17 +39,7 @@ export default function DateRangePopover({
   value,
 }: DateRangePopoverProps) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
+  const rootRef = usePopoverClose(open, () => setOpen(false));
 
   return (
     <div ref={rootRef} className="relative">
