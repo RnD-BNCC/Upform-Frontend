@@ -13,7 +13,6 @@ import {
   type HotkeyGroup,
 } from "@/pages/polls/present/components";
 import {
-  LOTTERY_BALL_COLORS,
   darkenHex,
   lightenHex,
   type LotteryParticipant,
@@ -25,6 +24,7 @@ type DrawPhase = "idle" | "shaking" | "settling";
 
 type PhysBall = {
   color: string;
+  participantId: string;
   vx: number;
   vy: number;
   x: number;
@@ -65,8 +65,44 @@ const BALL_RESTITUTION = 0.5;
 const GRAVITY = 0.32;
 const MAX_SPEED_IDLE = 9;
 const MAX_SPEED_SHAKE = 17;
+const MAX_VISIBLE_BALLS = 50;
 const SHAKE_FORCE = 2.6;
 const WALL_RESTITUTION = 0.42;
+
+function createPhysBall(
+  participant: LotteryParticipant,
+  maxDistance: number,
+): PhysBall {
+  return {
+    color: participant.color,
+    participantId: participant.id,
+    vx: (Math.random() - 0.5) * 1.2,
+    vy: (Math.random() - 0.5) * 0.6,
+    x: (Math.random() * 2 - 1) * maxDistance * 0.78,
+    y: maxDistance * 0.18 + Math.random() * maxDistance * 0.65,
+  };
+}
+
+function ensureWinnerBallIsVisible(
+  participant: LotteryParticipant,
+  balls: PhysBall[],
+  maxDistance: number,
+) {
+  if (balls.some((ball) => ball.participantId === participant.id)) return;
+
+  const nextBall = createPhysBall(participant, maxDistance || 150);
+  if (balls.length < MAX_VISIBLE_BALLS) {
+    balls.push(nextBall);
+    return;
+  }
+
+  const replaceIndex = Math.floor(Math.random() * balls.length);
+  balls[replaceIndex] = {
+    ...nextBall,
+    x: balls[replaceIndex].x,
+    y: balls[replaceIndex].y,
+  };
+}
 
 export default function LotteryPresenter({
   onClose,
@@ -84,6 +120,7 @@ export default function LotteryPresenter({
   const risingBallRef = useRef<HTMLDivElement>(null);
   const ballsRef = useRef<PhysBall[]>([]);
   const frameRef = useRef<number | null>(null);
+  const maxDistanceRef = useRef(0);
   const phaseRef = useRef<DrawPhase>("idle");
 
   const drawPool = useMemo(
@@ -112,15 +149,11 @@ export default function LotteryPresenter({
     const center = size / 2;
     const sphereRadius = center - 18;
     const maxDistance = sphereRadius - BALL_RADIUS - 1;
-    const count = Math.min(drawPool.length, 32);
+    maxDistanceRef.current = maxDistance;
 
-    ballsRef.current = Array.from({ length: count }, (_, index) => ({
-      color: LOTTERY_BALL_COLORS[index % LOTTERY_BALL_COLORS.length],
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: (Math.random() - 0.5) * 0.6,
-      x: (Math.random() * 2 - 1) * maxDistance * 0.78,
-      y: maxDistance * 0.18 + Math.random() * maxDistance * 0.65,
-    }));
+    ballsRef.current = drawPool
+      .slice(0, MAX_VISIBLE_BALLS)
+      .map((participant) => createPhysBall(participant, maxDistance));
     phaseRef.current = "idle";
 
     const loop = () => {
@@ -233,7 +266,7 @@ export default function LotteryPresenter({
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [drawPool.length]);
+  }, [participants]);
 
   const resetVisuals = useCallback(() => {
     phaseRef.current = "idle";
@@ -300,7 +333,12 @@ export default function LotteryPresenter({
 
     const index = Math.floor(Math.random() * drawPool.length);
     const nextWinner = drawPool[index];
-    const winnerColor = LOTTERY_BALL_COLORS[index % LOTTERY_BALL_COLORS.length];
+    const winnerColor = nextWinner.color;
+    ensureWinnerBallIsVisible(
+      nextWinner,
+      ballsRef.current,
+      maxDistanceRef.current,
+    );
     phaseRef.current = "shaking";
 
     gsap
@@ -335,6 +373,9 @@ export default function LotteryPresenter({
   const removeWinner = useCallback(() => {
     if (!winner || isDrawing) return;
 
+    ballsRef.current = ballsRef.current.filter(
+      (ball) => ball.participantId !== winner.id,
+    );
     setExcludedIds((current) => {
       const next = new Set(current);
       next.add(winner.id);
@@ -348,9 +389,14 @@ export default function LotteryPresenter({
     if (isDrawing) return;
 
     setExcludedIds(new Set<string>());
+    ballsRef.current = participants
+      .slice(0, MAX_VISIBLE_BALLS)
+      .map((participant) =>
+        createPhysBall(participant, maxDistanceRef.current || 150),
+      );
     setWinner(null);
     resetVisuals();
-  }, [isDrawing, resetVisuals]);
+  }, [isDrawing, participants, resetVisuals]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -521,7 +567,10 @@ export default function LotteryPresenter({
               </div>
             ) : null}
             <span className="absolute left-7 top-5 h-11 w-14 rounded-full bg-white/84 blur-[3px]" />
-            <span className="absolute bottom-8 right-8 h-9 w-9 rounded-full bg-rose-400/60" />
+            <span
+              className="absolute bottom-8 right-8 h-9 w-9 rounded-full"
+              style={{ background: winner ? `${winner.color}99` : undefined }}
+            />
           </div>
         </div>
       </main>

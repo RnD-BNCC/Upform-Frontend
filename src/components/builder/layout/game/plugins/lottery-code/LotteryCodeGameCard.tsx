@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useQuerySubmitFormSettings } from "@/api/email-blasts";
 import { LotteryMachinePreviewIcon } from "@/components/icons";
+import { Spinner } from "@/components/ui";
 import {
   buildLotteryParticipants,
   getLotteryRequirements,
@@ -22,6 +23,7 @@ export default function LotteryCodeGameCard({
   const [presenting, setPresenting] = useState(false);
   const settingsQuery = useQuerySubmitFormSettings(eventId, !!eventId);
   const settings = settingsQuery.data;
+  const isCheckingSettings = !settingsQuery.isFetched && !settings;
   const participants = useMemo(() => {
     if (!settings) return [];
     return buildLotteryParticipants(responses, settings);
@@ -31,6 +33,20 @@ export default function LotteryCodeGameCard({
   );
   const sampleNumber = participants[0]?.number ?? "UF-0001";
   const requirements = getLotteryRequirements(settings, participants.length);
+  const status = isCheckingSettings
+    ? {
+        className: "bg-gray-100 text-gray-500",
+        label: "Checking setup",
+      }
+    : canPlay
+      ? {
+          className: "bg-emerald-100 text-emerald-700",
+          label: "Ready",
+        }
+      : {
+          className: "bg-amber-100 text-amber-700",
+          label: "Needs setup",
+        };
 
   return (
     <>
@@ -51,13 +67,10 @@ export default function LotteryCodeGameCard({
                     Lottery Code
                   </h2>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                      canPlay
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${status.className}`}
                   >
-                    {canPlay ? "Ready" : "Needs setup"}
+                    {isCheckingSettings ? <Spinner size={10} /> : null}
+                    {status.label}
                   </span>
                 </div>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
@@ -74,7 +87,7 @@ export default function LotteryCodeGameCard({
                   Entries
                 </div>
                 <p className="mt-2 text-base font-semibold text-gray-900">
-                  {participants.length}
+                  {isCheckingSettings ? "-" : participants.length}
                 </p>
               </div>
               <div className="rounded-sm border border-gray-200 bg-gray-50 px-3 py-3">
@@ -83,7 +96,7 @@ export default function LotteryCodeGameCard({
                   Sample
                 </div>
                 <p className="mt-2 font-mono text-base font-semibold text-gray-900">
-                  {sampleNumber}
+                  {isCheckingSettings ? "-" : sampleNumber}
                 </p>
               </div>
               <div className="rounded-sm border border-gray-200 bg-gray-50 px-3 py-3">
@@ -97,7 +110,17 @@ export default function LotteryCodeGameCard({
               </div>
             </div>
 
-            {!canPlay ? (
+            {isCheckingSettings ? (
+              <div className="mt-5 rounded-sm border border-gray-200 bg-gray-50 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <Spinner size={13} />
+                  Checking Submit Form setup
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-gray-400">
+                  Loading lottery settings before enabling the presenter.
+                </p>
+              </div>
+            ) : !canPlay ? (
               <div className="mt-5 rounded-sm border border-amber-200 bg-amber-50/80 px-4 py-3">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
                   <WarningCircleIcon size={15} weight="fill" />
@@ -138,11 +161,15 @@ export default function LotteryCodeGameCard({
             <button
               type="button"
               onClick={() => setPresenting(true)}
-              disabled={!canPlay}
+              disabled={isCheckingSettings || !canPlay}
               className="mt-6 flex h-10 w-full items-center justify-center gap-2 rounded-sm bg-gray-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
             >
-              <PlayIcon size={16} weight="fill" />
-              Open draw
+              {isCheckingSettings ? (
+                <Spinner size={14} />
+              ) : (
+                <PlayIcon size={16} weight="fill" />
+              )}
+              {isCheckingSettings ? "Checking..." : "Open draw"}
             </button>
           </div>
         </div>

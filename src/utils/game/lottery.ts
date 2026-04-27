@@ -2,6 +2,7 @@ import type { SubmitFormSettings } from "@/types/api";
 import type { FormResponse } from "@/types/form";
 
 export type LotteryParticipant = {
+  color: string;
   id: string;
   number: string;
   submittedAt: string;
@@ -61,6 +62,7 @@ export function buildLotteryParticipants(
         new Date(right.submittedAt).getTime(),
     )
     .map((response, index) => ({
+      color: LOTTERY_BALL_COLORS[index % LOTTERY_BALL_COLORS.length],
       id: response.id,
       number: buildLotteryNumber(index, settings),
       submittedAt: response.submittedAt,
