@@ -1,10 +1,47 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "@phosphor-icons/react";
 
+export type HotkeyGroup = {
+  rows: Array<{
+    description: string;
+    keyLabel: string;
+  }>;
+  title: string;
+};
+
 interface HotkeysModalProps {
+  groups?: HotkeyGroup[];
   open: boolean;
   onClose: () => void;
+  title?: string;
 }
+
+const DEFAULT_HOTKEY_GROUPS: HotkeyGroup[] = [
+  {
+    title: "Presenting",
+    rows: [
+      { keyLabel: "->", description: "Go to next slide" },
+      { keyLabel: "<-", description: "Go to previous slide" },
+      { keyLabel: "P", description: "Exit presentation" },
+      { keyLabel: "Esc", description: "Exit / close overlay" },
+      { keyLabel: "F", description: "Toggle fullscreen" },
+      { keyLabel: "S", description: "Start quiz" },
+      { keyLabel: "R", description: "Restart quiz" },
+      { keyLabel: "B", description: "Show or hide blank screen" },
+    ],
+  },
+  {
+    title: "Participation",
+    rows: [
+      { keyLabel: "H", description: "Hide or show responses" },
+      { keyLabel: "L", description: "Show joining code" },
+      { keyLabel: "?", description: "Show keyboard shortcuts" },
+      { keyLabel: "Q", description: "Toggle Q&A sidebar" },
+      { keyLabel: "Up/Down", description: "Navigate Q&A questions" },
+      { keyLabel: "Enter", description: "Mark Q&A as answered" },
+    ],
+  },
+];
 
 function HotkeyRow({
   keyLabel,
@@ -23,7 +60,12 @@ function HotkeyRow({
   );
 }
 
-export default function HotkeysModal({ open, onClose }: HotkeysModalProps) {
+export default function HotkeysModal({
+  groups = DEFAULT_HOTKEY_GROUPS,
+  open,
+  onClose,
+  title = "Keyboard Shortcuts",
+}: HotkeysModalProps) {
   return (
     <AnimatePresence>
       {open && (
@@ -42,9 +84,7 @@ export default function HotkeysModal({ open, onClose }: HotkeysModalProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-base font-bold text-gray-800">
-                Keyboard Shortcuts
-              </h3>
+              <h3 className="text-base font-bold text-gray-800">{title}</h3>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
@@ -53,34 +93,22 @@ export default function HotkeysModal({ open, onClose }: HotkeysModalProps) {
               </button>
             </div>
             <div className="grid grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-sm font-bold text-gray-800 mb-4">
-                  Presenting
-                </h4>
-                <div className="flex flex-col gap-3">
-                  <HotkeyRow keyLabel="→" description="Go to next slide" />
-                  <HotkeyRow keyLabel="←" description="Go to previous slide" />
-                  <HotkeyRow keyLabel="P" description="Exit presentation" />
-                  <HotkeyRow keyLabel="Esc" description="Exit / close overlay" />
-                  <HotkeyRow keyLabel="F" description="Toggle fullscreen" />
-                  <HotkeyRow keyLabel="S" description="Start quiz" />
-                  <HotkeyRow keyLabel="R" description="Restart quiz" />
-                  <HotkeyRow keyLabel="B" description="Show or hide blank screen" />
+              {groups.map((group) => (
+                <div key={group.title}>
+                  <h4 className="text-sm font-bold text-gray-800 mb-4">
+                    {group.title}
+                  </h4>
+                  <div className="flex flex-col gap-3">
+                    {group.rows.map((row) => (
+                      <HotkeyRow
+                        key={`${group.title}-${row.keyLabel}-${row.description}`}
+                        keyLabel={row.keyLabel}
+                        description={row.description}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-gray-800 mb-4">
-                  Participation
-                </h4>
-                <div className="flex flex-col gap-3">
-                  <HotkeyRow keyLabel="H" description="Hide or show responses" />
-                  <HotkeyRow keyLabel="L" description="Show joining code" />
-                  <HotkeyRow keyLabel="?" description="Show keyboard shortcuts" />
-                  <HotkeyRow keyLabel="Q" description="Toggle Q&A sidebar" />
-                  <HotkeyRow keyLabel="↑/↓" description="Navigate Q&A questions" />
-                  <HotkeyRow keyLabel="Enter" description="Mark Q&A as answered" />
-                </div>
-              </div>
+              ))}
             </div>
           </motion.div>
         </motion.div>
