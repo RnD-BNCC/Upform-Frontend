@@ -10,7 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui'
 
-type Tab = 'questions' | 'share' | 'responses'
+type Tab = 'questions' | 'share' | 'game' | 'responses'
 
 type BuilderHeaderProps = {
   formTitle: string
@@ -31,6 +31,7 @@ type BuilderHeaderProps = {
 const NAV_TABS: { key: Tab; label: string }[] = [
   { key: 'questions', label: 'Edit' },
   { key: 'share', label: 'Share' },
+  { key: 'game', label: 'Game' },
   { key: 'responses', label: 'Results' },
 ]
 

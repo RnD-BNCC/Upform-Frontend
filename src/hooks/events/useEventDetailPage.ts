@@ -40,7 +40,7 @@ import {
 } from "@/components/builder/section/fieldRegistry";
 import type { FieldType, FormField, FormSection } from "@/types/form";
 
-type Tab = "questions" | "share" | "responses";
+type Tab = "questions" | "share" | "game" | "responses";
 type LeftPanelMode = "fields" | "theme";
 type BuilderRouteState = {
   sections?: FormSection[];

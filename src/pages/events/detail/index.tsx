@@ -4,6 +4,7 @@ import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   BuilderHeader,
+  BuilderGamePanel,
   BuilderSharePanel,
   CoverSettingsPanel,
   CoverPagePreview,
@@ -609,6 +610,15 @@ export default function EventDetailPage() {
             sections={sections}
             onPublish={() => setConfirmAction("publish")}
             showToast={showToast}
+          />
+        </div>
+      ) : activeTab === "game" ? (
+        <div className="flex-1 overflow-hidden">
+          <BuilderGamePanel
+            eventId={id ?? ""}
+            formTitle={formTitle}
+            responses={responses}
+            sections={sections}
           />
         </div>
       ) : (

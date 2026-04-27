@@ -1,5 +1,6 @@
 export * from "./api";
 export * from "./builder";
+export * from "./builderGame";
 export * from "./builderShare";
 export * from "./form";
 export * from "./polling";

@@ -8,6 +8,7 @@ export {
   PageTabBar,
   FieldPropertiesPanel,
   FormCover,
+  BuilderGamePanel,
   BuilderSharePanel,
 } from './layout'
 export {

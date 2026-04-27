@@ -31,3 +31,4 @@ export { default as ScaleWaveSvg } from "./ScaleWaveSvg";
 export { default as GuessNumberChartSvg } from "./GuessNumberChartSvg";
 export { default as LogicConnectPreviewSvg } from "./LogicConnectPreviewSvg";
 export { default as LogicConnectionLinesSvg } from "./LogicConnectionLinesSvg";
+export { default as LotteryMachinePreviewIcon } from "./LotteryMachinePreviewIcon";
