@@ -12,6 +12,7 @@ import type {
   BuilderSharePanelProps,
   EmbedType,
   ShareTab,
+  SubmitSettingsEditorState,
 } from "@/types/builderShare";
 
 export default function BuilderSharePanel({
@@ -21,6 +22,7 @@ export default function BuilderSharePanel({
   formTitle,
   isDirty,
   isPublishing,
+  onSubmitSettingsStateChange,
   onPublish,
   publicFormUrl,
   sections = [],
@@ -35,6 +37,10 @@ export default function BuilderSharePanel({
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLCanvasElement>(null);
   const isPublished = eventStatus === "active";
+
+  const handleSubmitSettingsStateChange = (state: SubmitSettingsEditorState) => {
+    onSubmitSettingsStateChange?.(state);
+  };
 
   const copyLink = async () => {
     try {
@@ -93,10 +99,15 @@ export default function BuilderSharePanel({
 
         <ShareTabPanel
           activeTab={activeTab}
+          activeTheme={activeTheme}
           eventId={eventId}
+          formTitle={formTitle}
           onOpenEmailComposer={() => setShowSendModal(true)}
           onSelectEmbedType={setSelectedEmbedType}
+          onSubmitSettingsStateChange={handleSubmitSettingsStateChange}
           onTabChange={setActiveTab}
+          sections={sections}
+          showToast={showToast}
         />
       </div>
 

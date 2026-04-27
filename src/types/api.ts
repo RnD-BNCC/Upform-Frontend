@@ -193,3 +193,36 @@ export type SaveEmailComposerDraftPayload = {
   selectedEmailFieldIds: string[]
   excludedRecipients: string[]
 }
+
+export type SubmitFormSettings = {
+  blocks: unknown
+  id: string
+  eventId: string
+  enabled: boolean
+  emailThemeValue: string | null
+  recipientFieldId: string
+  subject: string
+  body: string
+  raffleEnabled: boolean
+  rafflePrefix: string
+  raffleSuffix: string
+  raffleStart: number
+  rafflePadding: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type SaveSubmitFormSettingsPayload = {
+  eventId: string
+  blocks: unknown
+  enabled: boolean
+  emailThemeValue: string | null
+  recipientFieldId: string
+  subject: string
+  body: string
+  raffleEnabled: boolean
+  rafflePrefix: string
+  raffleSuffix: string
+  raffleStart: number
+  rafflePadding: number
+}

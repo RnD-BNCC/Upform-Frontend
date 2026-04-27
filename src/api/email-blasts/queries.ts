@@ -10,6 +10,8 @@ import type {
   CreateEmailBlastPayload,
   EmailComposerDraft,
   SaveEmailComposerDraftPayload,
+  SubmitFormSettings,
+  SaveSubmitFormSettingsPayload,
 } from '@/types/api'
 
 export function useQueryEmailBlasts(page = 1, take = 20, eventId?: string) {
@@ -87,6 +89,48 @@ export function useMutationSaveEmailComposerDraft(
       const [data, variables] = args
       queryClient.setQueryData(
         [QUERY_KEYS.EMAIL_BLAST_DRAFT, variables.eventId],
+        data,
+      )
+      options?.onSuccess?.(...args)
+    },
+    onError: options?.onError,
+  })
+}
+
+export function useQuerySubmitFormSettings(eventId: string, enabled = true) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.SUBMIT_FORM_SETTINGS, eventId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<SubmitFormSettings | null>(
+        Api.submitFormSettings(eventId),
+      )
+      return data
+    },
+    enabled: enabled && !!eventId,
+  })
+}
+
+export function useMutationSaveSubmitFormSettings(
+  options?: UseMutationOptions<
+    SubmitFormSettings,
+    Error,
+    SaveSubmitFormSettingsPayload
+  >,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ eventId, ...payload }: SaveSubmitFormSettingsPayload) => {
+      const { data } = await apiClient.put<SubmitFormSettings>(
+        Api.submitFormSettings(eventId),
+        payload,
+      )
+      return data
+    },
+    onSuccess: (...args) => {
+      const [data, variables] = args
+      queryClient.setQueryData(
+        [QUERY_KEYS.SUBMIT_FORM_SETTINGS, variables.eventId],
         data,
       )
       options?.onSuccess?.(...args)

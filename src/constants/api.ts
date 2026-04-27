@@ -62,4 +62,6 @@ export const Api = {
   emailBlastDetail: (id: string) => `/email-blasts/${id}`,
   emailBlastDraft: (eventId: string) =>
     `/email-blasts/events/${eventId}/draft`,
+  submitFormSettings: (eventId: string) =>
+    `/email-blasts/events/${eventId}/submit-settings`,
 } as const

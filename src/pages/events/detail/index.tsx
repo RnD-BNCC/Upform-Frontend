@@ -29,6 +29,7 @@ import { RenameModal, Spinner } from "@/components/ui";
 import ResponsesPanel from "@/components/responses/ResponsesPanel";
 import ShareToast from "@/components/toast/ShareToast";
 import { useEventDetailPage } from "@/hooks/events";
+import type { SubmitSettingsEditorState } from "@/types/builderShare";
 import {
   DesktopIcon,
   FloppyDiskIcon,
@@ -195,6 +196,8 @@ export default function EventDetailPage() {
   const [isCoverBgPickerOpen, setIsCoverBgPickerOpen] = useState(false);
   const [isThemeImagePositionOpen, setIsThemeImagePositionOpen] =
     useState(false);
+  const [submitSettingsState, setSubmitSettingsState] =
+    useState<SubmitSettingsEditorState>({ dirty: false, saving: false });
 
   useEffect(() => {
     ensureGoogleFontsLoaded([
@@ -233,6 +236,8 @@ export default function EventDetailPage() {
     activePageType === "page" &&
     themeConfig.formPosition !== "center" &&
     !!themeConfig.formImageUrl;
+  const hasUnsavedChanges = isDirty || submitSettingsState.dirty;
+  const isAnySaving = isSaving || submitSettingsState.saving;
 
   return (
     <ReferenceCalculationProvider calculations={referenceCalculations}>
@@ -246,8 +251,14 @@ export default function EventDetailPage() {
         formTitle={formTitle}
         onTitleChange={setFormTitle}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onBack={() => (isDirty ? setShowLeaveDialog(true) : navigate("/"))}
+        onTabChange={(nextTab) => {
+          if (submitSettingsState.dirty && activeTab === "share" && nextTab !== "share") {
+            showToast("Tekan Ctrl+S dulu untuk save Submit Form settings.", "error");
+            return;
+          }
+          setActiveTab(nextTab);
+        }}
+        onBack={() => (hasUnsavedChanges ? setShowLeaveDialog(true) : navigate("/"))}
         onPreview={() =>
           navigate(`/forms/${id}/preview`, {
             state: {
@@ -259,8 +270,8 @@ export default function EventDetailPage() {
             },
           })
         }
-        isSaving={isSaving}
-        isDirty={isDirty}
+        isSaving={isAnySaving}
+        isDirty={hasUnsavedChanges}
         eventStatus={eventStatus}
         onPublish={() => setConfirmAction("publish")}
         isPublishing={isPublishing}
@@ -593,6 +604,7 @@ export default function EventDetailPage() {
             formTitle={formTitle}
             isDirty={isDirty}
             isPublishing={isPublishing}
+            onSubmitSettingsStateChange={setSubmitSettingsState}
             publicFormUrl={publicFormUrl}
             sections={sections}
             onPublish={() => setConfirmAction("publish")}

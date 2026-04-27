@@ -13,4 +13,5 @@ export const QUERY_KEYS = {
   EMAIL_BLASTS: 'email-blasts',
   EMAIL_BLAST_DETAIL: 'email-blast-detail',
   EMAIL_BLAST_DRAFT: 'email-blast-draft',
+  SUBMIT_FORM_SETTINGS: 'submit-form-settings',
 } as const
