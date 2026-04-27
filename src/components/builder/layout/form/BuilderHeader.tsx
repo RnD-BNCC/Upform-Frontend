@@ -94,10 +94,13 @@ export default function BuilderHeader({
               {isSaving ? (
                 <span className="flex items-center gap-1 text-primary-500">
                   <Spinner size={9} />
-                  Saving…
+                  Saving...
                 </span>
               ) : (
-                <span className="text-amber-500">● Unsaved</span>
+                <span className="flex items-center gap-1 text-amber-500">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Unsaved
+                </span>
               )}
             </span>
           )}
