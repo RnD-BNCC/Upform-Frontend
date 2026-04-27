@@ -45,6 +45,10 @@ function textToRichHtml(value: string, linkColor = "#0054a5") {
   );
 }
 
+function getEmailFontFamily(fontFamily: string) {
+  return escapeHtml(fontFamily.replace(/"/g, "'"));
+}
+
 function createInitialTextHtml(publicFormUrl: string) {
   const safeUrl = escapeHtml(publicFormUrl);
   return `Hi there,<br /><br />I've invited you to fill out a form:<br /><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
@@ -405,6 +409,7 @@ export function generateHtml(
   style: EmailStyle,
   theme: ThemeConfig,
 ): string {
+  const fontFamily = getEmailFontFamily(theme.fontFamily);
   const blocksHtml = blocks
     .map((block) => {
       if (block.type === "text") {
@@ -425,12 +430,12 @@ export function generateHtml(
     .join("\n");
 
   if (style === "basic") {
-    return `<div style="font-family:${theme.fontFamily};background:${theme.bg};color:${theme.textColor};max-width:660px;margin:0 auto;padding:28px 32px;">
+    return `<div style="font-family:${fontFamily};background:${theme.bg};color:${theme.textColor};max-width:660px;margin:0 auto;padding:28px 32px;">
 ${blocksHtml}
 </div>`;
   }
 
-  return `<div style="font-family:${theme.fontFamily};background:${theme.canvasBg};padding:32px 16px;">
+  return `<div style="font-family:${fontFamily};background:${theme.canvasBg};padding:32px 16px;">
 <div style="max-width:660px;margin:0 auto;">
   <div style="text-align:center;font-size:30px;line-height:1.2;font-weight:800;color:${theme.textColor};margin-bottom:18px;">UpForm</div>
   <div style="background:${theme.bg};border-radius:10px;padding:28px 32px;color:${theme.textColor};">
