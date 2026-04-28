@@ -10,6 +10,11 @@ import type {
   ResultSortRule,
   ResultsAnswerValue,
 } from "@/types/results";
+import {
+  formatPhoneAnswer,
+  isPhoneAnswerEmpty,
+  isSerializedPhoneAnswer,
+} from "@/utils/form/phoneAnswer";
 
 export const RESULT_VIEW_STORAGE_PREFIX = "upform:results:views:";
 
@@ -158,11 +163,13 @@ export function getAnswerValue(response: FormResponse, fieldId: string) {
 
 export function formatAnswerValue(value: ResultsAnswerValue) {
   if (Array.isArray(value)) return value.join(", ");
+  if (isSerializedPhoneAnswer(value)) return formatPhoneAnswer(value);
   return value ?? "";
 }
 
 export function isFieldValueEmpty(value: ResultsAnswerValue) {
   if (Array.isArray(value)) return value.length === 0;
+  if (isSerializedPhoneAnswer(value)) return isPhoneAnswerEmpty(value);
   return !String(value ?? "").trim();
 }
 

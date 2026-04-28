@@ -29,6 +29,10 @@ import {
   getAcceptedFileMimeList,
   isAllowedFileType,
 } from "@/utils/form/fileTypes";
+import {
+  parsePhoneAnswer,
+  serializePhoneAnswer,
+} from "@/utils/form/phoneAnswer";
 import { stripHtmlToText } from "@/utils/form/referenceTokens";
 import { cleanResultLabel } from "../resultsResponseUtils";
 
@@ -479,11 +483,23 @@ export default function ResponseFieldEditor({
   }
 
   if (field.type === "phone") {
+    const phoneAnswer = parsePhoneAnswer(value, field.countryCode ?? "US");
+
     return (
       <PhoneField
-        countryCode={field.countryCode ?? "US"}
-        defaultValue={stringValue}
-        onChange={onChange}
+        countryCode={phoneAnswer.countryCode}
+        defaultValue={phoneAnswer.number}
+        onChange={(nextValue) =>
+          onChange(serializePhoneAnswer({ ...phoneAnswer, number: nextValue }))
+        }
+        onCountryChange={(nextCountryCode) =>
+          onChange(
+            serializePhoneAnswer({
+              ...phoneAnswer,
+              countryCode: nextCountryCode,
+            }),
+          )
+        }
         placeholder={getPlaceholder(field, "Phone number")}
       />
     );

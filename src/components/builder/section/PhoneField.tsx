@@ -12,6 +12,7 @@ import {
 } from "./fieldDefinitionHelpers";
 import { FieldPluginTextValidationFields } from "./FieldSettingSections";
 import { FieldPluginLabel } from "./FieldSettingControls";
+import { sanitizePhoneNumber } from "@/utils/form/phoneAnswer";
 
 type Props = {
   countryCode?: string;
@@ -241,10 +242,22 @@ export default function PhoneField({
   const [runtimeCountryCode, setRuntimeCountryCode] = useState(
     countryCode ?? "US",
   );
-  const selectedCountryCode = countryCode ?? runtimeCountryCode;
+  const isCountryControlled = typeof onCountryChange === "function";
+  const selectedCountryCode = isCountryControlled
+    ? countryCode ?? runtimeCountryCode
+    : runtimeCountryCode;
+  const phoneValue = sanitizePhoneNumber(defaultValue ?? "");
+
+  useEffect(() => {
+    setRuntimeCountryCode(countryCode ?? "US");
+  }, [countryCode]);
+
   const handleCountryChange = (value: string) => {
     setRuntimeCountryCode(value);
     onCountryChange?.(value);
+  };
+  const handlePhoneChange = (value: string) => {
+    onChange(sanitizePhoneNumber(value));
   };
 
   return (
@@ -262,10 +275,12 @@ export default function PhoneField({
       />
       <input
         type="tel"
-        value={defaultValue ?? ""}
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={phoneValue}
         placeholder={placeholder || "Phone number"}
         onClick={(event) => event.stopPropagation()}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => handlePhoneChange(event.target.value)}
         className="theme-answer-placeholder theme-answer-text min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-xs"
       />
     </div>

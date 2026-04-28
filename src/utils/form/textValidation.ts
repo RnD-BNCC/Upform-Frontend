@@ -1,5 +1,6 @@
 import type { FormField, FormAnswerValue } from "@/types/form";
 import { stripHtmlToText } from "./referenceTokens";
+import { parsePhoneAnswer } from "./phoneAnswer";
 
 function getTextValue(value: FormAnswerValue | undefined) {
   if (Array.isArray(value) || value === undefined) {
@@ -93,7 +94,8 @@ export function getTextValidationMessage(
   >,
   value: FormAnswerValue | undefined,
 ) {
-  const textValue = getTextValue(value);
+  const textValue =
+    field.type === "phone" ? parsePhoneAnswer(value).number : getTextValue(value);
 
   if (!textValue) {
     return field.required

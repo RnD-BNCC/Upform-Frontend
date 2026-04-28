@@ -31,6 +31,10 @@ import {
   resolveReferenceText,
   stripHtmlToText,
 } from "@/utils/form/referenceTokens";
+import {
+  parsePhoneAnswer,
+  serializePhoneAnswer,
+} from "@/utils/form/phoneAnswer";
 import RuntimeFileUploadField from "./RuntimeFileUploadField";
 
 const shakeVariants = {
@@ -632,13 +636,36 @@ export default function PreviewField({
       ) : null}
 
       {field.type === "phone" ? (
-        <PhoneField
-          countryCode={field.countryCode ?? "US"}
-          defaultValue={(val as string) ?? ""}
-          hasError={hasError}
-          onChange={(nextValue) => onAnswer(nextValue)}
-          placeholder={hasConfiguredPlaceholder ? resolvedPlaceholder : undefined}
-        />
+        (() => {
+          const phoneAnswer = parsePhoneAnswer(val, field.countryCode ?? "US");
+
+          return (
+            <PhoneField
+              countryCode={phoneAnswer.countryCode}
+              defaultValue={phoneAnswer.number}
+              hasError={hasError}
+              onChange={(nextValue) =>
+                onAnswer(
+                  serializePhoneAnswer({
+                    ...phoneAnswer,
+                    number: nextValue,
+                  }),
+                )
+              }
+              onCountryChange={(nextCountryCode) =>
+                onAnswer(
+                  serializePhoneAnswer({
+                    ...phoneAnswer,
+                    countryCode: nextCountryCode,
+                  }),
+                )
+              }
+              placeholder={
+                hasConfiguredPlaceholder ? resolvedPlaceholder : undefined
+              }
+            />
+          );
+        })()
       ) : null}
 
       {field.type === "currency" ? (

@@ -254,7 +254,6 @@ export default function EventDetailPage() {
         activeTab={activeTab}
         onTabChange={(nextTab) => {
           if (submitSettingsState.dirty && activeTab === "share" && nextTab !== "share") {
-            showToast("Tekan Ctrl+S dulu untuk save Submit Form settings.", "error");
             return;
           }
           setActiveTab(nextTab);

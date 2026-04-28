@@ -1,5 +1,6 @@
 import type { FormCalculation, FormField, FormSection } from "@/types/form";
 import { getIndexedOptionValues } from "./optionSelection";
+import { serializePhoneAnswer, sanitizePhoneNumber } from "./phoneAnswer";
 import { resolveReferenceText } from "./referenceTokens";
 
 type RuntimeDefaultContext = {
@@ -53,6 +54,19 @@ export function getRuntimeDefaultAnswer(
     const hasDefault = Object.values(defaults).some((value) => value?.trim());
 
     return hasDefault ? JSON.stringify(defaults) : undefined;
+  }
+
+  if (field.type === "phone") {
+    const defaultNumber = sanitizePhoneNumber(
+      getResolvedTextDefault(field, context) ?? "",
+    );
+
+    return defaultNumber
+      ? serializePhoneAnswer({
+          countryCode: field.countryCode ?? "US",
+          number: defaultNumber,
+        })
+      : undefined;
   }
 
   return getResolvedTextDefault(field, context);
