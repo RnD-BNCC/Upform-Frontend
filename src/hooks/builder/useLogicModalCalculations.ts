@@ -3,6 +3,7 @@ import {
   getAvailableConditionFieldGroupsForForm,
   getAvailableConditionFieldsForForm,
   getFormCalculationsFromSections,
+  normalizeGroupedNumberInput,
 } from "@/utils/form";
 import type {
   CalculationRule,
@@ -56,8 +57,9 @@ function normalizeCalculationInitialValue(calculation: FormCalculation) {
 
   if (!trimmedValue) return "";
 
-  const parsedValue = Number(trimmedValue);
-  return Number.isFinite(parsedValue) ? trimmedValue : "";
+  const normalizedValue = normalizeGroupedNumberInput(trimmedValue);
+  const parsedValue = Number(normalizedValue);
+  return normalizedValue && Number.isFinite(parsedValue) ? normalizedValue : "";
 }
 
 function createEmptyConditionTree(): ConditionGroup {

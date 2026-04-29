@@ -188,6 +188,9 @@ export default function ReferenceTextEditor({
         }}
         onBlur={() => {
           focusedRef.current = false;
+          if (editorRef.current && editorRef.current.innerHTML !== value) {
+            syncHtml(value);
+          }
           onBlur?.();
         }}
         onKeyDown={(event) => {

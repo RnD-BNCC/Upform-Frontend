@@ -109,7 +109,7 @@ export function ParagraphBlockFieldCard({
             referenceFields={availableReferenceFields}
             referenceFieldGroups={availableReferenceFieldGroups}
             placeholderClassName="theme-question-caption text-sm"
-            className="theme-question-caption w-full border-b border-transparent pb-1 text-sm text-gray-700 transition-colors hover:border-gray-200 focus:border-primary-400"
+            className="theme-question-caption w-full whitespace-pre-wrap border-b border-transparent pb-1 text-sm text-gray-700 transition-colors hover:border-gray-200 focus:border-primary-400"
             stopPropagation
           />
         </div>
@@ -198,13 +198,13 @@ export const paragraphBlockFieldPlugin = createFieldPlugin({
     isSelected,
     onChange,
     onSelect,
-    resolvedDefaultValue,
     resolvedPlaceholder,
+    field,
   }) => (
     <ParagraphBlockFieldCard
       availableReferenceFieldGroups={availableReferenceFieldGroups}
       availableReferenceFields={availableReferenceFields}
-      defaultValue={resolvedDefaultValue}
+      defaultValue={field.defaultValue}
       dragHandle={dragHandle}
       isSelected={isSelected}
       onChange={onChange}

@@ -324,7 +324,7 @@ function ConditionLeafRow({
         </div>
 
         {hasValue ? (
-          <div className="w-[150px] min-w-[150px]" data-cy="condition-picker-value">
+          <div className="w-[240px] min-w-[240px]" data-cy="condition-picker-value">
             <ReferenceTextEditor
               allowDateUtilities
               availableFields={availableFields}
@@ -333,12 +333,12 @@ function ConditionLeafRow({
               onFocus={() => closeConditionSelectMenus()}
               placeholder="value"
               placeholderClassName="px-3 py-[10px] text-[13px] text-gray-400"
-              className="h-10 min-h-10 w-full rounded-none border border-gray-300 border-l-0 bg-white px-3 py-[10px] text-[13px] text-gray-700 focus:border-gray-400"
+              className="h-10 min-h-10 w-full overflow-x-auto overflow-y-hidden rounded-none border border-gray-300 border-l-0 bg-white px-3 py-[10px] text-[13px] text-gray-700 [scrollbar-width:thin] focus:border-gray-400 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300"
             />
           </div>
         ) : (
           <div
-            className="h-10 w-[150px] min-w-[150px] rounded-none border border-gray-300 border-l-0 bg-white"
+            className="h-10 w-[240px] min-w-[240px] rounded-none border border-gray-300 border-l-0 bg-white"
             data-cy="condition-picker-value"
           />
         )}
@@ -401,7 +401,7 @@ function ConditionGroupBlock({
       className="my-2 rounded-md border py-2 pl-5 pr-2"
       style={{ backgroundColor: "#f3f4f6", borderColor: "#d1d5db" }}
     >
-      <div className="min-w-[450px]">
+      <div className="min-w-[540px]">
         <div className="flex justify-between gap-2">
           <div className="flex pt-1 pl-3 text-[12px] font-medium text-gray-400">
             {getGroupSummaryText(group.logic)}
@@ -561,7 +561,7 @@ export function ConditionEditorPanel({
   onUpdate,
   onDone,
   containerClassName = "",
-  contentClassName = "flex max-h-[40vh] overflow-y-auto overflow-hidden",
+  contentClassName = "flex max-h-[40vh] overflow-y-auto overflow-x-hidden",
   footerClassName = "flex items-center justify-between pt-2",
 }: ConditionEditorPanelProps) {
   const hasItems = tree.items.length > 0;
@@ -599,7 +599,7 @@ export function ConditionEditorPanel({
               No conditions specified yet
             </div>
           ) : (
-            <div className="min-w-[450px]">
+            <div className="min-w-[540px]">
               <div className="flex justify-between">
                 {showLogicSelect ? (
                   <CompactLogicSelect
@@ -704,7 +704,7 @@ export function ConditionPopup({
   if (!anchorEl) return null;
 
   const rect = anchorEl.getBoundingClientRect();
-  const popupWidth = Math.min(640, window.innerWidth - 24);
+  const popupWidth = Math.min(760, window.innerWidth - 24);
   const position = {
     top: Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - 320)),
     left: Math.max(
@@ -718,7 +718,7 @@ export function ConditionPopup({
       ref={popupRef}
       data-condition-popup-root="true"
       className="fixed z-[9999]"
-      style={{ top: position.top, left: position.left, maxWidth: popupWidth }}
+      style={{ top: position.top, left: position.left, width: popupWidth }}
       onMouseDown={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}

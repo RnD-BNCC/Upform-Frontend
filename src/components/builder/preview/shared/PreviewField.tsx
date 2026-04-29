@@ -312,7 +312,7 @@ export default function PreviewField({
             <BannerIcon type={field.bannerType} />
           </span>
           <div
-            className={`${bannerStyle.text} min-w-0 flex-1 text-sm leading-normal [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5`}
+            className={`${bannerStyle.text} upform-rich-text-display min-w-0 flex-1 whitespace-pre-wrap text-sm leading-normal`}
             dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "" }}
           />
         </div>
@@ -323,15 +323,9 @@ export default function PreviewField({
   if (field.type === "paragraph") {
     return (
       <div className={`${displaySurfaceClass} px-5 pb-4 pt-5`}>
-        {resolvedLabelHtml ? (
-          <p
-            className="theme-question-title mb-1 text-base leading-snug text-gray-900"
-            dangerouslySetInnerHTML={{ __html: resolvedLabelHtml }}
-          />
-        ) : null}
         {resolvedDefaultHtml ? (
           <div
-            className="theme-question-caption text-sm leading-relaxed text-gray-700 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="theme-question-caption whitespace-pre-wrap text-sm leading-relaxed text-gray-700 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: resolvedDefaultHtml }}
           />
         ) : null}

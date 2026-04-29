@@ -250,6 +250,7 @@ export const checkboxFieldPlugin = createFieldPlugin({
   renderBuilder: ({ field, onChange }) => (
     <CheckboxField
       defaultValue={field.defaultValue}
+      maxVisibleOptions={field.options?.length || 2}
       onChange={(value) => onChange({ defaultValue: value })}
       options={field.options?.length ? field.options : ["Option 1", "Option 2"]}
     />

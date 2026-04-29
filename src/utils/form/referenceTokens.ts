@@ -13,6 +13,10 @@ import {
   getAvailableReferenceFieldGroupsForField as getReferenceFieldGroupsForField,
   getAvailableReferenceFieldsForField as getReferenceFieldsForField,
 } from "./conditionFields";
+import {
+  formatGroupedNumberInput,
+  normalizeGroupedNumberInput,
+} from "./numberFormat";
 
 export const REFERENCE_TOKEN_SELECTOR = '[data-reference-token="true"]';
 
@@ -394,8 +398,10 @@ export function evaluateReferenceConditionTree(
 
 function formatCalculatedNumber(value: number) {
   if (!Number.isFinite(value)) return "";
-  if (Number.isInteger(value)) return String(value);
-  return String(Number.parseFloat(value.toFixed(6)));
+  const normalized = Number.isInteger(value)
+    ? String(value)
+    : String(Number.parseFloat(value.toFixed(6)));
+  return formatGroupedNumberInput(normalized);
 }
 
 function parseResolvedCalculationNumber(
@@ -403,12 +409,13 @@ function parseResolvedCalculationNumber(
   context: ReferenceResolveContext,
 ) {
   const normalized = resolveReferenceText(value, context)
-    .replace(/,/g, "")
+    .replace(/&nbsp;/g, " ")
     .trim();
+  const rawNumber = normalizeGroupedNumberInput(normalized);
 
-  if (!normalized) return null;
+  if (!rawNumber) return null;
 
-  const parsed = Number(normalized);
+  const parsed = Number(rawNumber);
   return Number.isFinite(parsed) ? parsed : null;
 }
 

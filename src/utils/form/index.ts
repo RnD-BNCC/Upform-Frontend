@@ -12,6 +12,7 @@ export * from "./fileUpload";
 export * from "./fileTypes";
 export * from "./formBuilder";
 export * from "./logicModalEvents";
+export * from "./numberFormat";
 export * from "./optionSelection";
 export * from "./pageLogic";
 export * from "./referenceTokens";

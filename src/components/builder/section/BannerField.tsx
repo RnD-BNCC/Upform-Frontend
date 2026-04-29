@@ -102,7 +102,7 @@ export function BannerFieldCard({
                 placeholder="Write banner content here..."
                 referenceFields={availableReferenceFields}
                 referenceFieldGroups={availableReferenceFieldGroups}
-                className={`${colors.text} w-full bg-transparent text-sm leading-normal`}
+                className={`${colors.text} upform-rich-text-display w-full whitespace-pre-wrap bg-transparent text-sm leading-normal`}
                 stopPropagation
               />
             </div>
