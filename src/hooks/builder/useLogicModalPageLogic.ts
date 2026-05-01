@@ -34,6 +34,11 @@ type UseLogicModalPageLogicArgs = {
   pages: FormSection[];
 };
 
+type PendingConnectedNode = {
+  fromId: string;
+  nodeId: string;
+};
+
 export type LogicModalPageLogicController = {
   addConditionalSlot: (fromId: string) => void;
   addNodeFrom: (
@@ -104,6 +109,43 @@ export type LogicModalPageLogicController = {
   zoomAtCenter: (newZoom: number) => void;
 };
 
+function hasSameBranches(left: LogicBranch[], right: LogicBranch[]) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function mergeTouchedBranches(
+  generatedBranches: LogicBranch[],
+  localBranches: LogicBranch[],
+  pages: FormSection[],
+  touchedSourceIds: Set<string>,
+  pendingConnectedNode: PendingConnectedNode | null,
+) {
+  if (touchedSourceIds.size === 0 && !pendingConnectedNode) {
+    return generatedBranches;
+  }
+
+  const validPageIds = new Set(pages.map((page) => page.id));
+  const nextBranches = generatedBranches.filter((branch) => {
+    if (touchedSourceIds.has(branch.fromId)) return false;
+    if (
+      pendingConnectedNode &&
+      branch.toId === pendingConnectedNode.nodeId &&
+      branch.fromId !== pendingConnectedNode.fromId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const preservedBranches = localBranches.filter((branch) => {
+    if (!touchedSourceIds.has(branch.fromId)) return false;
+    if (!validPageIds.has(branch.fromId)) return false;
+    return !branch.toId || validPageIds.has(branch.toId);
+  });
+
+  return normalizeLogicBranches([...nextBranches, ...preservedBranches]);
+}
+
 export function useLogicModalPageLogic({
   activeTab,
   isOpen,
@@ -168,6 +210,8 @@ export function useLogicModalPageLogic({
   const flowSyncTimeoutRef = useRef<number | null>(null);
   const didOpenRef = useRef(false);
   const hasHydratedGraphRef = useRef(false);
+  const touchedBranchSourceIdsRef = useRef<Set<string>>(new Set());
+  const pendingConnectedNodeRef = useRef<PendingConnectedNode | null>(null);
 
   const activeConditionBranch = conditionEditorBranchId
     ? (branches.find((branch) => branch.id === conditionEditorBranchId) ?? null)
@@ -196,6 +240,24 @@ export function useLogicModalPageLogic({
         const next = normalizeLogicBranches(
           typeof updater === "function" ? updater(prev) : updater,
         );
+        const sourceIds = new Set([
+          ...prev.map((branch) => branch.fromId),
+          ...next.map((branch) => branch.fromId),
+        ]);
+
+        for (const sourceId of sourceIds) {
+          const prevSourceBranches = prev.filter(
+            (branch) => branch.fromId === sourceId,
+          );
+          const nextSourceBranches = next.filter(
+            (branch) => branch.fromId === sourceId,
+          );
+
+          if (!hasSameBranches(prevSourceBranches, nextSourceBranches)) {
+            touchedBranchSourceIdsRef.current.add(sourceId);
+          }
+        }
+
         savedBranchesRef.current = next;
         return next;
       });
@@ -239,6 +301,31 @@ export function useLogicModalPageLogic({
       }
     };
   }, [branches, isOpen, onFlowChange]);
+
+  const flushFlowChange = useCallback(() => {
+    if (!onFlowChange) return;
+    if (!hasHydratedGraphRef.current) return;
+    if (!userInteractedRef.current) return;
+
+    const nextBranches = savedBranchesRef.current ?? branchesRef.current;
+    const hasPendingSync = flowSyncTimeoutRef.current !== null;
+
+    if (flowSyncTimeoutRef.current) {
+      window.clearTimeout(flowSyncTimeoutRef.current);
+      flowSyncTimeoutRef.current = null;
+    }
+
+    if (
+      !hasPendingSync &&
+      JSON.stringify(lastSyncedBranchesRef.current ?? []) ===
+        JSON.stringify(nextBranches)
+    ) {
+      return;
+    }
+
+    lastSyncedBranchesRef.current = nextBranches;
+    onFlowChange(nextBranches);
+  }, [onFlowChange]);
 
   const zoomAtCenter = useCallback((newZoom: number) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -302,13 +389,33 @@ export function useLogicModalPageLogic({
       let nextBranches = normalizeLogicBranches(
         buildRuntimePageLogicBranches(incomingPages),
       );
+      const shouldSyncTouchedBranches =
+        !options?.resetExpanded && touchedBranchSourceIdsRef.current.size > 0;
 
       if (!options?.resetExpanded) {
+        nextBranches = mergeTouchedBranches(
+          nextBranches,
+          savedBranchesRef.current ?? branchesRef.current,
+          incomingPages,
+          touchedBranchSourceIdsRef.current,
+          pendingConnectedNodeRef.current,
+        );
         nextBranches = mergeMissingConditionalBranches(
           nextBranches,
           branchesRef.current,
           incomingPages,
         );
+      } else {
+        touchedBranchSourceIdsRef.current.clear();
+        pendingConnectedNodeRef.current = null;
+      }
+
+      const pendingConnectedNode = pendingConnectedNodeRef.current;
+      if (
+        pendingConnectedNode &&
+        incomingPages.some((page) => page.id === pendingConnectedNode.nodeId)
+      ) {
+        pendingConnectedNodeRef.current = null;
       }
 
       savedBranchesRef.current = nextBranches;
@@ -319,6 +426,11 @@ export function useLogicModalPageLogic({
       setBranches((prev) =>
         JSON.stringify(prev) === JSON.stringify(nextBranches) ? prev : nextBranches,
       );
+
+      if (shouldSyncTouchedBranches) {
+        touchedBranchSourceIdsRef.current.clear();
+        onFlowChange?.(nextBranches);
+      }
 
       if (options?.resetExpanded) {
         setExpandedNodeId(null);
@@ -341,13 +453,15 @@ export function useLogicModalPageLogic({
         }
       }
     },
-    [],
+    [onFlowChange],
   );
 
   useEffect(() => {
     if (!isOpen) {
       didOpenRef.current = false;
       hasHydratedGraphRef.current = false;
+      touchedBranchSourceIdsRef.current.clear();
+      pendingConnectedNodeRef.current = null;
       setNodeMenu(null);
       setConfirmDeleteNodeId(null);
       setConditionEditorBranchId(null);
@@ -496,6 +610,8 @@ export function useLogicModalPageLogic({
         existingDefault.toId !== newId;
 
       savedPositionsRef.current.set(newId, { x: newNode.x, y: newNode.y });
+      onNodeMove?.(newId, newNode.x, newNode.y);
+      pendingConnectedNodeRef.current = { fromId, nodeId: newId };
       setNodes((prev) => [...prev, newNode]);
       updateBranches((prev) =>
         connectBranchTarget(prev, fromId, newId, mode, branchId),
@@ -505,7 +621,7 @@ export function useLogicModalPageLogic({
         announceBranching(fromId);
       }
     },
-    [announceBranching, onAddPage, updateBranches],
+    [announceBranching, onAddPage, onNodeMove, updateBranches],
   );
 
   const addConditionalSlot = useCallback(
@@ -843,10 +959,16 @@ export function useLogicModalPageLogic({
   ]);
 
   const prepareForTabChange = useCallback(() => {
+    flushFlowChange();
     closeNodeMenu();
     closeConfirmDeleteNode();
     closeBranchConditionEditor();
-  }, [closeBranchConditionEditor, closeConfirmDeleteNode, closeNodeMenu]);
+  }, [
+    closeBranchConditionEditor,
+    closeConfirmDeleteNode,
+    closeNodeMenu,
+    flushFlowChange,
+  ]);
 
   return {
     addConditionalSlot,

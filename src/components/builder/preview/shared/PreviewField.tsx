@@ -171,6 +171,10 @@ export default function PreviewField({
     field.description,
     referenceContext,
   );
+  const resolvedSubtitleHtml = resolveReferenceHtml(
+    field.subtitle,
+    referenceContext,
+  );
   const resolvedPlaceholder = resolveReferenceText(
     field.placeholder,
     referenceContext,
@@ -286,15 +290,18 @@ export default function PreviewField({
   if (field.type === "thank_you_block") {
     return (
       <div className={`${displaySurfaceClass} flex flex-col items-center gap-2 px-5 py-6 text-center`}>
-        <CheckCircleIcon size={40} weight="fill" className="text-emerald-500" />
-        <h3
-          className="theme-question-title text-lg font-bold text-gray-900 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+        {!field.hideIcon ? (
+          <CheckCircleIcon size={40} weight="fill" className="text-emerald-500" />
+        ) : null}
+        <div
+          className="theme-question-title upform-rich-text-display w-full text-center text-lg font-bold text-gray-900 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
           dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "Thank You!" }}
         />
-        {field.subtitle ? (
-          <p className="theme-question-caption text-sm text-gray-500">
-            {field.subtitle}
-          </p>
+        {resolvedSubtitleHtml ? (
+          <div
+            className="theme-question-caption upform-rich-text-display w-full text-center text-sm text-gray-500 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: resolvedSubtitleHtml }}
+          />
         ) : null}
       </div>
     );

@@ -106,10 +106,38 @@ export default function LogicModal({
     [onToast, showSaveToast],
   );
 
+  const handleAddPage = useCallback(
+    async (type: PageType) => {
+      const pageLabel =
+        type === "cover" ? "cover page" : type === "ending" ? "ending page" : "page";
+
+      showSaveToast(`Adding ${pageLabel}...`, "info", 0);
+
+      try {
+        const sectionId = await onAddPage?.(type);
+
+        if (!sectionId) {
+          showSaveToast(`Failed to add ${pageLabel}`, "error");
+          return undefined;
+        }
+
+        showSaveToast(
+          `${pageLabel.charAt(0).toUpperCase()}${pageLabel.slice(1)} added`,
+        );
+        return sectionId;
+      } catch (error) {
+        console.error("[LogicModal] add page failed:", error);
+        showSaveToast(`Failed to add ${pageLabel}`, "error");
+        return undefined;
+      }
+    },
+    [onAddPage, showSaveToast],
+  );
+
   const pageLogicController = useLogicModalPageLogic({
     activeTab,
     isOpen,
-    onAddPage,
+    onAddPage: onAddPage ? handleAddPage : undefined,
     onDeletePage,
     onFlowChange,
     onNodeMove,
