@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import type { PieLabelProps, PieSectorProps } from '@/types/form'
-import { CHART_COLORS } from '@/utils/response-aggregation'
+import { CHART_COLORS } from '@/utils/form/responseAggregation'
 
 interface PieChartCardProps {
   data: Array<{ name: string; value: number }>

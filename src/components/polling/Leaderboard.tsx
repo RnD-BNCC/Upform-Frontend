@@ -5,13 +5,22 @@ import type { LeaderboardEntry } from '@/types/polling'
 import { RANK_COLORS, LEADERBOARD_BAR_BG as BAR_BG } from '@/config/polling'
 
 export default function Leaderboard({
+  currentParticipantId,
   scores,
 }: {
+  currentParticipantId?: string
   scores: LeaderboardEntry[]
 }) {
   const [phase, setPhase] = useState<'runners' | 'winner'>('runners')
   const top5 = scores.slice(0, 5)
   const runners = top5.slice(1)
+  const currentParticipantIndex = currentParticipantId
+    ? scores.findIndex((entry) => entry.id === currentParticipantId)
+    : -1
+  const currentParticipant =
+    currentParticipantIndex >= 0 ? scores[currentParticipantIndex] : null
+  const currentParticipantRank =
+    currentParticipantIndex >= 0 ? currentParticipantIndex + 1 : null
 
   useEffect(() => {
     const timer = setTimeout(() => setPhase('winner'), runners.length * 1000 + 1500)
@@ -23,7 +32,7 @@ export default function Leaderboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="w-full min-h-full flex-1 bg-gradient-to-b from-primary-900 via-primary-800 to-primary-900 flex flex-col items-center justify-center overflow-hidden"
+      className="relative w-full min-h-full flex-1 bg-gradient-to-b from-primary-900 via-primary-800 to-primary-900 flex flex-col items-center justify-center overflow-hidden"
     >
 
       <AnimatePresence mode="wait">
@@ -47,13 +56,16 @@ export default function Leaderboard({
             <div className="flex flex-col gap-2.5 sm:gap-3">
               {runners.map((entry, i) => {
                 const rank = top5.indexOf(entry) + 1
+                const isCurrentParticipant = entry.id === currentParticipantId
                 return (
                   <motion.div
                     key={entry.id}
                     initial={{ x: 300, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: (runners.length - 1 - i) * 0.8, type: 'spring', stiffness: 260, damping: 28 }}
-                    className={`flex items-center gap-2.5 sm:gap-4 rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-4 ${BAR_BG[rank - 1]}`}
+                    className={`flex items-center gap-2.5 sm:gap-4 rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-4 ${BAR_BG[rank - 1]} ${
+                      isCurrentParticipant ? 'ring-2 ring-white/80 ring-offset-2 ring-offset-primary-900' : ''
+                    }`}
                   >
                     <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br ${RANK_COLORS[rank - 1]} flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-lg shrink-0`}>
                       {rank}
@@ -104,7 +116,9 @@ export default function Leaderboard({
               <img
                 src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${top5[0].avatarSeed || top5[0].id}`}
                 alt={top5[0].name}
-                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/10 border-3 sm:border-4 border-amber-400 shadow-2xl shadow-amber-400/30"
+                className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/10 border-3 sm:border-4 border-amber-400 shadow-2xl shadow-amber-400/30 ${
+                  top5[0].id === currentParticipantId ? 'ring-4 ring-white/70' : ''
+                }`}
               />
             </motion.div>
 
@@ -147,6 +161,32 @@ export default function Leaderboard({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {phase === 'winner' && currentParticipant && currentParticipantRank ? (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-1/2 sm:right-auto sm:w-full sm:max-w-md sm:-translate-x-1/2"
+        >
+          <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-base font-black text-primary-900">
+              #{currentParticipantRank}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-white/55">
+                Your rank
+              </p>
+              <p className="truncate text-sm font-black text-white">
+                {currentParticipant.name}
+              </p>
+            </div>
+            <p className="shrink-0 text-base font-black tabular-nums text-amber-300">
+              {currentParticipant.score} p
+            </p>
+          </div>
+        </motion.div>
+      ) : null}
     </motion.div>
   )
 }

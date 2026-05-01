@@ -6,11 +6,12 @@ import {
   aggregateScaleResponses,
   collectTextResponses,
   countFieldResponses,
-} from '@/utils/response-aggregation'
+} from '@/utils/form/responseAggregation'
 import PieChartCard from './charts/PieChartCard'
 import BarChartCard from './charts/BarChartCard'
 import TextResponseList from './charts/TextResponseList'
 import FileResponseList from './charts/FileResponseList'
+import { cleanResultLabel } from './resultsResponseUtils'
 
 interface QuestionSummaryCardProps {
   field: FormField
@@ -32,7 +33,8 @@ export default function QuestionSummaryCard({
         const data = aggregateChoiceResponses(field.id, field.options ?? [], responses)
         return <PieChartCard data={data} />
       }
-      case 'checkbox': {
+      case 'checkbox':
+      case 'multiselect': {
         const data = aggregateCheckboxResponses(field.id, field.options ?? [], responses)
         return <BarChartCard data={data} layout="horizontal" colorful />
       }
@@ -73,7 +75,7 @@ export default function QuestionSummaryCard({
     >
       <div className="mb-3">
         <h3 className="text-[15px] font-medium text-gray-900">
-          {questionNumber}. {field.label}
+          {questionNumber}. {cleanResultLabel(field.label)}
         </h3>
         <p className="text-sm text-gray-400 mt-0.5">
           {answered} response{answered !== 1 ? 's' : ''}

@@ -42,9 +42,10 @@ export function useMutationCreateEvent(
       const { data } = await apiClient.post<FormEvent>(Api.events, payload)
       return data
     },
-    onSuccess: (...args) => {
+    onSuccess: (data, ...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
-      options?.onSuccess?.(...args)
+      queryClient.setQueryData([QUERY_KEYS.EVENT_DETAIL, data.id], data)
+      options?.onSuccess?.(data, ...args)
     },
     onError: options?.onError,
   })

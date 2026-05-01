@@ -6,6 +6,13 @@ import QAFeed from "./QAFeed";
 import GuessNumberViz from "./GuessNumberViz";
 import PinOnImageViz from "./PinOnImageViz";
 
+export { default as QAFeed } from "./QAFeed";
+export { default as WordCloudViz } from "./WordCloudViz";
+export { default as MCBarChart } from "./MCBarChart";
+export { default as ScaleViz } from "./ScaleViz";
+export { default as GuessNumberViz } from "./GuessNumberViz";
+export { default as PinOnImageViz } from "./PinOnImageViz";
+
 export default function SlideVisualization({
   type,
   results,
@@ -98,6 +105,7 @@ export default function SlideVisualization({
           data={results as Parameters<typeof PinOnImageViz>[0]["data"]}
           settings={settings}
           textColor={textColor}
+          revealPhase={revealPhase}
         />
       );
     default:

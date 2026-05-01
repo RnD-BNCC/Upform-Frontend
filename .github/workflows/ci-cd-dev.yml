@@ -35,7 +35,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}
           cache-from: type=gha

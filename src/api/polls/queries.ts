@@ -12,6 +12,7 @@ import type {
   CreateSlidePayload,
   UpdateSlidePayload,
   SlideResults,
+  LeaderboardEntry,
 } from '@/types/polling'
 
 
@@ -38,6 +39,17 @@ export function useQueryPollDetail(pollId: string) {
   })
 }
 
+export function useQueryPollScores(pollId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.POLL_SCORES, pollId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<LeaderboardEntry[]>(Api.pollScores(pollId))
+      return data
+    },
+    enabled: !!pollId && pollId !== 'new',
+  })
+}
+
 export function useQueryPublicPoll(code: string) {
   return useQuery({
     queryKey: [QUERY_KEYS.PUBLIC_POLL, code],
@@ -59,9 +71,10 @@ export function useMutationCreatePoll(
       const { data } = await apiClient.post<Poll>(Api.polls, payload)
       return data
     },
-    onSuccess: (...args) => {
+    onSuccess: (data, ...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLLS] })
-      options?.onSuccess?.(...args)
+      queryClient.setQueryData([QUERY_KEYS.POLL_DETAIL, data.id], data)
+      options?.onSuccess?.(data, ...args)
     },
     onError: options?.onError,
   })
@@ -198,7 +211,7 @@ export function useMutationSubmitVote(
   })
 }
 
-export { useMutationUploadImage } from '@/api/upload/queries'
+export { useMutationUploadImage } from '@/api/upload'
 
 export function useQuerySlideResults(pollId: string, slideId: string) {
   return useQuery({

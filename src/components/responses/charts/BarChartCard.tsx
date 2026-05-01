@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LabelList } from 'recharts'
-import { CHART_COLORS } from '@/utils/response-aggregation'
+import { CHART_COLORS } from '@/utils/form/responseAggregation'
 
 interface BarChartCardProps {
   data: Array<{ label: string; count: number }>

@@ -1,15 +1,14 @@
 import type { FormField, FormResponse } from '@/types/form'
 import QuestionSummaryCard from './QuestionSummaryCard'
+import { getResultFields } from './resultsResponseUtils'
 
 interface SummaryTabProps {
   responses: FormResponse[]
   allFields: FormField[]
 }
 
-const NON_QUESTION_TYPES = new Set(['title_block', 'image_block'])
-
 export default function SummaryTab({ responses, allFields }: SummaryTabProps) {
-  const questionFields = allFields.filter((f) => !NON_QUESTION_TYPES.has(f.type))
+  const questionFields = getResultFields(allFields)
 
   return (
     <div className="space-y-4">

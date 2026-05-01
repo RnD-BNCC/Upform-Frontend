@@ -110,7 +110,9 @@ export function SortableOptionItem({
         </div>
 
         {fieldType === "multiple_choice" && <div className="w-5 h-5 rounded-full border-2 border-gray-400 shrink-0" />}
-        {fieldType === "checkbox" && <div className="w-5 h-5 rounded border-2 border-gray-400 shrink-0" />}
+        {(fieldType === "checkbox" || fieldType === "multiselect") && (
+          <div className="w-5 h-5 rounded border-2 border-gray-400 shrink-0" />
+        )}
         {fieldType === "dropdown" && (
           <span className="text-sm text-gray-400 w-5 shrink-0 text-right">{index + 1}.</span>
         )}

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
+import { GuessNumberChartSvg } from "@/components/icons";
 import type { GuessNumberResult, SlideSettings } from "@/types/polling";
 
 const SVG_W = 600;
@@ -192,92 +193,26 @@ export default function GuessNumberViz({
 
       {/* Distribution chart */}
       <div className="w-full">
-        <svg
-          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          preserveAspectRatio="xMidYMid meet"
+        <GuessNumberChartSvg
+          svgWidth={SVG_W}
+          svgHeight={SVG_H}
+          fillPath={fillPath}
+          strokePath={strokePath}
+          baseline={baseline}
+          ticks={ticks}
+          textColor={textColor}
+          xForValue={xS}
           className="w-full"
           style={{ height: 220 }}
-        >
-          <defs>
-            <linearGradient id="gnFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#818cf8" stopOpacity="0.04" />
-            </linearGradient>
-          </defs>
-
-          {/* Filled area */}
-          <motion.path
-            d={fillPath}
-            fill="url(#gnFill)"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showCorrectAnswer ? 0.3 : 1 }}
-            transition={{ duration: 0.5 }}
-          />
-
-          {/* Stroke */}
-          <motion.path
-            d={strokePath}
-            stroke="#6366f1"
-            strokeWidth={3}
-            fill="none"
-            strokeLinecap="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{
-              pathLength: 1,
-              opacity: showCorrectAnswer ? 0.3 : 1,
-            }}
-            transition={{ duration: 0.9, ease: "easeOut" }}
-          />
-
-          {/* Correct answer indicator */}
-          {showCorrectAnswer && correctNumber !== undefined && (
-            <motion.line
-              x1={xS(correctNumber)}
-              y1={PAD_T}
-              x2={xS(correctNumber)}
-              y2={baseline}
-              stroke="#10b981"
-              strokeWidth={3}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-            />
-          )}
-
-          {/* X axis */}
-          <line
-            x1={PAD_L}
-            y1={baseline}
-            x2={SVG_W - PAD_R}
-            y2={baseline}
-            stroke={textColor}
-            strokeOpacity={0.15}
-            strokeWidth={1.5}
-          />
-
-          {/* Ticks */}
-          {ticks.map((v) => (
-            <g key={v} transform={`translate(${xS(v)}, ${baseline})`}>
-              <line
-                y1={0}
-                y2={4}
-                stroke={textColor}
-                strokeOpacity={0.25}
-                strokeWidth={1.5}
-              />
-              <text
-                y={16}
-                textAnchor="middle"
-                fontSize={11}
-                fill={textColor}
-                fillOpacity={0.5}
-                fontWeight="600"
-              >
-                {v}
-              </text>
-            </g>
-          ))}
-        </svg>
+          gradientId="gnFill"
+          fillTopOpacity={0.6}
+          fillBottomOpacity={0.04}
+          strokeWidth={3}
+          animated
+          showCorrectAnswer={showCorrectAnswer}
+          correctNumber={correctNumber}
+          lineTop={PAD_T}
+        />
       </div>
     </div>
   );

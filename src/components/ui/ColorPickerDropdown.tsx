@@ -8,6 +8,7 @@ interface ColorPickerDropdownProps {
   onChange: (color: string) => void
   colors: string[]
   triggerClassName?: string
+  swatchClassName?: string
   showCaret?: boolean
   swatchSize?: 'sm' | 'md'
   direction?: 'up' | 'down'
@@ -20,6 +21,7 @@ export default function ColorPickerDropdown({
   onChange,
   colors,
   triggerClassName,
+  swatchClassName,
   showCaret = true,
   swatchSize = 'md',
   direction = 'down',
@@ -100,7 +102,10 @@ export default function ColorPickerDropdown({
         {...triggerHandler}
         className={triggerClassName ?? 'flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors'}
       >
-        <div className="w-5 h-5 rounded-full border border-gray-200" style={{ backgroundColor: value }} />
+        <div
+          className={swatchClassName ?? "w-5 h-5 rounded-full border border-gray-200"}
+          style={{ backgroundColor: value }}
+        />
         {showCaret && <CaretDown size={10} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />}
       </button>
       {createPortal(

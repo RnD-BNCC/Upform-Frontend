@@ -1,13 +1,14 @@
 export default function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex items-center rounded-full transition-colors duration-200 cursor-pointer shrink-0 ${checked ? 'bg-primary-500' : 'bg-gray-300'}`}
-      style={{ width: 44, height: 24 }}
+      className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ${checked ? 'bg-primary-500' : 'bg-gray-200'}`}
     >
       <span
-        className="absolute rounded-full bg-white shadow transition-transform duration-200"
-        style={{ width: 20, height: 20, top: 2, left: 2, transform: checked ? 'translateX(20px)' : 'translateX(0)' }}
+        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${checked ? 'translate-x-4' : 'translate-x-0'}`}
       />
     </button>
   )

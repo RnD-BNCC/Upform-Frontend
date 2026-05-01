@@ -1,6 +1,21 @@
 import SlideVisualization from "@/components/polling/visualizations";
-import type { SlideType } from "@/types/polling";
-import type { SlidePresenterProps } from "./types";
+import type { SlideType, PollSlide, ImageLayout, SlideResults, SlideSettings } from "@/types/polling";
+
+type SlidePresenterProps = {
+  activeSlide: PollSlide
+  imageUrl: string | undefined
+  imageLayout: ImageLayout
+  hideResponses: boolean
+  textColor: string
+  bgColor: string
+  effectiveResults: SlideResults | null
+  slideSettings: SlideSettings
+  qaHighlightedVoteId: string | null
+  revealPhase: boolean
+  onQANext: () => void
+  onQAPrev: () => void
+  onMarkQAAnswered: (voteId: string) => Promise<void>
+}
 
 export default function SlidePresenter({
   activeSlide,

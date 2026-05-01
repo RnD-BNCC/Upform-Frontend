@@ -3,16 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
 import type { FormField, FormResponse } from '@/types/form'
 import QuestionSummaryCard from './QuestionSummaryCard'
+import { getResultFields } from './resultsResponseUtils'
 
 interface QuestionsTabProps {
   responses: FormResponse[]
   allFields: FormField[]
 }
 
-const NON_QUESTION_TYPES = new Set(['title_block', 'image_block'])
-
 export default function QuestionsTab({ responses, allFields }: QuestionsTabProps) {
-  const questionFields = allFields.filter((f) => !NON_QUESTION_TYPES.has(f.type))
+  const questionFields = getResultFields(allFields)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)

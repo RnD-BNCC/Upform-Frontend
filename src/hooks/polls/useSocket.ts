@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getSocket, disconnectSocket } from '@/lib/socket'
+import { getSocket, disconnectSocket } from '@/lib'
 import type { Socket } from 'socket.io-client'
 
 export function useSocket(pollId: string | undefined) {

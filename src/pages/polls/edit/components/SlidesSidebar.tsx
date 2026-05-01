@@ -1,8 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type RefObject } from 'react'
 import type { PollSlide, SlideType } from '@/types/polling'
-import { ArrowLeft, Plus, Presentation, FloppyDisk, Copy, Trash, DotsSixVertical } from '@phosphor-icons/react'
+import {
+  Copy,
+  DotsSixVertical,
+  FloppyDisk,
+  HouseIcon,
+  PencilSimple,
+  Plus,
+  Presentation,
+  Trash,
+  Trophy,
+} from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
-import type { SlidesSidebarProps } from './types'
+import { BrandLogo } from '@/components/layout'
+type SlidesSidebarProps = {
+  activePanel: 'edit' | 'results'
+  title: string
+  pollCode: string
+  slides: PollSlide[]
+  selectedIndex: number
+  liveQuestion: string | null
+  onBack: () => void
+  onTitleChange: (title: string) => void
+  onTitleBlur: () => void
+  onSelectSlide: (index: number) => void
+  onAddSlide: () => void
+  onDeleteSlide: (id: string) => void
+  onReorderSlides: (orderedIds: string[]) => void
+  saveReorderRef: RefObject<(() => void) | null>
+  onCopyCode: () => void
+  onPresent: () => void
+  onSave: () => void
+  onShowEdit: () => void
+  onShowResults: () => void
+  isAddPending: boolean
+}
 import { DndContext, closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -28,11 +60,11 @@ function SlideItemContent({
 }) {
   return (
     <div
-      className={`relative flex flex-col gap-1 px-3 py-2.5 rounded-xl text-left group ${
+      className={`relative flex flex-col gap-1 rounded-sm px-3 py-2.5 text-left group ${
         elevated
           ? 'bg-white border border-gray-200 shadow-xl'
           : isSelected
-            ? 'bg-primary-50 border-l-3 border-l-primary-500 border border-primary-100'
+            ? 'bg-white border border-primary-300 shadow-sm'
             : 'border border-transparent'
       }`}
     >
@@ -117,6 +149,7 @@ function SortableSlideItem({
 }
 
 export default function SlidesSidebar({
+  activePanel,
   title,
   pollCode,
   slides,
@@ -133,13 +166,16 @@ export default function SlidesSidebar({
   onCopyCode,
   onPresent,
   onSave,
+  onShowEdit,
+  onShowResults,
   isAddPending,
 }: SlidesSidebarProps) {
   const [localSlides, setLocalSlides] = useState(slides)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
-    setLocalSlides((prev) => {
+    const timer = window.setTimeout(() => {
+      setLocalSlides((prev) => {
       const prevIds = prev.map((s) => s.id)
       const newIds = slides.map((s) => s.id)
       // Same set of IDs (just data update, not add/remove) → preserve local order
@@ -147,7 +183,10 @@ export default function SlidesSidebar({
         return prev.map((s) => slides.find((ss) => ss.id === s.id) ?? s)
       }
       return slides
-    })
+      })
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [slides])
 
   useEffect(() => {
@@ -174,15 +213,21 @@ export default function SlidesSidebar({
   }
 
   return (
-    <aside className="hidden sm:flex w-64 bg-white border-r border-gray-100 flex-col h-screen sticky top-0 shrink-0 overflow-y-auto">
-      <div className="flex items-center gap-2.5 px-4 pt-4 pb-2">
-        <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
-          <ArrowLeft size={16} weight="bold" />
+    <aside className="hidden h-screen w-72 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50 sm:flex">
+      <div className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3">
+        <button
+          onClick={onBack}
+          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+          title="Home"
+        >
+          <HouseIcon size={16} weight="fill" />
         </button>
-        <span className="text-sm font-bold italic text-gray-900">UpForm</span>
+        <div className="flex min-w-0 flex-col items-start">
+          <BrandLogo className="h-6 w-auto max-w-[104px]" />
+        </div>
       </div>
 
-      <div className="px-4 pb-3">
+      <div className="px-4 py-3">
         <input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
@@ -192,8 +237,8 @@ export default function SlidesSidebar({
         />
       </div>
 
-      <div className="px-4 pb-4 flex flex-col gap-2.5">
-        <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+      <div className="flex flex-col gap-2.5 px-4 pb-4">
+        <div className="flex items-center justify-between rounded-sm border border-gray-200 bg-white px-3 py-2">
           <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <span className="font-medium">Code:</span>
             <span className="font-bold text-gray-800 tracking-wider">{pollCode}</span>
@@ -204,27 +249,53 @@ export default function SlidesSidebar({
         </div>
         <button
           onClick={onPresent}
-          className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-emerald-600 transition-colors cursor-pointer"
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-emerald-500 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-600"
         >
           <Presentation size={14} weight="bold" />
           Present
         </button>
+        <div className="grid grid-cols-2 gap-1 rounded-sm border border-gray-200 bg-white p-1">
+          <button
+            type="button"
+            onClick={onShowEdit}
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-[3px] text-xs font-bold transition-colors ${
+              activePanel === 'edit'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}
+          >
+            <PencilSimple size={13} weight="bold" />
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={onShowResults}
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-[3px] text-xs font-bold transition-colors ${
+              activePanel === 'results'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}
+          >
+            <Trophy size={13} weight="fill" />
+            Results
+          </button>
+        </div>
       </div>
 
       <div className="border-t border-gray-100" />
 
-      <div className="p-3">
+      <div className="px-4 py-3">
         <button
           onClick={onAddSlide}
           disabled={isAddPending}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-white px-3 text-xs font-bold text-primary-600 shadow-sm ring-1 ring-gray-200 transition-colors hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus size={14} weight="bold" />
           New slide
         </button>
       </div>
 
-      <div className="flex flex-col gap-1.5 px-3 flex-1">
+      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-3">
         <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <SortableContext items={slideIds} strategy={verticalListSortingStrategy}>
             {localSlides.map((slide, i) => (
@@ -259,10 +330,10 @@ export default function SlidesSidebar({
         </DndContext>
       </div>
 
-      <div className="p-3 border-t border-gray-100 mt-auto">
+      <div className="mt-auto border-t border-gray-100 p-3">
         <button
           onClick={onSave}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-primary-500 hover:bg-primary-600 px-3 py-2.5 rounded-xl transition-colors cursor-pointer"
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-primary-500 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-600"
         >
           <FloppyDisk size={14} weight="bold" />
           Save

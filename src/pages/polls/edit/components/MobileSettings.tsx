@@ -2,7 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CaretDown, Plus, Trash } from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
-import type { MobileSettingsProps } from './types'
+import type { SlideType, SlideSettings } from '@/types/polling'
+
+type MobileSettingsProps = {
+  type: SlideType
+  options: string[]
+  settings: SlideSettings
+  onTypeChange: (type: SlideType) => void
+  onOptionsChange: (options: string[]) => void
+  onSettingsChange: (settings: SlideSettings) => void
+  onBlur: () => void
+}
 
 function NumberDropdown({ value, options, onChange }: { value: number; options: number[]; onChange: (v: number) => void }) {
   const [open, setOpen] = useState(false)

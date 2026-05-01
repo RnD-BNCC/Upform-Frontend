@@ -12,10 +12,11 @@ import type { FormField } from "@/types/form";
 
 type Props = {
   src: string;
-  imgRef: React.RefObject<HTMLInputElement | null>;
+  imgRef?: React.RefObject<HTMLInputElement | null>;
   imageWidth?: number;
   imageAlign?: "left" | "center" | "right";
   imageCaption?: string;
+  onChangeImage?: () => void;
   onUpdate: (updates: Partial<FormField>) => void;
   onRemove: () => void;
 };
@@ -26,6 +27,7 @@ export const ResizableImage = memo(function ResizableImage({
   imageWidth,
   imageAlign,
   imageCaption,
+  onChangeImage,
   onUpdate,
   onRemove,
 }: Props) {
@@ -73,7 +75,7 @@ export const ResizableImage = memo(function ResizableImage({
           onChange={(e) => onUpdate({ imageCaption: e.target.value || undefined })}
           onClick={(e) => e.stopPropagation()}
           placeholder="Add caption..."
-          className="w-full text-xs text-gray-500 text-center mt-1 outline-none bg-transparent border-b border-transparent focus:border-gray-300 transition-colors"
+          className="theme-question-caption w-full bg-transparent text-center text-xs text-gray-500 mt-1 outline-none border-b border-transparent transition-colors focus:border-gray-300"
         />
       )}
 
@@ -109,7 +111,12 @@ export const ResizableImage = memo(function ResizableImage({
               ))}
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); imgRef.current?.click(); setShowMenu(false); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChangeImage?.();
+                imgRef?.current?.click();
+                setShowMenu(false);
+              }}
               className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
             >
               <ImageIcon size={16} /> Ubah
