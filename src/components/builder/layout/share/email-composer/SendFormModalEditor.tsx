@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -25,7 +25,9 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { Spinner } from "@/components/ui";
+import { BrandLogo } from "@/components/layout";
 import { ImagePickerModal } from "@/components/modal";
+import { getBrandLogoVariantForBackground } from "@/constants/brand";
 import {
   useMutationCreateEmailBlast,
   useMutationSaveEmailComposerDraft,
@@ -84,6 +86,7 @@ export default function SendFormModalEditor({
   initialDraft,
   isOpen,
   onClose,
+  onStateChange,
   publicFormUrl,
   savedDraftKey,
   sections = [],
@@ -319,10 +322,15 @@ export default function SendFormModalEditor({
     }
   }
 
-  async function handleSaveDraft({ silent = false }: { silent?: boolean } = {}) {
+  const handleSaveDraft = useCallback(async ({
+    showFeedback = true,
+    silent,
+  }: { showFeedback?: boolean; silent?: boolean } = {}) => {
+    const shouldShowFeedback = silent === true ? false : showFeedback;
+
     if (saveDraft.isPending) return false;
 
-    if (!silent) {
+    if (shouldShowFeedback) {
       showToast?.("Saving email settings...", "info", 0);
     }
 
@@ -331,19 +339,46 @@ export default function SendFormModalEditor({
         toSaveEmailDraftPayload(eventId, normalizedCurrentDraft),
       );
       setSavedDraftSnapshot(serializeEmailDraft(normalizedCurrentDraft));
-      if (!silent) {
+      if (shouldShowFeedback) {
         showToast?.("Email settings saved", "success");
       }
       return true;
     } catch (error) {
       if (isEventNotFound(error)) {
         showToast?.("Form belum tersimpan. Save form dulu ya.", "error");
-      } else if (!silent) {
+      } else if (shouldShowFeedback) {
         showToast?.("Failed to save email settings", "error");
       }
       return false;
     }
-  }
+  }, [
+    eventId,
+    normalizedCurrentDraft,
+    saveDraft.isPending,
+    saveDraft.mutateAsync,
+    showToast,
+  ]);
+
+  useEffect(() => {
+    if (!onStateChange) return;
+
+    if (!isOpen) {
+      onStateChange({ dirty: false, saving: false });
+      return;
+    }
+
+    onStateChange({
+      dirty: isEmailDraftDirty,
+      save: handleSaveDraft,
+      saving: saveDraft.isPending,
+    });
+  }, [
+    handleSaveDraft,
+    isEmailDraftDirty,
+    isOpen,
+    onStateChange,
+    saveDraft.isPending,
+  ]);
 
   async function handleSend() {
     if (!subject.trim()) {
@@ -454,12 +489,12 @@ export default function SendFormModalEditor({
                   }}
                 >
                   {emailStyle === "formatted" ? (
-                    <div
-                      className="mb-5 text-center text-3xl font-extrabold leading-none"
-                      style={{ color: resolvedEmailTheme.config.textColor }}
-                    >
-                      UpForm
-                    </div>
+                    <BrandLogo
+                      variant={getBrandLogoVariantForBackground(
+                        resolvedEmailTheme.config.canvasBg,
+                      )}
+                      className="mx-auto mb-5 h-9 w-auto max-w-[170px]"
+                    />
                   ) : null}
 
                   <div

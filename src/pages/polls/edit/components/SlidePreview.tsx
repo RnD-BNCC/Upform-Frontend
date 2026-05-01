@@ -13,6 +13,8 @@ import {
   ScaleWaveSvg,
   WordCloudSvg,
 } from "@/components/icons";
+import { BrandLogo } from "@/components/layout";
+import { getBrandLogoVariantForBackground } from "@/constants/brand";
 import { ColorInputField } from "@/components/ui";
 import {
   TextB,
@@ -680,9 +682,10 @@ export default function SlidePreview({
         style={{ backgroundColor: settings.bgColor }}
       >
         <div className="absolute top-2.5 right-3 z-10">
-          <span className="text-[10px] font-bold italic text-primary-500">
-            UpForm
-          </span>
+          <BrandLogo
+            variant={getBrandLogoVariantForBackground(settings.bgColor)}
+            className="h-4 w-auto max-w-[72px]"
+          />
         </div>
 
         {showInstructions && (

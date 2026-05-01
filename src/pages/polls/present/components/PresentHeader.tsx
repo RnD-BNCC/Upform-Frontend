@@ -1,4 +1,6 @@
 import { Users } from "@phosphor-icons/react";
+import { BrandLogo } from "@/components/layout";
+import { getBrandLogoVariantForTextColor } from "@/constants/brand";
 
 type PresentHeaderProps = {
   title: string
@@ -69,9 +71,10 @@ export default function PresentHeader({
         </div>
       )}
 
-      <span className="text-[11px] font-bold italic text-primary-500">
-        UpForm
-      </span>
+      <BrandLogo
+        variant={getBrandLogoVariantForTextColor(textColor)}
+        className="h-4 w-auto max-w-[72px]"
+      />
     </div>
   );
 }

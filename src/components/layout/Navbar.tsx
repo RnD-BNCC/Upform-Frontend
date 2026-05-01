@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, List, X, SignOut } from "@phosphor-icons/react";
 import { useAuth } from "@/hooks";
 import { authClient } from "@/lib";
+import BrandLogo from "./BrandLogo";
 
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
@@ -66,9 +67,10 @@ export default function Navbar() {
           </button>
           <button
             onClick={() => navigate("/")}
-            className="text-base font-bold italic text-white shrink-0"
+            className="shrink-0"
+            aria-label="Go to home"
           >
-            UpForm
+            <BrandLogo variant="white" className="h-7 w-auto max-w-[120px]" />
           </button>
           <nav className="hidden sm:flex items-center gap-1">
             {NAV_ITEMS.map(({ label, path }) => {

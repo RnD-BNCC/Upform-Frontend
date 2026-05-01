@@ -1,5 +1,9 @@
 ﻿import type { EmailComposerDraft as ApiEmailComposerDraft } from "@/types/api";
 import type { FormResponse, FormSection } from "@/types/form";
+import {
+  getBrandLogoSrc,
+  getBrandLogoVariantForBackground,
+} from "@/constants/brand";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
 import {
   DEFAULT_IMAGE_MAX_HEIGHT,
@@ -47,6 +51,14 @@ function textToRichHtml(value: string, linkColor = "#0054a5") {
 
 function getEmailFontFamily(fontFamily: string) {
   return escapeHtml(fontFamily.replace(/"/g, "'"));
+}
+
+function getEmailBrandLogoHtml(theme: ThemeConfig) {
+  const logoSrc = escapeHtml(
+    getBrandLogoSrc(getBrandLogoVariantForBackground(theme.canvasBg), true),
+  );
+
+  return `<div style="text-align:center;margin-bottom:18px;"><img src="${logoSrc}" alt="UpForm" width="150" style="display:inline-block;width:150px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;" /></div>`;
 }
 
 function createInitialTextHtml(publicFormUrl: string) {
@@ -437,7 +449,7 @@ ${blocksHtml}
 
   return `<div style="font-family:${fontFamily};background:${theme.canvasBg};padding:32px 16px;">
 <div style="max-width:660px;margin:0 auto;">
-  <div style="text-align:center;font-size:30px;line-height:1.2;font-weight:800;color:${theme.textColor};margin-bottom:18px;">UpForm</div>
+  ${getEmailBrandLogoHtml(theme)}
   <div style="background:${theme.bg};border-radius:10px;padding:28px 32px;color:${theme.textColor};">
 ${blocksHtml}
   </div>

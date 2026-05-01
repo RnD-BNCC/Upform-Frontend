@@ -154,7 +154,6 @@ export default function ShareTabPanel({
             activeTheme={activeTheme}
             eventId={eventId}
             formTitle={formTitle}
-            isActive={activeTab === "submit"}
             onStateChange={onSubmitSettingsStateChange}
             sections={sections}
             showToast={showToast}

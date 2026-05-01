@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useParams } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpenIcon } from "@phosphor-icons/react";
+import { BrandLogo } from "@/components/layout";
 import {
   RuntimeCoverPagePreview,
   RuntimeEndingPagePreview,
@@ -107,7 +108,7 @@ function PublicFormLoadingScreen() {
       <div className="flex w-full max-w-[220px] flex-col items-center gap-4">
         <div className="flex flex-col items-center gap-1">
           <p className="text-xs font-medium text-[#a89f93]">Powered by</p>
-          <p className="text-lg font-bold tracking-tight text-[#312812]">UpForm</p>
+          <BrandLogo className="h-8 w-auto max-w-[150px]" />
         </div>
         <div className="h-1.5 w-36 overflow-hidden rounded-full bg-[#e8dfd1] shadow-[0_18px_38px_rgba(103,93,77,0.16)]">
           <motion.div

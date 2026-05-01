@@ -4,6 +4,7 @@ import {
   HouseIcon,
   CaretDownIcon,
   EyeIcon,
+  FloppyDiskIcon,
   RocketLaunchIcon,
   ProhibitIcon,
   LockIcon,
@@ -19,6 +20,7 @@ type BuilderHeaderProps = {
   onTabChange: (tab: Tab) => void
   onBack: () => void
   onPreview: () => void
+  onSave?: () => void
   isSaving?: boolean
   isDirty?: boolean
   eventStatus?: 'draft' | 'active' | 'closed'
@@ -42,6 +44,7 @@ export default function BuilderHeader({
   onTabChange,
   onBack,
   onPreview,
+  onSave,
   isSaving,
   isDirty,
   eventStatus,
@@ -138,6 +141,15 @@ export default function BuilderHeader({
         >
           <EyeIcon size={14} />
           Preview
+        </button>
+
+        <button
+          onClick={onSave}
+          disabled={!isDirty || isSaving || !onSave}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSaving ? <Spinner size={13} /> : <FloppyDiskIcon size={14} />}
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
 
         {/* Actions for active forms */}

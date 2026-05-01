@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -199,6 +199,8 @@ export default function EventDetailPage() {
     useState(false);
   const [submitSettingsState, setSubmitSettingsState] =
     useState<SubmitSettingsEditorState>({ dirty: false, saving: false });
+  const [sendFormState, setSendFormState] =
+    useState<SubmitSettingsEditorState>({ dirty: false, saving: false });
 
   useEffect(() => {
     ensureGoogleFontsLoaded([
@@ -214,6 +216,85 @@ export default function EventDetailPage() {
     themeConfig.fontFamily,
     themeConfig.fontKey,
   ]);
+
+  const referenceCalculations = getFormCalculationsFromSections(sections);
+  const canAdjustThemeImage =
+    activePageType === "page" &&
+    themeConfig.formPosition !== "center" &&
+    !!themeConfig.formImageUrl;
+  const hasUnsavedChanges =
+    isDirty || submitSettingsState.dirty || sendFormState.dirty;
+  const isAnySaving =
+    isSaving || submitSettingsState.saving || sendFormState.saving;
+  const saveSubmitSettings = submitSettingsState.save;
+  const saveSendForm = sendFormState.save;
+
+  const handleSaveAll = useCallback(
+    async (options?: { showFeedback?: boolean }) => {
+      const showFeedback = options?.showFeedback ?? true;
+
+      if (!hasUnsavedChanges || isAnySaving) {
+        return false;
+      }
+
+      if (showFeedback) {
+        showToast("Saving...", "info", 0);
+      }
+
+      const formSaved = isDirty
+        ? await handleSave({ showFeedback: false })
+        : true;
+      const submitSaved =
+        submitSettingsState.dirty && saveSubmitSettings
+          ? await saveSubmitSettings({ showFeedback: false })
+          : true;
+      const sendFormSaved =
+        sendFormState.dirty && saveSendForm
+          ? await saveSendForm({ showFeedback: false })
+          : true;
+
+      const saved = formSaved && submitSaved && sendFormSaved;
+
+      if (showFeedback) {
+        showToast(
+          saved ? "Saved successfully" : "Save failed",
+          saved ? "success" : "error",
+        );
+      }
+
+      return saved;
+    },
+    [
+      handleSave,
+      hasUnsavedChanges,
+      isAnySaving,
+      isDirty,
+      saveSendForm,
+      saveSubmitSettings,
+      sendFormState.dirty,
+      showToast,
+      submitSettingsState.dirty,
+    ],
+  );
+
+  useEffect(() => {
+    if (!submitSettingsState.dirty && !sendFormState.dirty) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      void handleSaveAll();
+    };
+
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () =>
+      document.removeEventListener("keydown", handleKeyDown, { capture: true });
+  }, [handleSaveAll, sendFormState.dirty, submitSettingsState.dirty]);
 
   if (isLoading) {
     return (
@@ -231,14 +312,6 @@ export default function EventDetailPage() {
       </>
     );
   }
-
-  const referenceCalculations = getFormCalculationsFromSections(sections);
-  const canAdjustThemeImage =
-    activePageType === "page" &&
-    themeConfig.formPosition !== "center" &&
-    !!themeConfig.formImageUrl;
-  const hasUnsavedChanges = isDirty || submitSettingsState.dirty;
-  const isAnySaving = isSaving || submitSettingsState.saving;
 
   return (
     <ReferenceCalculationProvider calculations={referenceCalculations}>
@@ -270,6 +343,7 @@ export default function EventDetailPage() {
             },
           })
         }
+        onSave={() => void handleSaveAll()}
         isSaving={isAnySaving}
         isDirty={hasUnsavedChanges}
         eventStatus={eventStatus}
@@ -604,6 +678,7 @@ export default function EventDetailPage() {
             formTitle={formTitle}
             isDirty={isDirty}
             isPublishing={isPublishing}
+            onSendFormStateChange={setSendFormState}
             onSubmitSettingsStateChange={setSubmitSettingsState}
             publicFormUrl={publicFormUrl}
             sections={sections}

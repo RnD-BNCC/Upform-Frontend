@@ -1,9 +1,11 @@
-﻿import type { ThemeConfig } from "@/utils/form/themeConfig";
+import { BrandLogo } from "@/components/layout";
+import { getBrandLogoVariantForBackground } from "@/constants/brand";
+import type { EmailBlock, EmailStyle } from "@/types/builderShare";
+import type { ThemeConfig } from "@/utils/form/themeConfig";
 import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
 } from "../constants";
-import type { EmailBlock, EmailStyle } from "@/types/builderShare";
 import {
   getImageWrapperClassName,
   sanitizeRichTextHtml,
@@ -32,9 +34,10 @@ export default function EmailBlocksPreview({
       }}
     >
       {emailStyle === "formatted" ? (
-        <div className="mb-6 text-center text-3xl font-extrabold leading-none">
-          UpForm
-        </div>
+        <BrandLogo
+          variant={getBrandLogoVariantForBackground(theme.canvasBg)}
+          className="mx-auto mb-6 h-9 w-auto max-w-[170px]"
+        />
       ) : null}
       <div
         className={`h-full min-h-[22rem] space-y-2 p-8 ${

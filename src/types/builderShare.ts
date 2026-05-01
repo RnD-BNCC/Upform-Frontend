@@ -20,6 +20,7 @@ export type BuilderSharePanelProps = {
   formTitle: string;
   isDirty?: boolean;
   isPublishing?: boolean;
+  onSendFormStateChange?: (state: SubmitSettingsEditorState) => void;
   onSubmitSettingsStateChange?: (state: SubmitSettingsEditorState) => void;
   onPublish: () => void;
   publicFormUrl: string;
@@ -29,6 +30,7 @@ export type BuilderSharePanelProps = {
 
 export type SubmitSettingsEditorState = {
   dirty: boolean;
+  save?: (options?: { showFeedback?: boolean }) => Promise<boolean>;
   saving: boolean;
 };
 
@@ -89,6 +91,7 @@ export type SendFormModalProps = {
   formTitle: string;
   publicFormUrl: string;
   activeTheme?: string;
+  onStateChange?: (state: SubmitSettingsEditorState) => void;
   sections?: FormSection[];
   showToast?: ShareToast;
 };

@@ -74,7 +74,7 @@ type SubmitFormSettings = {
   rafflePrefix: string;
   raffleStart: number;
   raffleSuffix: string;
-  recipientFieldId: string;
+  recipientFieldIds: string[];
   subject: string;
 };
 
@@ -82,7 +82,6 @@ type SubmitFormPanelProps = {
   activeTheme?: string;
   eventId: string;
   formTitle: string;
-  isActive: boolean;
   onStateChange?: (state: SubmitSettingsEditorState) => void;
   sections: FormSection[];
   showToast?: ShareToast;
@@ -129,7 +128,7 @@ function getDefaultSettings(formTitle: string): SubmitFormSettings {
     rafflePrefix: "UF-",
     raffleStart: 1,
     raffleSuffix: "",
-    recipientFieldId: "",
+    recipientFieldIds: [],
     subject: `Submission received: ${formTitle || "Form"}`,
   };
 }
@@ -152,6 +151,13 @@ function buildSubmitEmailFields(sections: FormSection[]): SubmitEmailField[] {
 
 function normalizePadding(value: number) {
   return Math.max(1, Math.min(10, Math.round(value) || 1));
+}
+
+function normalizeRecipientFieldIds(value: unknown): string[] {
+  const ids = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+  return Array.from(
+    new Set(ids.filter((item): item is string => typeof item === "string" && item.length > 0)),
+  );
 }
 
 function getRafflePreview(settings: SubmitFormSettings) {
@@ -187,6 +193,7 @@ function normalizeSettings(settings: SubmitFormSettings): SubmitFormSettings {
     body: normalizeMessageBody(settings.body),
     rafflePadding: normalizePadding(settings.rafflePadding),
     raffleStart: Math.max(0, Math.round(settings.raffleStart) || 0),
+    recipientFieldIds: normalizeRecipientFieldIds(settings.recipientFieldIds),
   };
 }
 
@@ -207,7 +214,9 @@ function getSettingsFromApi(
     rafflePrefix: settings.rafflePrefix,
     raffleStart: settings.raffleStart,
     raffleSuffix: settings.raffleSuffix,
-    recipientFieldId: settings.recipientFieldId,
+    recipientFieldIds: normalizeRecipientFieldIds(
+      settings.recipientFieldIds ?? settings.recipientFieldId,
+    ),
     subject: settings.subject || defaults.subject,
   });
 }
@@ -240,7 +249,6 @@ export default function SubmitFormPanel({
   activeTheme,
   eventId,
   formTitle,
-  isActive,
   onStateChange,
   sections,
   showToast,
@@ -297,16 +305,6 @@ export default function SubmitFormPanel({
     setSavedSnapshot(serializeSettings(nextSettings));
   }, [formTitle, settingsQuery.data, settingsQuery.isLoading]);
 
-  useEffect(() => {
-    setSettings((current) => {
-      const next =
-        current.recipientFieldId || emailFields.length === 0
-          ? current
-          : { ...current, recipientFieldId: emailFields[0].id };
-      return next;
-    });
-  }, [emailFields]);
-
   const updateSettings = (patch: Partial<SubmitFormSettings>) => {
     setSettings((current) => ({
       ...current,
@@ -319,14 +317,16 @@ export default function SubmitFormPanel({
     [savedSnapshot, settings],
   );
 
-  const saveSettings = useCallback(async () => {
+  const saveSettings = useCallback(async (options?: { showFeedback?: boolean }) => {
+    const showFeedback = options?.showFeedback ?? true;
+
     if (!eventId) {
       showToast?.("Form belum tersimpan. Save form dulu ya.", "error");
       return false;
     }
 
-    if (settings.enabled && !settings.recipientFieldId) {
-      showToast?.("Choose an email field first", "error");
+    if (settings.enabled && settings.recipientFieldIds.length === 0) {
+      showToast?.("Choose at least one email field first", "error");
       return false;
     }
 
@@ -342,15 +342,27 @@ export default function SubmitFormPanel({
       const saved = await saveSubmitSettings.mutateAsync({
         eventId,
         ...normalizedSettings,
+        recipientFieldId: normalizedSettings.recipientFieldIds[0] ?? "",
       });
-      const nextSettings = getSettingsFromApi(saved, formTitle);
+      const nextSettings = getSettingsFromApi(
+        {
+          ...saved,
+          recipientFieldIds:
+            saved.recipientFieldIds ?? normalizedSettings.recipientFieldIds,
+        },
+        formTitle,
+      );
       setSettings(nextSettings);
       setSavedSnapshot(serializeSettings(nextSettings));
-      showToast?.("Submit form settings saved");
+      if (showFeedback) {
+        showToast?.("Submit form settings saved");
+      }
       return true;
     } catch (error) {
       console.error("[SubmitFormPanel] save settings failed:", error);
-      showToast?.("Failed to save submit form settings", "error");
+      if (showFeedback) {
+        showToast?.("Failed to save submit form settings", "error");
+      }
       return false;
     }
   }, [emailTheme.config, eventId, formTitle, saveSubmitSettings, settings, showToast]);
@@ -358,34 +370,16 @@ export default function SubmitFormPanel({
   useEffect(() => {
     onStateChange?.({
       dirty: isSettingsDirty,
+      save: saveSettings,
       saving: saveSubmitSettings.isPending,
     });
-  }, [isSettingsDirty, onStateChange, saveSubmitSettings.isPending]);
+  }, [isSettingsDirty, onStateChange, saveSettings, saveSubmitSettings.isPending]);
 
   useEffect(() => {
     return () => {
       onStateChange?.({ dirty: false, saving: false });
     };
   }, [onStateChange]);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      void saveSettings();
-    };
-
-    window.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [isActive, saveSettings]);
 
   useEffect(() => {
     if (!isSettingsDirty) return;
@@ -546,18 +540,24 @@ export default function SubmitFormPanel({
           <section className="rounded-sm border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2">
               <EnvelopeSimpleIcon size={18} weight="fill" className="text-gray-500" />
-              <h3 className="text-sm font-bold text-gray-900">Recipient field</h3>
+              <h3 className="text-sm font-bold text-gray-900">Recipient fields</h3>
             </div>
 
             <div className="mt-4 space-y-2">
               {emailFields.length ? (
                 emailFields.map((field) => {
-                  const selected = field.id === settings.recipientFieldId;
+                  const selected = settings.recipientFieldIds.includes(field.id);
                   return (
                     <button
                       key={field.id}
                       type="button"
-                      onClick={() => updateSettings({ recipientFieldId: field.id })}
+                      onClick={() =>
+                        updateSettings({
+                          recipientFieldIds: selected
+                            ? settings.recipientFieldIds.filter((id) => id !== field.id)
+                            : [...settings.recipientFieldIds, field.id],
+                        })
+                      }
                       className={`flex w-full items-center gap-3 rounded-md border px-3 py-3 text-left transition-colors ${
                         selected
                           ? "border-primary-300 bg-primary-50/80"

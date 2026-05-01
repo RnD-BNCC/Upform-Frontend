@@ -201,6 +201,7 @@ export type SubmitFormSettings = {
   enabled: boolean
   emailThemeValue: string | null
   recipientFieldId: string
+  recipientFieldIds?: string[]
   subject: string
   body: string
   raffleEnabled: boolean
@@ -218,6 +219,7 @@ export type SaveSubmitFormSettingsPayload = {
   enabled: boolean
   emailThemeValue: string | null
   recipientFieldId: string
+  recipientFieldIds?: string[]
   subject: string
   body: string
   raffleEnabled: boolean

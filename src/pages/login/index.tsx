@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { GoogleBrandIcon, SpinnerArcIcon } from "@/components/icons";
+import { BrandLogo } from "@/components/layout";
 import { authClient } from "@/lib";
 
 const GREETINGS = [
@@ -69,9 +70,7 @@ export default function LoginPage() {
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="bg-white px-10 py-10 shadow-md">
-          <p className="mb-6 text-center text-2xl italic font-semibold text-primary-500">
-            UpForm
-          </p>
+          <BrandLogo className="mx-auto mb-7 h-10 w-auto max-w-[180px]" />
 
           <div className="mb-8">
             <p className="text-[#3d3d3d] text-xl">

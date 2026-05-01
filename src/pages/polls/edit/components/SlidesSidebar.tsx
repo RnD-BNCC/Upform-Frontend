@@ -12,6 +12,7 @@ import {
   Trophy,
 } from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
+import { BrandLogo } from '@/components/layout'
 type SlidesSidebarProps = {
   activePanel: 'edit' | 'results'
   title: string
@@ -222,9 +223,7 @@ export default function SlidesSidebar({
           <HouseIcon size={16} weight="fill" />
         </button>
         <div className="flex min-w-0 flex-col items-start">
-          <span className="text-sm font-bold italic leading-tight text-gray-900">
-            UpForm
-          </span>
+          <BrandLogo className="h-6 w-auto max-w-[104px]" />
         </div>
       </div>
 

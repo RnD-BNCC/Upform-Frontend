@@ -131,7 +131,10 @@ export function useMutationSaveSubmitFormSettings(
       const [data, variables] = args
       queryClient.setQueryData(
         [QUERY_KEYS.SUBMIT_FORM_SETTINGS, variables.eventId],
-        data,
+        {
+          ...data,
+          recipientFieldIds: variables.recipientFieldIds ?? data.recipientFieldIds,
+        },
       )
       options?.onSuccess?.(...args)
     },
