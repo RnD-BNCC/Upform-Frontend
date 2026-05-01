@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { EventCard } from "@/components/card";
+import EventCard from "@/components/card/EventCard";
 import { Navbar, Footer, PageGridShell } from "@/components/layout";
 import { ConfirmModal, LoadingModal, StatusModal, type StatusType } from "@/components/modal";
-import { NoFormsIllustration } from "@/components/icons";
-import { ContextMenu } from "@/context";
+import { NoFormsIllustrationIcon } from "@/components/icons";
+import ContextMenu from "@/context/ContextMenu";
 import { Pagination } from "@/components/utils";
 import { useGetEvents, useDeleteEvent, useUpdateEvent } from "@/hooks/events";
 import type { FormEvent } from "@/types/form";
-import { MagnifyingGlass, SpinnerGap } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import { HomeHero } from "./components";
 
 type Filter = "All" | "Active" | "Draft" | "Closed";
@@ -209,10 +210,7 @@ export default function HomePage() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center gap-3 py-16 sm:py-24"
             >
-              <SpinnerGap
-                size={32}
-                className="text-primary-500 animate-spin"
-              />
+              <Spinner size={32} className="text-primary-500" />
               <p className="text-sm text-gray-400">Loading forms...</p>
             </motion.div>
           ) : events.length === 0 ? (
@@ -223,7 +221,7 @@ export default function HomePage() {
               exit={{ opacity: 0, y: 12 }}
               className="flex flex-col items-center justify-center gap-4 py-16 sm:py-24"
             >
-              <NoFormsIllustration />
+              <NoFormsIllustrationIcon />
               <div className="text-center">
                 <p className="text-sm font-bold text-gray-500">
                   No forms found

@@ -178,6 +178,8 @@ export interface FormField {
   validationMaxLength?: number
   /** Validation pattern preset or custom regex. */
   validationPattern?: 'none' | 'email' | 'url' | 'number' | string
+  /** Optional required email suffix/domain when validationPattern is email, e.g. '@binus.ac.id'. */
+  validationEmailDomain?: string
   /** Custom error message shown when validation fails. */
   validationErrorMessage?: string
   /** Minimum number of selections required. Only for checkbox / multiselect / multiple_choice. */

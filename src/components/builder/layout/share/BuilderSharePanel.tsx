@@ -21,6 +21,8 @@ export default function BuilderSharePanel({
   formTitle,
   isDirty,
   isPublishing,
+  onSendFormStateChange,
+  onSubmitSettingsStateChange,
   onPublish,
   publicFormUrl,
   sections = [],
@@ -93,10 +95,15 @@ export default function BuilderSharePanel({
 
         <ShareTabPanel
           activeTab={activeTab}
+          activeTheme={activeTheme}
           eventId={eventId}
+          formTitle={formTitle}
           onOpenEmailComposer={() => setShowSendModal(true)}
           onSelectEmbedType={setSelectedEmbedType}
+          onSubmitSettingsStateChange={onSubmitSettingsStateChange}
           onTabChange={setActiveTab}
+          sections={sections}
+          showToast={showToast}
         />
       </div>
 
@@ -115,6 +122,7 @@ export default function BuilderSharePanel({
         onClose={() => setShowSendModal(false)}
         eventId={eventId}
         formTitle={formTitle}
+        onStateChange={onSendFormStateChange}
         publicFormUrl={publicFormUrl}
         sections={sections}
         showToast={showToast}

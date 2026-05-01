@@ -4,6 +4,10 @@ import { ScaleWaveSvg } from '@/components/icons'
 import type { ScaleResult, ScaleStatementResult, SlideSettings } from '@/types/polling'
 import { SCALE_COLORS as STATEMENT_COLORS } from '@/config/polling'
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
 function normalizeScaleData(data: unknown): ScaleStatementResult[] {
   if (!Array.isArray(data) || data.length === 0) return []
   if ('value' in data[0] && !('statement' in data[0])) {
@@ -122,8 +126,9 @@ function StatementRow({
     [smoothed, min, max],
   )
 
-  const avgX = ((item.average - min) / range) * 100
-  const barProgress = ((item.average - min) / range) * 100
+  const rawProgress = ((item.average - min) / range) * 100
+  const avgX = clamp(rawProgress, 1.5, 98.5)
+  const barProgress = clamp(rawProgress, 0, 100)
 
   return (
     <motion.div
@@ -138,7 +143,7 @@ function StatementRow({
         </span>
       </div>
 
-      <div className="relative">
+      <div className="relative w-full max-w-full">
         {/* Background bar */}
         <div className="h-2 rounded-full w-full" style={{ backgroundColor: 'rgba(128,128,128,0.15)' }}>
           <motion.div
@@ -215,7 +220,7 @@ export default function ScaleViz({
   const maxLabel = settings?.scaleMaxLabel || 'Strongly agree'
 
   return (
-    <div className={`flex flex-col w-full max-w-3xl mx-auto p-6 overflow-y-auto ${normalized.length >= 4 ? 'gap-8' : 'gap-14'}`}>
+    <div className={`mx-auto flex w-full max-w-3xl min-w-0 flex-col overflow-x-hidden overflow-y-auto p-6 ${normalized.length >= 4 ? 'gap-8' : 'gap-14'}`}>
       {normalized.map((item, i) => (
         <StatementRow
           key={item.statement}
@@ -228,11 +233,11 @@ export default function ScaleViz({
           compact={normalized.length >= 4}
         />
       ))}
-      <div className="flex justify-between -mt-4">
-        <span className="text-xs font-medium" style={{ color: textColor, opacity: 0.45 }}>
+      <div className="flex min-w-0 justify-between gap-4 -mt-4">
+        <span className="min-w-0 truncate text-xs font-medium" style={{ color: textColor, opacity: 0.45 }}>
           {minLabel}
         </span>
-        <span className="text-xs font-medium" style={{ color: textColor, opacity: 0.45 }}>
+        <span className="min-w-0 truncate text-right text-xs font-medium" style={{ color: textColor, opacity: 0.45 }}>
           {maxLabel}
         </span>
       </div>

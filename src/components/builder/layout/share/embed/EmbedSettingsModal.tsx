@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CodeIcon, XIcon } from "@phosphor-icons/react";
 import ConditionSelect from "@/components/builder/layout/reference/ConditionSelect";
 import ShareToggle from "../components/ShareToggle";
+import type { ConditionSelectOption } from "@/components/builder/layout/reference/ConditionSelect";
 import type {
   EmbedButtonSize,
   EmbedType,
@@ -11,13 +12,35 @@ import type {
   ShareToast,
   SliderSide,
 } from "@/types/builderShare";
-import {
-  BUTTON_SIZE_OPTIONS,
-  EMBED_TYPE_OPTIONS,
-  POPUP_WIDTH_OPTIONS,
-  SLIDER_SIDE_OPTIONS,
-  WIDTH_UNIT_OPTIONS,
-} from "./embedOptions";
+
+const EMBED_TYPE_OPTIONS: ConditionSelectOption[] = [
+  { value: "standard", label: "Standard" },
+  { value: "popup", label: "Popup" },
+  { value: "fullscreen", label: "Full screen" },
+  { value: "slider", label: "Slider" },
+];
+
+const WIDTH_UNIT_OPTIONS: ConditionSelectOption[] = [
+  { value: "%", label: "%" },
+  { value: "px", label: "px" },
+];
+
+const BUTTON_SIZE_OPTIONS: ConditionSelectOption[] = [
+  { value: "default", label: "Default" },
+  { value: "large", label: "Large" },
+  { value: "small", label: "Small" },
+];
+
+const POPUP_WIDTH_OPTIONS: ConditionSelectOption[] = [
+  { value: "small", label: "Small" },
+  { value: "medium", label: "Medium" },
+  { value: "large", label: "Large" },
+];
+
+const SLIDER_SIDE_OPTIONS: ConditionSelectOption[] = [
+  { value: "right", label: "Right" },
+  { value: "left", label: "Left" },
+];
 
 type EmbedSettingsModalProps = {
   publicFormUrl: string;

@@ -6,6 +6,7 @@ import {
   getResponseTimestamp,
   getResultFields,
 } from "./resultsResponseUtils";
+import { formatAnswerValue } from "./database/resultsDatabaseUtils";
 
 interface IndividualResponseCardProps {
   response: FormResponse;
@@ -53,7 +54,7 @@ export default function IndividualResponseCard({
               <FileResponseList values={Array.isArray(value) ? value : [value]} />
             ) : (
               <p className="text-sm text-gray-800">
-                {Array.isArray(value) ? value.join(", ") : value || "-"}
+                {formatAnswerValue(value) || "-"}
               </p>
             )}
           </div>

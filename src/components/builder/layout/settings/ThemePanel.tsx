@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { Toggle } from "@/components/ui";
 import {
   ArrowRightIcon,
   CaretDownIcon,
@@ -18,7 +19,6 @@ import {
   resolveTheme,
   serializeCustomTheme,
   type ThemeConfig,
-  type ThemeButtonAnimation,
   type ThemeButtonRounding,
   type ThemeFormAlignment,
   type ThemeFormPosition,
@@ -121,14 +121,6 @@ const BUTTON_ROUNDING_OPTIONS: Array<{
   { label: "Default", value: "default" },
   { label: "Full", value: "full" },
   { label: "None", value: "none" },
-];
-
-const BUTTON_ANIMATION_OPTIONS: Array<{
-  label: string;
-  value: ThemeButtonAnimation;
-}> = [
-  { label: "Default", value: "default" },
-  { label: "Grow", value: "grow" },
 ];
 
 const FORM_ALIGNMENT_OPTIONS: Array<{
@@ -329,31 +321,6 @@ function ThemeRangeField({
   );
 }
 
-function ThemeToggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${
-        checked ? "bg-primary-500" : "bg-gray-200"
-      }`}
-    >
-      <span
-        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${
-          checked ? "translate-x-4" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
 
 function FormPositionIcon({
   isSelected,
@@ -661,7 +628,7 @@ export default function ThemePanel({
                   }
                 </HelpTooltip>
               </div>
-              <ThemeToggle
+              <Toggle
                 checked={currentTheme.logoEnabled}
                 onChange={(checked) =>
                   updateCurrentCustomTheme((theme) => ({
@@ -884,7 +851,7 @@ export default function ThemePanel({
 
               <div className="flex items-center justify-between pt-4">
                 <span className={fieldLabelClassName}>Bold labels</span>
-                <ThemeToggle
+                <Toggle
                   checked={currentTheme.boldLabels}
                   onChange={(checked) =>
                     updateCurrentCustomTheme((theme) => ({
@@ -940,41 +907,6 @@ export default function ThemePanel({
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-1.5">
-                  <span className={fieldLabelClassName}>Animation</span>
-                  <HelpTooltip>Choose how buttons animate on hover.</HelpTooltip>
-                </div>
-                <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  {BUTTON_ANIMATION_OPTIONS.map((option, index) => {
-                    const isSelected =
-                      currentTheme.buttonAnimation === option.value;
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          updateCurrentCustomTheme((theme) => ({
-                            ...theme,
-                            buttonAnimation: option.value,
-                          }))
-                        }
-                        className={`h-9 border-r border-gray-200 px-4 text-xs font-medium transition-colors last:border-r-0 ${getSegmentRadiusClassName(
-                          index,
-                          BUTTON_ANIMATION_OPTIONS.length,
-                        )} ${
-                          isSelected
-                            ? advancedSegmentSelectedClassName
-                            : advancedSegmentIdleClassName
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
           </ThemeAdvancedSection>
 

@@ -11,6 +11,7 @@ type Props = {
   fieldsRef: RefObject<Record<string, HTMLDivElement | null>>;
   isSubmittedView?: boolean;
   isLightTheme?: boolean;
+  logoClassName?: string;
   onAnimationComplete: (fieldId: string) => void;
   onAnswer: (fieldId: string, value: string | string[]) => void;
   onFillAgain?: () => void;

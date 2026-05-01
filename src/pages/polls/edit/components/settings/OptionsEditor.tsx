@@ -1,5 +1,5 @@
 import { BAR_COLORS_HEX } from '@/config/polling'
-import { ColorPickerDropdown } from '@/components/ui'
+import { ColorInputField } from '@/components/ui'
 import { Trash, Plus, Check } from '@phosphor-icons/react'
 
 export default function OptionsEditor({
@@ -26,7 +26,7 @@ export default function OptionsEditor({
       {options.map((opt, i) => (
         <div key={i} className="flex items-center gap-2">
           {onColorsChange ? (
-            <ColorPickerDropdown
+            <ColorInputField
               value={effectiveColors[i]}
               onChange={(c) => {
                 const next = [...effectiveColors]
@@ -34,12 +34,6 @@ export default function OptionsEditor({
                 onColorsChange(next)
                 onBlur()
               }}
-              colors={BAR_COLORS_HEX}
-              direction="down"
-              align="left"
-              showCaret={false}
-              swatchSize="sm"
-              triggerClassName="h-6 w-6 shrink-0 cursor-pointer rounded-sm border border-gray-200 shadow-sm transition-transform hover:scale-105"
             />
           ) : (
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary-100 text-[10px] font-bold text-primary-600">

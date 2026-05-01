@@ -538,41 +538,41 @@ export default function RichInput({
 
   const staticToolbarEl = staticToolbar ? (
     <div
-      className={`flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 ${
+      className={`theme-answer-border theme-question-caption flex items-center gap-0.5 border-b border-gray-100 px-2 py-1.5 text-gray-400 ${
         readOnly ? "pointer-events-none" : ""
       }`}
       onMouseDown={(e) => e.preventDefault()}
     >
       <button type="button" title="Bold" onMouseDown={(e) => { e.preventDefault(); execFormat('bold') }}
-        className={`w-6 h-6 flex items-center justify-center rounded text-xs font-bold transition-colors ${activeFormats.bold ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}>
+        className={`theme-question-caption flex h-6 w-6 items-center justify-center rounded text-xs font-bold transition-colors ${activeFormats.bold ? 'bg-black/5' : 'opacity-70 hover:bg-black/5 hover:opacity-100'}`}>
         <TextBolderIcon size={12} />
       </button>
       <button type="button" title="Italic" onMouseDown={(e) => { e.preventDefault(); execFormat('italic') }}
-        className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${activeFormats.italic ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}>
+        className={`theme-question-caption flex h-6 w-6 items-center justify-center rounded transition-colors ${activeFormats.italic ? 'bg-black/5' : 'opacity-70 hover:bg-black/5 hover:opacity-100'}`}>
         <TextItalicIcon size={12} />
       </button>
       <button type="button" title="Strikethrough" onMouseDown={(e) => { e.preventDefault(); execFormat('strikeThrough') }}
-        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        className="theme-question-caption flex h-6 w-6 items-center justify-center rounded opacity-70 transition-colors hover:bg-black/5 hover:opacity-100">
         <TextStrikethroughIcon size={12} />
       </button>
       <button type="button" title="Code" onMouseDown={(e) => { e.preventDefault(); execFormat('formatBlock', 'pre') }}
-        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        className="theme-question-caption flex h-6 w-6 items-center justify-center rounded opacity-70 transition-colors hover:bg-black/5 hover:opacity-100">
         <CodeSimpleIcon size={12} />
       </button>
-      <div className="w-px h-3.5 bg-gray-200 mx-0.5" />
+      <div className="theme-answer-border mx-0.5 h-3.5 border-l border-gray-200" />
       {(['h1', 'h2', 'h3'] as const).map((tag, i) => (
         <button key={tag} type="button" title={tag.toUpperCase()} onMouseDown={(e) => { e.preventDefault(); applyHeading(tag) }}
-          className="h-6 px-1 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors text-[10px] font-semibold">
+          className="theme-question-caption flex h-6 items-center justify-center rounded px-1 text-[10px] font-semibold opacity-70 transition-colors hover:bg-black/5 hover:opacity-100">
           H<sub>{i + 1}</sub>
         </button>
       ))}
-      <div className="w-px h-3.5 bg-gray-200 mx-0.5" />
+      <div className="theme-answer-border mx-0.5 h-3.5 border-l border-gray-200" />
       <button type="button" title="Bulleted list" onMouseDown={(e) => { e.preventDefault(); toggleList('ul') }}
-        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        className="theme-question-caption flex h-6 w-6 items-center justify-center rounded opacity-70 transition-colors hover:bg-black/5 hover:opacity-100">
         <ListBulletsIcon size={12} />
       </button>
       <button type="button" title="Numbered list" onMouseDown={(e) => { e.preventDefault(); toggleList('ol') }}
-        className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+        className="theme-question-caption flex h-6 w-6 items-center justify-center rounded opacity-70 transition-colors hover:bg-black/5 hover:opacity-100">
         <ListNumbersIcon size={12} />
       </button>
     </div>

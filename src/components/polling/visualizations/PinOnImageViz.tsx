@@ -1,6 +1,6 @@
 import type { PinOnImageResult, SlideSettings } from '@/types/polling'
 import { PIN_COLORS } from '@/config/polling'
-import { MapPinIcon } from '@/components/icons'
+import { MapPinMarkerIcon } from '@/components/icons'
 
 function inCorrectArea(
   pin: { x: number; y: number },
@@ -70,7 +70,7 @@ export default function PinOnImageViz({
               style={{ left: `${pin.x}%`, top: `${pin.y}%`, transform: 'translate(-50%, -100%)' }}
               title={pin.participantName}
             >
-              <MapPinIcon color={color} />
+              <MapPinMarkerIcon color={color} />
             </div>
           )
         })}

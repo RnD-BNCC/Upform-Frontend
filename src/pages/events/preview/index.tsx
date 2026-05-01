@@ -26,10 +26,11 @@ import { PAGE_TYPE_BADGE_CLASS, PAGE_TYPE_ICONS } from "@/constants";
 import type { FormSection } from "@/types/form";
 import { ensureGoogleFontsLoaded } from "@/utils/form/googleFonts";
 import {
-  getIndexedOptionValues,
   getSelectionCount,
   getSelectionValidationMessage,
 } from "@/utils/form/optionSelection";
+import { getAnswersWithRuntimeDefaults } from "@/utils/form/defaultAnswers";
+import { getTextValidationMessage } from "@/utils/form/textValidation";
 import {
   getFileUploadCount,
   getFileUploadValidationMessage,
@@ -145,8 +146,13 @@ export default function EventPreviewPage() {
 
   const currentSectionIndex = sectionHistory[sectionHistory.length - 1] ?? 0;
   const section = sections[currentSectionIndex];
-  const visibleSectionFields = getVisibleFields(section?.fields ?? [], {
+  const answersWithDefaults = getAnswersWithRuntimeDefaults(
+    sections,
     answers,
+    calculations,
+  );
+  const visibleSectionFields = getVisibleFields(section?.fields ?? [], {
+    answers: answersWithDefaults,
     calculations,
   });
   const nextTarget = section
@@ -154,7 +160,7 @@ export default function EventPreviewPage() {
         sections,
         section.id,
         visibleSectionFields,
-        answers,
+        answersWithDefaults,
       )
     : { kind: "complete" as const };
   const activeEndingSection = getRuntimeEndingSection(
@@ -162,7 +168,7 @@ export default function EventPreviewPage() {
     submittedEndingSectionId ?? undefined,
   );
   const progressPercent = getRuntimeProgressPercent({
-    answers,
+    answers: answersWithDefaults,
     calculations,
     sectionHistory,
     sections,
@@ -198,6 +204,8 @@ export default function EventPreviewPage() {
     themeConfig.backButtonPosition === "near-next-button"
       ? "bottom-8 left-1/2 -translate-x-[calc(50%+4.5rem)]"
       : "left-3 top-[68px] sm:left-4 sm:top-[72px]";
+  const previewLogoClassName =
+    "fixed right-3 top-[68px] z-40 sm:right-4 sm:top-[72px]";
   const coverContainerClassName = "min-h-[calc(100vh-56px)]";
 
   useEffect(() => {
@@ -246,19 +254,15 @@ export default function EventPreviewPage() {
     const errs: Record<string, string> = {};
     if (!sec || sec.pageType !== "page") return errs;
 
-    const visibleFields = getVisibleFields(sec.fields, { answers, calculations });
+    const visibleFields = getVisibleFields(sec.fields, {
+      answers: answersWithDefaults,
+      calculations,
+    });
 
     visibleFields.forEach((field) => {
       if (field.type === "next_button") return;
 
-      const value =
-        answers[field.id] ??
-        (field.type === "multiselect"
-          ? (() => {
-              const defaults = getIndexedOptionValues(field.options, field.defaultValue);
-              return defaults.length > 0 ? defaults : undefined;
-            })()
-          : undefined);
+      const value = answersWithDefaults[field.id];
       const isSelectionField =
         field.type === "multiple_choice" ||
         field.type === "checkbox" ||
@@ -290,21 +294,11 @@ export default function EventPreviewPage() {
           errs[field.id] = fileUploadError;
           return;
         }
-      } else if (
-        field.required &&
-        (!value || (Array.isArray(value) && value.length === 0) || value === "")
-      ) {
-        errs[field.id] = field.validationMessage || "This question is required.";
-      }
-
-      if (
-        field.type === "email" &&
-        value &&
-        typeof value === "string" &&
-        value.length > 0 &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-      ) {
-        errs[field.id] = "Format email tidak valid.";
+      } else {
+        const textValidationError = getTextValidationMessage(field, value);
+        if (textValidationError) {
+          errs[field.id] = textValidationError;
+        }
       }
     });
 
@@ -486,13 +480,14 @@ export default function EventPreviewPage() {
           >
             {activeEndingSection ? (
               <RuntimeEndingPagePreview
-                answers={answers}
+                answers={answersWithDefaults}
                 calculations={calculations}
                 emptyMessage="No content in this section yet."
                 errors={{}}
                 fieldsRef={fieldRefs}
                 isSubmittedView
                 isLightTheme={isLightTheme}
+                logoClassName={previewLogoClassName}
                 onAnimationComplete={() => {}}
                 onAnswer={setAnswer}
                 onFillAgain={handleResetPreview}
@@ -526,13 +521,14 @@ export default function EventPreviewPage() {
                 />
               ) : section ? (
                 <RuntimeFormPagePreview
-                  answers={answers}
+                  answers={answersWithDefaults}
                   backButtonClassName={previewBackButtonClassName}
                   calculations={calculations}
                   emptyMessage="No questions in this section yet."
                   errors={errors}
                   fieldsRef={fieldRefs}
                   isLightTheme={isLightTheme}
+                  logoClassName={previewLogoClassName}
                   onAnimationComplete={(fieldId) =>
                     setShakeIds((prev) => {
                       const next = new Set(prev);

@@ -1,5 +1,17 @@
 import { Users } from "@phosphor-icons/react";
-import type { PresentHeaderProps } from "./types";
+import { BrandLogo } from "@/components/layout";
+import { getBrandLogoVariantForTextColor } from "@/constants/brand";
+
+type PresentHeaderProps = {
+  title: string
+  code: string
+  currentSlide: number
+  totalSlides: number
+  participantCount: number
+  joinUrl: string
+  textColor: string
+  showInstructionsBar?: boolean
+}
 
 export default function PresentHeader({
   title,
@@ -59,9 +71,10 @@ export default function PresentHeader({
         </div>
       )}
 
-      <span className="text-[11px] font-bold italic text-primary-500">
-        UpForm
-      </span>
+      <BrandLogo
+        variant={getBrandLogoVariantForTextColor(textColor)}
+        className="h-4 w-auto max-w-[72px]"
+      />
     </div>
   );
 }

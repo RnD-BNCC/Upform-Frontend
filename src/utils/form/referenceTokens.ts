@@ -13,6 +13,10 @@ import {
   getAvailableReferenceFieldGroupsForField as getReferenceFieldGroupsForField,
   getAvailableReferenceFieldsForField as getReferenceFieldsForField,
 } from "./conditionFields";
+import {
+  formatGroupedNumberInput,
+  normalizeGroupedNumberInput,
+} from "./numberFormat";
 
 export const REFERENCE_TOKEN_SELECTOR = '[data-reference-token="true"]';
 
@@ -57,7 +61,7 @@ export const DATE_REFERENCE_OPTIONS: DateReferenceOption[] = [
 ];
 
 const REFERENCE_TOKEN_CLASSNAME =
-  "inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[12px] font-medium text-blue-600 align-baseline";
+  "inline-flex items-center rounded !bg-primary-50 px-1.5 py-0 font-medium leading-tight !text-primary-600 align-baseline";
 
 function formatReferenceDate(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -394,8 +398,10 @@ export function evaluateReferenceConditionTree(
 
 function formatCalculatedNumber(value: number) {
   if (!Number.isFinite(value)) return "";
-  if (Number.isInteger(value)) return String(value);
-  return String(Number.parseFloat(value.toFixed(6)));
+  const normalized = Number.isInteger(value)
+    ? String(value)
+    : String(Number.parseFloat(value.toFixed(6)));
+  return formatGroupedNumberInput(normalized);
 }
 
 function parseResolvedCalculationNumber(
@@ -403,12 +409,13 @@ function parseResolvedCalculationNumber(
   context: ReferenceResolveContext,
 ) {
   const normalized = resolveReferenceText(value, context)
-    .replace(/,/g, "")
+    .replace(/&nbsp;/g, " ")
     .trim();
+  const rawNumber = normalizeGroupedNumberInput(normalized);
 
-  if (!normalized) return null;
+  if (!rawNumber) return null;
 
-  const parsed = Number(normalized);
+  const parsed = Number(rawNumber);
   return Number.isFinite(parsed) ? parsed : null;
 }
 

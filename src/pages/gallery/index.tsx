@@ -5,7 +5,8 @@ import {
   useEffect,
   type ChangeEvent,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ActionToast, Spinner } from "@/components/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navbar, Footer, PageGridShell } from "@/components/layout";
 import {
@@ -28,7 +29,6 @@ import {
   Images,
   Link,
   MagnifyingGlass,
-  SpinnerGap,
   UploadSimple,
   User,
 } from "@phosphor-icons/react";
@@ -218,7 +218,7 @@ export default function GalleryPage() {
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadMutation.isPending ? (
-                  <SpinnerGap size={14} className="animate-spin" />
+                  <Spinner size={14} />
                 ) : (
                   <UploadSimple size={14} weight="bold" />
                 )}
@@ -246,10 +246,7 @@ export default function GalleryPage() {
             >
               {filesQuery.isPending ? (
                 <div className="flex justify-center py-20">
-                  <SpinnerGap
-                    size={28}
-                    className="animate-spin text-primary-400"
-                  />
+                  <Spinner size={28} className="text-primary-400" />
                 </div>
               ) : filesQuery.isError ? (
                 <div className="text-center py-20 text-sm text-gray-400">
@@ -423,10 +420,7 @@ export default function GalleryPage() {
             >
               {mediaQuery.isPending ? (
                 <div className="flex justify-center py-20">
-                  <SpinnerGap
-                    size={28}
-                    className="animate-spin text-primary-400"
-                  />
+                  <Spinner size={28} className="text-primary-400" />
                 </div>
               ) : mediaQuery.isError ? (
                 <div className="text-center py-20 text-sm text-gray-400">
@@ -516,20 +510,10 @@ export default function GalleryPage() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg"
-          >
-            <Link size={12} weight="bold" className="text-emerald-400" />
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ActionToast
+        message={toast}
+        icon={<Link size={12} weight="bold" className="text-emerald-400" />}
+      />
     </PageGridShell>
   );
 }

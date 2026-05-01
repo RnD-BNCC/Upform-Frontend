@@ -3,6 +3,7 @@ import { ArrowLeftIcon } from "@phosphor-icons/react";
 import type { FormCalculation, FormField, FormSection } from "@/types/form";
 import { buildRows } from "@/utils/form/formBuilder";
 import { getVisibleFields } from "@/utils/form";
+import { getRuntimeDefaultAnswer } from "@/utils/form/defaultAnswers";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
 import PreviewField from "./PreviewField";
 import ThemeFormLayout from "./ThemeFormLayout";
@@ -16,6 +17,7 @@ type Props = {
   fieldsRef: RefObject<Record<string, HTMLDivElement | null>>;
   isSubmittedView?: boolean;
   isLightTheme?: boolean;
+  logoClassName?: string;
   nextButtonLabel?: string;
   onAnimationComplete: (fieldId: string) => void;
   onAnswer: (fieldId: string, value: string | string[]) => void;
@@ -53,6 +55,7 @@ export default function RuntimeSectionFields({
   errors,
   fieldsRef,
   isSubmittedView,
+  logoClassName,
   nextButtonLabel = "Next",
   onAnimationComplete,
   onAnswer,
@@ -87,6 +90,7 @@ export default function RuntimeSectionFields({
 
       <ThemeFormLayout
         pageType={(section.pageType ?? "page") === "ending" ? "ending" : "page"}
+        logoClassName={logoClassName}
         surfaceClassName="scheme-light rounded-xl bg-white p-4 sm:p-6"
         themeConfig={themeConfig}
       >
@@ -128,7 +132,13 @@ export default function RuntimeSectionFields({
                         isShaking={shakeIds.has(field.id)}
                         otherText={otherTexts[field.id] ?? ""}
                         pendingFilesRef={pendingFilesRef}
-                        value={answers[field.id]}
+                        value={
+                          answers[field.id] ??
+                          getRuntimeDefaultAnswer(runtimeField, {
+                            answers,
+                            calculations,
+                          })
+                        }
                         onAnswer={(value) => {
                           if (runtimeField.type === "next_button") {
                             if (value === "__skip__") {

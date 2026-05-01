@@ -1,6 +1,20 @@
 import { ArrowLeft, Plus, Presentation, FloppyDisk } from '@phosphor-icons/react'
 import { SLIDE_TYPES } from '@/config/polling'
-import type { MobileSlideNavProps } from './types'
+import type { PollSlide } from '@/types/polling'
+
+type MobileSlideNavProps = {
+  title: string
+  slides: PollSlide[]
+  selectedIndex: number
+  onBack: () => void
+  onTitleChange: (title: string) => void
+  onTitleBlur: () => void
+  onSelectSlide: (index: number) => void
+  onAddSlide: () => void
+  onPresent: () => void
+  onSave: () => void
+  isAddPending: boolean
+}
 
 export default function MobileSlideNav({
   title,

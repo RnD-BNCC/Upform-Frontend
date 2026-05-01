@@ -3,25 +3,48 @@
   MonitorIcon,
   PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
-import { EmailActivityPanel } from "../email-activity";
+import EmailActivityPanel from "../email-activity/EmailActivityPanel";
 import BrowserIllustration from "../embed/BrowserIllustration";
-import { EMBED_TYPE_OPTIONS } from "../embed/embedOptions";
-import type { EmbedType, ShareTab } from "@/types/builderShare";
+import SubmitFormPanel from "./SubmitFormPanel";
+import type { FormSection } from "@/types/form";
+import type {
+  EmbedType,
+  ShareTab,
+  ShareToast,
+  SubmitSettingsEditorState,
+} from "@/types/builderShare";
+
+const EMBED_TYPE_OPTIONS = [
+  { value: "standard", label: "Standard" },
+  { value: "popup", label: "Popup" },
+  { value: "fullscreen", label: "Full screen" },
+  { value: "slider", label: "Slider" },
+] as const;
 
 type ShareTabPanelProps = {
   activeTab: ShareTab;
+  activeTheme?: string;
   eventId: string;
+  formTitle: string;
   onOpenEmailComposer: () => void;
   onSelectEmbedType: (type: EmbedType) => void;
+  onSubmitSettingsStateChange?: (state: SubmitSettingsEditorState) => void;
   onTabChange: (tab: ShareTab) => void;
+  sections: FormSection[];
+  showToast?: ShareToast;
 };
 
 export default function ShareTabPanel({
   activeTab,
+  activeTheme,
   eventId,
+  formTitle,
   onOpenEmailComposer,
   onSelectEmbedType,
+  onSubmitSettingsStateChange,
   onTabChange,
+  sections,
+  showToast,
 }: ShareTabPanelProps) {
   return (
     <div className="mt-10 border-t border-gray-200 pt-8">
@@ -54,6 +77,18 @@ export default function ShareTabPanel({
               <EnvelopeSimpleIcon size={16} weight="fill" />
               Send form
             </button>
+            <button
+              type="button"
+              onClick={() => onTabChange("submit")}
+              className={`flex h-9 items-center gap-2 rounded-sm px-3 text-sm font-medium transition-colors ${
+                activeTab === "submit"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <PaperPlaneTiltIcon size={16} weight="fill" />
+              Submit Form
+            </button>
           </div>
         </div>
 
@@ -83,7 +118,9 @@ export default function ShareTabPanel({
               })}
             </div>
           </div>
-        ) : (
+        ) : null}
+
+        {activeTab === "send" ? (
           <div className="bg-gray-50/70 p-6">
             <div className="grid gap-6 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
               <div className="rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
@@ -110,7 +147,18 @@ export default function ShareTabPanel({
               <EmailActivityPanel eventId={eventId} />
             </div>
           </div>
-        )}
+        ) : null}
+
+        <div className={activeTab === "submit" ? "block" : "hidden"}>
+          <SubmitFormPanel
+            activeTheme={activeTheme}
+            eventId={eventId}
+            formTitle={formTitle}
+            onStateChange={onSubmitSettingsStateChange}
+            sections={sections}
+            showToast={showToast}
+          />
+        </div>
       </div>
     </div>
   );

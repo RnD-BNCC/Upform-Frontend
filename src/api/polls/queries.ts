@@ -12,6 +12,7 @@ import type {
   CreateSlidePayload,
   UpdateSlidePayload,
   SlideResults,
+  LeaderboardEntry,
 } from '@/types/polling'
 
 
@@ -35,6 +36,17 @@ export function useQueryPollDetail(pollId: string) {
       return data
     },
     enabled: !!pollId,
+  })
+}
+
+export function useQueryPollScores(pollId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.POLL_SCORES, pollId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<LeaderboardEntry[]>(Api.pollScores(pollId))
+      return data
+    },
+    enabled: !!pollId && pollId !== 'new',
   })
 }
 

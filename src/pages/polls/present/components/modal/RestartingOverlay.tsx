@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { SpinnerGap } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 
 interface RestartingOverlayProps {
   restarting: boolean;
@@ -21,7 +21,7 @@ export default function RestartingOverlay({ restarting }: RestartingOverlayProps
             exit={{ scale: 0.8, opacity: 0 }}
             className="flex flex-col items-center gap-3"
           >
-            <SpinnerGap size={40} className="text-white animate-spin" />
+            <Spinner size={40} className="text-white" />
             <span className="text-white font-semibold text-sm">
               Restarting...
             </span>

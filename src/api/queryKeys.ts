@@ -8,8 +8,10 @@ export const QUERY_KEYS = {
   PUBLIC_EVENT: 'public-event',
   POLLS: 'polls',
   POLL_DETAIL: 'poll-detail',
+  POLL_SCORES: 'poll-scores',
   PUBLIC_POLL: 'public-poll',
   EMAIL_BLASTS: 'email-blasts',
   EMAIL_BLAST_DETAIL: 'email-blast-detail',
   EMAIL_BLAST_DRAFT: 'email-blast-draft',
+  SUBMIT_FORM_SETTINGS: 'submit-form-settings',
 } as const

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useParams } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpenIcon } from "@phosphor-icons/react";
+import { BrandLogo } from "@/components/layout";
 import {
   RuntimeCoverPagePreview,
   RuntimeEndingPagePreview,
@@ -20,10 +21,11 @@ import { useMutationUploadFile } from "@/api/upload";
 import type { FormSection, RespondentDeviceType } from "@/types/form";
 import { ensureGoogleFontsLoaded } from "@/utils/form/googleFonts";
 import {
-  getIndexedOptionValues,
   getSelectionCount,
   getSelectionValidationMessage,
 } from "@/utils/form/optionSelection";
+import { getAnswersWithRuntimeDefaults } from "@/utils/form/defaultAnswers";
+import { getTextValidationMessage } from "@/utils/form/textValidation";
 import {
   getFileUploadCount,
   getFileUploadValidationMessage,
@@ -106,7 +108,7 @@ function PublicFormLoadingScreen() {
       <div className="flex w-full max-w-[220px] flex-col items-center gap-4">
         <div className="flex flex-col items-center gap-1">
           <p className="text-xs font-medium text-[#a89f93]">Powered by</p>
-          <p className="text-lg font-bold tracking-tight text-[#312812]">UpForm</p>
+          <BrandLogo className="h-8 w-auto max-w-[150px]" />
         </div>
         <div className="h-1.5 w-36 overflow-hidden rounded-full bg-[#e8dfd1] shadow-[0_18px_38px_rgba(103,93,77,0.16)]">
           <motion.div
@@ -267,6 +269,11 @@ export default function PublicFormPage() {
 
   const sections = event?.sections ?? [];
   const calculations = getFormCalculationsFromSections(sections);
+  const answersWithDefaults = getAnswersWithRuntimeDefaults(
+    sections,
+    answers,
+    calculations,
+  );
   const themeConfig = resolveTheme(event?.theme ?? "light").config;
   const isLightTheme = themeConfig.bg.toLowerCase() === "#ffffff";
   const activeEndingSection = getRuntimeEndingSection(
@@ -274,7 +281,7 @@ export default function PublicFormPage() {
     submittedEndingSectionId ?? undefined,
   );
   const progressPercent = getRuntimeProgressPercent({
-    answers,
+    answers: answersWithDefaults,
     calculations,
     sectionHistory,
     sections,
@@ -453,7 +460,7 @@ export default function PublicFormPage() {
   }, [answers, submitted]);
 
   const visibleSectionFields = getVisibleFields(section?.fields ?? [], {
-    answers,
+    answers: answersWithDefaults,
     calculations,
   });
   const nextTarget = section
@@ -461,7 +468,7 @@ export default function PublicFormPage() {
         sections,
         section.id,
         visibleSectionFields,
-        answers,
+        answersWithDefaults,
       )
     : { kind: "complete" as const };
 
@@ -483,19 +490,15 @@ export default function PublicFormPage() {
     const errs: Record<string, string> = {};
     if (!sec || sec.pageType !== "page") return errs;
 
-    const visibleFields = getVisibleFields(sec.fields, { answers, calculations });
+    const visibleFields = getVisibleFields(sec.fields, {
+      answers: answersWithDefaults,
+      calculations,
+    });
 
     visibleFields.forEach((field) => {
       if (field.type === "next_button") return;
 
-      const value =
-        answers[field.id] ??
-        (field.type === "multiselect"
-          ? (() => {
-              const defaults = getIndexedOptionValues(field.options, field.defaultValue);
-              return defaults.length > 0 ? defaults : undefined;
-            })()
-          : undefined);
+      const value = answersWithDefaults[field.id];
       const isSelectionField =
         field.type === "multiple_choice" ||
         field.type === "checkbox" ||
@@ -527,21 +530,11 @@ export default function PublicFormPage() {
           errs[field.id] = fileUploadError;
           return;
         }
-      } else if (
-        field.required &&
-        (!value || (Array.isArray(value) && value.length === 0) || value === "")
-      ) {
-        errs[field.id] = field.validationMessage || "This question is required.";
-      }
-
-      if (
-        field.type === "email" &&
-        value &&
-        typeof value === "string" &&
-        value.length > 0 &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-      ) {
-        errs[field.id] = "Format email tidak valid.";
+      } else {
+        const textValidationError = getTextValidationMessage(field, value);
+        if (textValidationError) {
+          errs[field.id] = textValidationError;
+        }
       }
     });
 
@@ -577,20 +570,11 @@ export default function PublicFormPage() {
     setErrors({});
 
     try {
-      const finalAnswers = { ...answers };
-
-      sections.forEach((entry) => {
-        entry.fields.forEach((field) => {
-          if (field.type !== "multiselect" || finalAnswers[field.id] !== undefined) {
-            return;
-          }
-
-          const defaults = getIndexedOptionValues(field.options, field.defaultValue);
-          if (defaults.length > 0) {
-            finalAnswers[field.id] = defaults;
-          }
-        });
-      });
+      const finalAnswers = getAnswersWithRuntimeDefaults(
+        sections,
+        answers,
+        calculations,
+      );
 
       for (const [fieldId, files] of Object.entries(pendingFilesRef.current)) {
         if (files.length === 0) continue;
@@ -791,7 +775,7 @@ export default function PublicFormPage() {
         >
           {activeEndingSection ? (
             <RuntimeEndingPagePreview
-              answers={answers}
+              answers={answersWithDefaults}
               calculations={calculations}
               emptyMessage="No content in this section yet."
               errors={{}}
@@ -839,7 +823,7 @@ export default function PublicFormPage() {
             />
           ) : section ? (
             <RuntimeFormPagePreview
-              answers={answers}
+              answers={answersWithDefaults}
               backButtonClassName="left-3 top-3 sm:left-4 sm:top-4"
               calculations={calculations}
               emptyMessage="No questions in this section yet."

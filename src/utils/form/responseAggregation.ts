@@ -1,4 +1,9 @@
 import type { FormResponse } from '@/types/form'
+import {
+  formatPhoneAnswer,
+  isPhoneAnswerEmpty,
+  isSerializedPhoneAnswer,
+} from './phoneAnswer'
 
 export const PASTEL_COLORS = [
   '#FDE68A',
@@ -101,7 +106,11 @@ export function collectTextResponses(
   for (const r of responses) {
     const val = r.answers[fieldId]
     if (!val) continue
-    const text = Array.isArray(val) ? val.join(', ') : val
+    const text = isSerializedPhoneAnswer(val)
+      ? formatPhoneAnswer(val)
+      : Array.isArray(val)
+        ? val.join(', ')
+        : val
     if (text.trim()) values.push(text)
   }
   return values
@@ -114,6 +123,10 @@ export function countFieldResponses(
   let count = 0
   for (const r of responses) {
     const val = r.answers[fieldId]
+    if (isSerializedPhoneAnswer(val)) {
+      if (!isPhoneAnswerEmpty(val)) count++
+      continue
+    }
     if (val && (Array.isArray(val) ? val.length > 0 : val.trim() !== '')) count++
   }
   return count

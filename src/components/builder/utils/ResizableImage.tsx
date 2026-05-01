@@ -75,7 +75,7 @@ export const ResizableImage = memo(function ResizableImage({
           onChange={(e) => onUpdate({ imageCaption: e.target.value || undefined })}
           onClick={(e) => e.stopPropagation()}
           placeholder="Add caption..."
-          className="w-full text-xs text-gray-500 text-center mt-1 outline-none bg-transparent border-b border-transparent focus:border-gray-300 transition-colors"
+          className="theme-question-caption w-full bg-transparent text-center text-xs text-gray-500 mt-1 outline-none border-b border-transparent transition-colors focus:border-gray-300"
         />
       )}
 

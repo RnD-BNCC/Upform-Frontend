@@ -62,9 +62,10 @@ export function useQueryGalleryFiles(page = 1, take = 20) {
   })
 }
 
-export function useQueryGalleryMedia(page = 1, take = 21) {
+export function useQueryGalleryMedia(page = 1, take = 21, enabled = true) {
   return useQuery({
     queryKey: ['gallery-media', page, take],
+    enabled,
     queryFn: async () => {
       const { data } = await apiClient.get<GalleryMediaData>(Api.galleryMedia, {
         params: { page, take },

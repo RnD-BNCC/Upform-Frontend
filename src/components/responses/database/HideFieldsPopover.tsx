@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -19,6 +19,7 @@ import {
   EyeSlashIcon,
   MagnifyingGlassIcon,
 } from "@phosphor-icons/react";
+import { usePopoverClose } from "@/hooks/usePopoverClose";
 import type { FormField } from "@/types/form";
 import { FIELD_TYPE_META } from "@/components/builder/section/fieldTypeMeta";
 import { cleanResultLabel } from "../resultsResponseUtils";
@@ -100,7 +101,7 @@ export default function HideFieldsPopover({
 }: HideFieldsPopoverProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = usePopoverClose(open, () => setOpen(false));
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const orderedFields = useMemo(() => {
@@ -119,15 +120,6 @@ export default function HideFieldsPopover({
     );
   }, [orderedFields, search]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
 
   const toggleField = (fieldId: string) => {
     if (hiddenFieldIds.includes(fieldId)) {

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   MagnifyingGlassIcon,
-  SpinnerGapIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { BaseModal, Spinner } from "@/components/ui";
 import {
   ensureGoogleFontsLoaded,
   fetchGoogleFontsList,
@@ -94,19 +94,8 @@ export default function ThemeFontPickerModal({
     ensureGoogleFontsLoaded(visibleFonts);
   }, [isOpen, visibleFonts]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-[220] flex items-center justify-center bg-black/35 px-4"
-      onClick={onClose}
-    >
-      <div
-        className="flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-sm bg-white shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
+    <BaseModal isOpen={isOpen} onClose={onClose} zIndex="z-[220]" className="flex max-h-[88vh] w-full max-w-5xl flex-col mx-4">
         <div className="flex items-center justify-between border-b border-gray-100 px-8 py-5">
           <div className="flex items-center gap-8">
             <div className="border-b-2 border-gray-900 pb-2 text-2xl font-medium text-gray-900">
@@ -160,7 +149,7 @@ export default function ThemeFontPickerModal({
           {isLoading ? (
             <div className="flex h-56 items-center justify-center">
               <div className="flex items-center gap-3 text-sm text-gray-500">
-                <SpinnerGapIcon size={18} className="animate-spin" />
+                <Spinner size={18} />
                 Loading Google fonts...
               </div>
             </div>
@@ -223,7 +212,6 @@ export default function ThemeFontPickerModal({
             Done
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

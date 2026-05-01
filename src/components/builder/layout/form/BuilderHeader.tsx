@@ -4,13 +4,14 @@ import {
   HouseIcon,
   CaretDownIcon,
   EyeIcon,
+  FloppyDiskIcon,
   RocketLaunchIcon,
-  SpinnerGapIcon,
   ProhibitIcon,
   LockIcon,
 } from '@phosphor-icons/react'
+import { Spinner } from '@/components/ui'
 
-type Tab = 'questions' | 'share' | 'responses'
+type Tab = 'questions' | 'share' | 'game' | 'responses'
 
 type BuilderHeaderProps = {
   formTitle: string
@@ -19,6 +20,7 @@ type BuilderHeaderProps = {
   onTabChange: (tab: Tab) => void
   onBack: () => void
   onPreview: () => void
+  onSave?: () => void
   isSaving?: boolean
   isDirty?: boolean
   eventStatus?: 'draft' | 'active' | 'closed'
@@ -31,6 +33,7 @@ type BuilderHeaderProps = {
 const NAV_TABS: { key: Tab; label: string }[] = [
   { key: 'questions', label: 'Edit' },
   { key: 'share', label: 'Share' },
+  { key: 'game', label: 'Game' },
   { key: 'responses', label: 'Results' },
 ]
 
@@ -41,6 +44,7 @@ export default function BuilderHeader({
   onTabChange,
   onBack,
   onPreview,
+  onSave,
   isSaving,
   isDirty,
   eventStatus,
@@ -93,11 +97,14 @@ export default function BuilderHeader({
             <span className="text-[10px] font-medium pointer-events-none whitespace-nowrap leading-none -mt-0.5">
               {isSaving ? (
                 <span className="flex items-center gap-1 text-primary-500">
-                  <SpinnerGapIcon size={9} className="animate-spin" />
-                  Saving…
+                  <Spinner size={9} />
+                  Saving...
                 </span>
               ) : (
-                <span className="text-amber-500">● Unsaved</span>
+                <span className="flex items-center gap-1 text-amber-500">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Unsaved
+                </span>
               )}
             </span>
           )}
@@ -136,6 +143,15 @@ export default function BuilderHeader({
           Preview
         </button>
 
+        <button
+          onClick={onSave}
+          disabled={!isDirty || isSaving || !onSave}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSaving ? <Spinner size={13} /> : <FloppyDiskIcon size={14} />}
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
+
         {/* Actions for active forms */}
         {eventStatus === 'active' && onUnpublish && (
           <button
@@ -165,7 +181,7 @@ export default function BuilderHeader({
             className="flex items-center gap-1.5 px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPublishing
-              ? <SpinnerGapIcon size={13} className="animate-spin" />
+              ? <Spinner size={13} />
               : <RocketLaunchIcon size={13} />
             }
             {isPublishing ? 'Publishing...' : eventStatus === 'closed' ? 'Reopen' : 'Publish'}

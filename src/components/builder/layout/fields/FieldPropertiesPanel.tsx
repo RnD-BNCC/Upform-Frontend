@@ -6,6 +6,7 @@ import {
   TrashIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { Toggle } from "@/components/ui";
 import type { ConditionGroup, FormField, FormSection } from "@/types/form";
 import {
   ConditionalLogicIcon,
@@ -18,6 +19,7 @@ import {
 import { ConditionPopup } from "../reference/FieldConditionEditor";
 import { countConditionNodes } from "../reference/fieldConditionUtils";
 import ReferenceTextEditor from "../reference/ReferenceTextEditor";
+import RichInput from "../../utils/RichInput";
 import {
   getAvailableReferenceFieldGroupsForField,
   stripHtmlToText,
@@ -26,6 +28,10 @@ import {
   fieldSupportsSetting,
   getFieldPlugin,
 } from "@/components/builder/section/fieldRegistry";
+import {
+  formatCurrencyInput,
+  normalizeCurrencyInput,
+} from "@/components/builder/section/CurrencyField";
 import HelpTooltip from "../shared/HelpTooltip";
 
 type Props = {
@@ -36,29 +42,6 @@ type Props = {
   onClose: () => void;
 };
 
-function Toggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${
-        checked ? "bg-primary-500" : "bg-gray-200"
-      }`}
-    >
-      <span
-        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${
-          checked ? "translate-x-4" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
 
 function Section({
   label,
@@ -146,6 +129,8 @@ function normalizeReferenceEditorValue(value: string) {
   return stripHtmlToText(value) ? value : undefined;
 }
 
+const MULTILINE_DEFAULT_VALUE_FIELDS = ["long_text", "paragraph"] as const;
+
 export default function FieldPropertiesPanel({
   isOpen,
   field,
@@ -189,6 +174,9 @@ export default function FieldPropertiesPanel({
   const hasPlaceholder = fieldSupportsSetting(field.type, "placeholder");
   const hasValidation = HAS_VALIDATION.includes(field.type);
   const hasDefaultValue = fieldSupportsSetting(field.type, "defaultValue");
+  const hasMultilineDefaultValue = MULTILINE_DEFAULT_VALUE_FIELDS.includes(
+    field.type as (typeof MULTILINE_DEFAULT_VALUE_FIELDS)[number],
+  );
   const isDisplayOnly = fieldSupportsSetting(field.type, "displayOnly");
   const supportsHalfWidth = fieldSupportsSetting(field.type, "halfWidth");
   const supportsLogic = fieldSupportsSetting(field.type, "logic");
@@ -300,18 +288,23 @@ export default function FieldPropertiesPanel({
           {hasCaption ? (
             <div>
               <Label tooltip="Shown below the field title">Caption</Label>
-              <ReferenceTextEditor
-                availableFields={availableFields}
-                availableFieldGroups={availableFieldGroups}
-                value={field.description ?? ""}
-                onChange={(nextValue) =>
-                  onChange({
-                    description: normalizeReferenceEditorValue(nextValue),
-                  })
-                }
-                placeholder="Add caption..."
-                multiline
-              />
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <RichInput
+                  referenceFields={availableFields}
+                  referenceFieldGroups={availableFieldGroups}
+                  value={field.description ?? ""}
+                  onChange={(nextValue) =>
+                    onChange({
+                      description: normalizeReferenceEditorValue(nextValue),
+                    })
+                  }
+                  placeholder="Add caption..."
+                  placeholderClassName="px-3 py-2 text-xs text-gray-400"
+                  className="min-h-20 px-3 py-2 text-xs text-gray-700"
+                  staticToolbar
+                  stopPropagation
+                />
+              </div>
             </div>
           ) : null}
 
@@ -335,17 +328,55 @@ export default function FieldPropertiesPanel({
           {hasDefaultValue ? (
             <div>
               <Label>Default value</Label>
-              <ReferenceTextEditor
-                availableFields={availableFields}
-                availableFieldGroups={availableFieldGroups}
-                value={field.defaultValue ?? ""}
-                onChange={(nextValue) =>
-                  onChange({
-                    defaultValue: normalizeReferenceEditorValue(nextValue),
-                  })
-                }
-                placeholder="Pre-filled value..."
-              />
+              {field.type === "rich_text" ? (
+                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                  <RichInput
+                    referenceFields={availableFields}
+                    referenceFieldGroups={availableFieldGroups}
+                    value={field.defaultValue ?? ""}
+                    onChange={(nextValue) =>
+                      onChange({
+                        defaultValue: normalizeReferenceEditorValue(nextValue),
+                      })
+                    }
+                    placeholder="Pre-filled value..."
+                    placeholderClassName="px-3 py-2 text-xs text-gray-400"
+                    className="min-h-20 px-3 py-2 text-xs text-gray-700"
+                    staticToolbar
+                    stopPropagation
+                  />
+                </div>
+              ) : field.type === "currency" ? (
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={formatCurrencyInput(field.defaultValue)}
+                  onChange={(event) => {
+                    const nextValue = normalizeCurrencyInput(event.target.value);
+                    onChange({ defaultValue: nextValue || undefined });
+                  }}
+                  placeholder="Pre-filled value..."
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
+                />
+              ) : (
+                <ReferenceTextEditor
+                  availableFields={availableFields}
+                  availableFieldGroups={availableFieldGroups}
+                  value={field.defaultValue ?? ""}
+                  onChange={(nextValue) =>
+                    onChange({
+                      defaultValue: normalizeReferenceEditorValue(nextValue),
+                    })
+                  }
+                  placeholder="Pre-filled value..."
+                  multiline={hasMultilineDefaultValue}
+                  className={
+                    hasMultilineDefaultValue
+                      ? "max-h-none min-h-24 overflow-hidden break-words"
+                      : ""
+                  }
+                />
+              )}
             </div>
           ) : null}
 
@@ -631,11 +662,15 @@ export default function FieldPropertiesPanel({
                   <Label>Validation pattern</Label>
                   <select
                     value={field.validationPattern ?? "none"}
-                    onChange={(event) =>
-                      onChange({
-                        validationPattern:
-                          event.target.value === "none"
-                            ? undefined
+                      onChange={(event) =>
+                        onChange({
+                          validationEmailDomain:
+                            event.target.value === "email"
+                              ? field.validationEmailDomain
+                              : undefined,
+                          validationPattern:
+                            event.target.value === "none"
+                              ? undefined
                             : event.target.value,
                       })
                     }
@@ -648,6 +683,26 @@ export default function FieldPropertiesPanel({
                     ))}
                   </select>
                 </div>
+
+                {field.validationPattern === "email" ? (
+                  <div>
+                    <Label tooltip="Optional. Example: @binus.ac.id only allows emails ending with that domain. Leave empty to allow any email.">
+                      Email domain
+                    </Label>
+                    <input
+                      type="text"
+                      value={field.validationEmailDomain ?? ""}
+                      onChange={(event) =>
+                        onChange({
+                          validationEmailDomain:
+                            event.target.value || undefined,
+                        })
+                      }
+                      placeholder="@binus.ac.id"
+                      className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300 placeholder:text-gray-400"
+                    />
+                  </div>
+                ) : null}
 
                 <div>
                   <Label tooltip="Shown to the user when their answer fails validation">

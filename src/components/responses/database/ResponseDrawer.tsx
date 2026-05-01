@@ -3,10 +3,10 @@ import {
   CaretDownIcon,
   CaretUpIcon,
   CheckCircleIcon,
-  SpinnerGapIcon,
   WarningCircleIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import type { FormField, FormResponse } from "@/types/form";
 import { cleanResultLabel, getResponseTimestamp } from "../resultsResponseUtils";
 import { formatAnswerValue, toStableResponseUuid } from "./resultsDatabaseUtils";
@@ -30,7 +30,7 @@ function SaveStatusLabel({ status }: { status: ResponseSaveStatus }) {
   if (status === "saving") {
     return (
       <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-gray-500">
-        <SpinnerGapIcon size={15} className="animate-spin text-gray-400" />
+        <Spinner size={15} className="text-gray-400" />
         Saving...
       </span>
     );

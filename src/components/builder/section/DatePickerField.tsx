@@ -102,7 +102,7 @@ export default function DatePickerField({
     <div ref={triggerRef} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
       <div
         onClick={() => setOpen(v => !v)}
-        className={`theme-answer-input flex w-48 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 bg-white transition-colors ${
+        className={`theme-answer-input flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border bg-white px-3 py-2.5 transition-colors ${
           hasError
             ? "border-red-400"
             : "border-gray-200 hover:border-gray-300"

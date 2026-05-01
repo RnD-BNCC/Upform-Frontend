@@ -1,3 +1,4 @@
+export { default as BrandLogo } from "./BrandLogo";
 export { default as Navbar } from "./Navbar";
 export { default as Footer } from "./Footer";
 export { default as LayoutPicker } from "./LayoutPicker";

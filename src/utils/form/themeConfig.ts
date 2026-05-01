@@ -432,23 +432,23 @@ export function getThemeQuestionSizeStyles(questionSize: ThemeQuestionSize) {
       return {
         captionLineHeight: "1.25rem",
         captionSize: "0.75rem",
-        titleLineHeight: "1.25rem",
+        titleLineHeight: "1.375rem",
         titleSize: "0.875rem",
       };
     case "large":
+      return {
+        captionLineHeight: "1.75rem",
+        captionSize: "1.125rem",
+        titleLineHeight: "2.25rem",
+        titleSize: "1.5rem",
+      };
+    case "normal":
+    default:
       return {
         captionLineHeight: "1.5rem",
         captionSize: "0.9375rem",
         titleLineHeight: "1.75rem",
         titleSize: "1.125rem",
-      };
-    case "normal":
-    default:
-      return {
-        captionLineHeight: "1.375rem",
-        captionSize: "0.875rem",
-        titleLineHeight: "1.5rem",
-        titleSize: "1rem",
       };
   }
 }
@@ -473,6 +473,7 @@ function getThemeInputStyleVars(theme: ThemeConfig) {
         borderBottomWidth: "1px",
         borderLeftWidth: "0px",
         borderRadius: "0px",
+        multilineBorderRadius: "0px",
         borderRightWidth: "0px",
         borderTopWidth: "0px",
       };
@@ -482,6 +483,7 @@ function getThemeInputStyleVars(theme: ThemeConfig) {
         borderBottomWidth: "1px",
         borderLeftWidth: "1px",
         borderRadius: "9999px",
+        multilineBorderRadius: "1rem",
         borderRightWidth: "1px",
         borderTopWidth: "1px",
       };
@@ -492,6 +494,7 @@ function getThemeInputStyleVars(theme: ThemeConfig) {
         borderBottomWidth: "1px",
         borderLeftWidth: "1px",
         borderRadius: "0.5rem",
+        multilineBorderRadius: "0.5rem",
         borderRightWidth: "1px",
         borderTopWidth: "1px",
       };
@@ -817,10 +820,13 @@ export function getThemeCssVariables(theme: ThemeConfig) {
 
   return {
     "--upform-theme-answer-bg": inputStyle.background,
+    "--upform-theme-answer-addon-bg": withAlpha(theme.inputText, 0.12),
     "--upform-theme-answer-border": theme.inputBorder,
     "--upform-theme-answer-border-bottom-width": inputStyle.borderBottomWidth,
     "--upform-theme-answer-border-left-width": inputStyle.borderLeftWidth,
     "--upform-theme-answer-border-radius": inputStyle.borderRadius,
+    "--upform-theme-answer-multiline-radius":
+      inputStyle.multilineBorderRadius,
     "--upform-theme-answer-border-right-width": inputStyle.borderRightWidth,
     "--upform-theme-answer-border-top-width": inputStyle.borderTopWidth,
     "--upform-theme-answer-placeholder": withAlpha(theme.inputText, 0.62),
@@ -838,6 +844,9 @@ export function getThemeCssVariables(theme: ThemeConfig) {
     "--upform-theme-question-bg": theme.bg,
     "--upform-theme-question-align": theme.formAlignment,
     "--upform-theme-question-caption": withAlpha(theme.textColor, 0.72),
+    "--upform-theme-question-caption-font-weight": theme.boldLabels
+      ? "700"
+      : "400",
     "--upform-theme-question-caption-line-height": questionSize.captionLineHeight,
     "--upform-theme-question-caption-size": questionSize.captionSize,
     "--upform-theme-question-text": theme.textColor,

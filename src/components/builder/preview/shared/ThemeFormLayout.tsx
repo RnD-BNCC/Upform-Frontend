@@ -12,6 +12,8 @@ type Props = {
   children: ReactNode;
   formEndRef?: RefObject<HTMLDivElement | null>;
   pageType: "page" | "ending";
+  logoClassName?: string;
+  logoPlacement?: "absolute" | "fixed";
   surfaceClassName: string;
   themeConfig: ThemeConfig;
   onFormClick?: MouseEventHandler<HTMLDivElement>;
@@ -58,6 +60,8 @@ export default function ThemeFormLayout({
   children,
   formEndRef,
   pageType,
+  logoClassName,
+  logoPlacement = "fixed",
   surfaceClassName,
   themeConfig,
   onFormClick,
@@ -69,14 +73,25 @@ export default function ThemeFormLayout({
   const hasLogo = themeConfig.logoEnabled && !!themeConfig.logoUrl;
   const hasLayoutImage =
     pageType === "page" && layout.hasImage && !!themeConfig.formImageUrl;
-  const topPaddingClassName = hasLogo ? "pt-8" : "pt-8";
+  const topPaddingClassName = "pt-8";
+  const floatingLogo = hasLogo ? (
+    <ThemeLogo
+      className={
+        logoClassName ??
+        (logoPlacement === "absolute"
+          ? "absolute right-3 top-3 z-30 sm:right-4 sm:top-4"
+          : "fixed right-3 top-3 z-40 sm:right-4 sm:top-4")
+      }
+      insideSurface={false}
+      themeConfig={themeConfig}
+    />
+  ) : null;
   const formStack = (
     <div
       className={`mx-auto flex w-full flex-col px-4 pb-6 sm:px-6 sm:pb-8 ${topPaddingClassName}`}
       style={{ maxWidth: `${themeConfig.formWidth}px` }}
       onClick={onFormClick}
     >
-      <ThemeLogo className={hasLogo ? "mb-8 w-full" : ""} insideSurface={false} themeConfig={themeConfig} />
       <div
         className={`upform-theme-scope upform-theme-form-surface theme-field-stack ${surfaceClassName}`}
         style={themeVars}
@@ -90,6 +105,7 @@ export default function ThemeFormLayout({
   if (!hasLayoutImage || !themeConfig.formImageUrl) {
     return (
       <div className="relative w-full">
+        {floatingLogo}
         {formStack}
       </div>
     );
@@ -118,6 +134,7 @@ export default function ThemeFormLayout({
             Position
           </button>
         ) : null}
+        {floatingLogo}
         <div className="relative z-10">{formStack}</div>
       </div>
     );
@@ -135,6 +152,7 @@ export default function ThemeFormLayout({
 
     return (
       <div className="flex w-full flex-col">
+        {floatingLogo}
         {layout.imagePlacement === "top" ? imagePanel : null}
         <div className="w-full" style={{ background: themeConfig.bg }}>
           {formStack}
@@ -163,6 +181,7 @@ export default function ThemeFormLayout({
 
   return (
     <div className="flex w-full flex-col lg:min-h-screen lg:flex-row">
+      {floatingLogo}
       {layout.imagePlacement === "left" ? imagePanel : null}
       {formPanel}
       {layout.imagePlacement === "right" ? imagePanel : null}

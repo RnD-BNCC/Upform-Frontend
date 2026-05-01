@@ -1,7 +1,15 @@
 import { motion } from "framer-motion";
 import { PASTEL_COLORS } from "@/utils/form/responseAggregation";
-import type { Participant } from "@/types/polling";
-import type { WaitingRoomViewProps } from "./types";
+import type { Participant, ImageLayout } from "@/types/polling";
+
+type WaitingRoomViewProps = {
+  imageUrl: string | undefined
+  imageLayout: ImageLayout
+  currentSlide: number
+  totalSlides: number
+  participants: Participant[]
+  textColor: string
+}
 
 function FloatingAvatars({ participants }: { participants: Participant[] }) {
   if (participants.length === 0) return null;

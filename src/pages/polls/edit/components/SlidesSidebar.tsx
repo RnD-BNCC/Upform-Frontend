@@ -1,8 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type RefObject } from 'react'
 import type { PollSlide, SlideType } from '@/types/polling'
-import { ArrowLeft, Plus, Presentation, FloppyDisk, Copy, Trash, DotsSixVertical } from '@phosphor-icons/react'
+import {
+  Copy,
+  DotsSixVertical,
+  FloppyDisk,
+  HouseIcon,
+  PencilSimple,
+  Plus,
+  Presentation,
+  Trash,
+  Trophy,
+} from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
-import type { SlidesSidebarProps } from './types'
+import { BrandLogo } from '@/components/layout'
+type SlidesSidebarProps = {
+  activePanel: 'edit' | 'results'
+  title: string
+  pollCode: string
+  slides: PollSlide[]
+  selectedIndex: number
+  liveQuestion: string | null
+  onBack: () => void
+  onTitleChange: (title: string) => void
+  onTitleBlur: () => void
+  onSelectSlide: (index: number) => void
+  onAddSlide: () => void
+  onDeleteSlide: (id: string) => void
+  onReorderSlides: (orderedIds: string[]) => void
+  saveReorderRef: RefObject<(() => void) | null>
+  onCopyCode: () => void
+  onPresent: () => void
+  onSave: () => void
+  onShowEdit: () => void
+  onShowResults: () => void
+  isAddPending: boolean
+}
 import { DndContext, closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -117,6 +149,7 @@ function SortableSlideItem({
 }
 
 export default function SlidesSidebar({
+  activePanel,
   title,
   pollCode,
   slides,
@@ -133,6 +166,8 @@ export default function SlidesSidebar({
   onCopyCode,
   onPresent,
   onSave,
+  onShowEdit,
+  onShowResults,
   isAddPending,
 }: SlidesSidebarProps) {
   const [localSlides, setLocalSlides] = useState(slides)
@@ -180,10 +215,16 @@ export default function SlidesSidebar({
   return (
     <aside className="hidden h-screen w-72 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50 sm:flex">
       <div className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3">
-        <button onClick={onBack} className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer">
-          <ArrowLeft size={16} weight="bold" />
+        <button
+          onClick={onBack}
+          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+          title="Home"
+        >
+          <HouseIcon size={16} weight="fill" />
         </button>
-        <span className="text-sm font-bold italic text-gray-900">UpForm</span>
+        <div className="flex min-w-0 flex-col items-start">
+          <BrandLogo className="h-6 w-auto max-w-[104px]" />
+        </div>
       </div>
 
       <div className="px-4 py-3">
@@ -213,11 +254,37 @@ export default function SlidesSidebar({
           <Presentation size={14} weight="bold" />
           Present
         </button>
+        <div className="grid grid-cols-2 gap-1 rounded-sm border border-gray-200 bg-white p-1">
+          <button
+            type="button"
+            onClick={onShowEdit}
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-[3px] text-xs font-bold transition-colors ${
+              activePanel === 'edit'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}
+          >
+            <PencilSimple size={13} weight="bold" />
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={onShowResults}
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-[3px] text-xs font-bold transition-colors ${
+              activePanel === 'results'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}
+          >
+            <Trophy size={13} weight="fill" />
+            Results
+          </button>
+        </div>
       </div>
 
       <div className="border-t border-gray-100" />
 
-      <div className="p-3">
+      <div className="px-4 py-3">
         <button
           onClick={onAddSlide}
           disabled={isAddPending}

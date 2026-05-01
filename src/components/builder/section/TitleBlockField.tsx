@@ -30,7 +30,7 @@ export function TitleBlockFieldCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12 }}
       onClickCapture={onSelect}
-      className={`relative cursor-pointer rounded-xl bg-white transition-all duration-150 ${
+      className={`relative cursor-pointer rounded-xl bg-transparent transition-all duration-150 ${
         isSelected
           ? "ring-2 ring-primary-400"
           : "hover:ring-2 hover:ring-primary-200"
@@ -48,7 +48,8 @@ export function TitleBlockFieldCard({
             placeholder="Title"
             referenceFields={availableReferenceFields}
             referenceFieldGroups={availableReferenceFieldGroups}
-            className="w-full border-b border-transparent pb-1 text-lg font-semibold text-gray-900 transition-colors hover:border-gray-200 focus:border-primary-400"
+            placeholderClassName="theme-question-caption text-sm"
+            className="theme-question-title w-full border-b border-transparent pb-1 text-lg font-semibold text-gray-900 transition-colors hover:border-gray-200 focus:border-primary-400"
             stopPropagation
           />
           {field.headerImage && (

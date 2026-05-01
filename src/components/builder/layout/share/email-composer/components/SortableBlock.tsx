@@ -209,7 +209,7 @@ export default function SortableBlock({
               placeholder="Write your email text..."
               placeholderClassName="px-3 py-2 text-sm text-gray-300"
               containerClassName="w-full"
-              className="min-h-24 w-full rounded-md border-0 bg-transparent px-3 py-2 text-sm leading-relaxed text-inherit outline-none transition-colors whitespace-pre-wrap"
+              className="min-h-24 w-full rounded-md border-0 bg-transparent px-3 py-2 text-[15px] leading-relaxed text-inherit outline-none transition-colors whitespace-pre-wrap"
               stopPropagation
               allowDateUtilities={false}
             />

@@ -11,6 +11,13 @@ type Props = {
   onStart: () => void;
 };
 
+const COVER_RICH_TEXT_CLASS =
+  "[&_a]:underline [&_b]:font-bold [&_strong]:font-bold [&_em]:italic [&_i]:italic [&_u]:underline [&_s]:line-through [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:leading-normal";
+const COVER_TITLE_RICH_TEXT_CLASS =
+  `${COVER_RICH_TEXT_CLASS} [&_h1]:text-5xl [&_h1]:font-black [&_h2]:text-4xl [&_h2]:font-black [&_h3]:text-3xl [&_h3]:font-bold [&_h4]:text-2xl [&_h4]:font-bold [&_h5]:text-xl [&_h5]:font-bold`;
+const COVER_DESCRIPTION_RICH_TEXT_CLASS =
+  `${COVER_RICH_TEXT_CLASS} [&_h1]:text-3xl [&_h1]:font-black [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:text-xl [&_h3]:font-bold [&_h4]:text-lg [&_h4]:font-semibold [&_h5]:text-base [&_h5]:font-semibold`;
+
 function CoverContent({
   html,
   className,
@@ -44,7 +51,7 @@ export default function RuntimeCoverPagePreview({
       descriptionContent={
         <CoverContent
           html={coverDescription}
-          className={`w-full leading-relaxed ${
+          className={`${COVER_DESCRIPTION_RICH_TEXT_CLASS} w-full leading-relaxed ${
             Number(settings.coverLayout ?? 0) >= 3 ? "text-center text-base" : "text-base"
           }`}
         />
@@ -54,7 +61,7 @@ export default function RuntimeCoverPagePreview({
       titleContent={
         <CoverContent
           html={coverTitle}
-          className={`w-full font-bold italic leading-tight ${
+          className={`${COVER_TITLE_RICH_TEXT_CLASS} w-full font-bold italic leading-tight ${
             Number(settings.coverLayout ?? 0) >= 3
               ? "text-center text-4xl"
               : "text-3xl"

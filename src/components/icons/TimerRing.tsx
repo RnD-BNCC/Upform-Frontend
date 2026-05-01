@@ -4,10 +4,12 @@ export function TimerRing({
   remaining,
   total,
   size = 56,
+  trackColor,
 }: {
   remaining: number
   total: number
   size?: number
+  trackColor?: string
 }) {
   const strokeWidth = Math.max(4, size * 0.09)
   const radius = (size - strokeWidth * 2) / 2
@@ -29,10 +31,15 @@ export function TimerRing({
         circumference={circumference}
         dashOffset={dashOffset}
         color={color}
+        trackColor={trackColor}
       />
       <span
         className="relative font-black tabular-nums"
-        style={{ fontSize: size < 50 ? 11 : size < 70 ? 14 : 18, color, transition: 'color 0.5s ease' }}
+        style={{
+          fontSize: size < 50 ? 12 : size < 70 ? 18 : 24,
+          color,
+          transition: 'color 0.5s ease',
+        }}
       >
         {remaining}
       </span>

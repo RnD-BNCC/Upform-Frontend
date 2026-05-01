@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { SlideType, SlideSettings, ImageLayout } from "@/types/polling";
 import {
-  TOOLBAR_COLORS,
   FORMAT_CMDS,
   BAR_COLORS_HEX,
   WORD_CLOUD_COLORS,
@@ -9,12 +8,14 @@ import {
 } from "@/config/polling";
 import cloud from "d3-cloud";
 import {
-  CaretIcon,
+  ChevronDownIcon,
   GuessNumberChartSvg,
   ScaleWaveSvg,
   WordCloudSvg,
 } from "@/components/icons";
-import { ColorPickerDropdown } from "@/components/ui";
+import { BrandLogo } from "@/components/layout";
+import { getBrandLogoVariantForBackground } from "@/constants/brand";
+import { ColorInputField } from "@/components/ui";
 import {
   TextB,
   TextItalic,
@@ -270,18 +271,11 @@ export default function SlidePreview({
             }}
             className="text-[11px] text-gray-500 font-medium px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1 cursor-pointer"
           >
-            Default <CaretIcon />
+            Default <ChevronDownIcon size={10} className="text-gray-400" />
           </button>
-          <ColorPickerDropdown
+          <ColorInputField
             value="#111827"
             onChange={(c) => execCmd("foreColor", c)}
-            colors={TOOLBAR_COLORS}
-            direction="down"
-            align="left"
-            showCaret={false}
-            swatchSize="sm"
-            useMouseDown
-            triggerClassName="w-5 h-5 rounded-full bg-gray-800 ml-1 cursor-pointer border-2 border-gray-200 hover:scale-110 transition-transform"
           />
           <div className="w-px h-4 bg-gray-200 mx-1.5" />
           {[
@@ -688,9 +682,10 @@ export default function SlidePreview({
         style={{ backgroundColor: settings.bgColor }}
       >
         <div className="absolute top-2.5 right-3 z-10">
-          <span className="text-[10px] font-bold italic text-primary-500">
-            UpForm
-          </span>
+          <BrandLogo
+            variant={getBrandLogoVariantForBackground(settings.bgColor)}
+            className="h-4 w-auto max-w-[72px]"
+          />
         </div>
 
         {showInstructions && (

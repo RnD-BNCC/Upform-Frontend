@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { LayoutPicker } from '@/components/layout'
 import type { SlideType, SlideSettings } from '@/types/polling'
-import { ColorPickerDropdown } from '@/components/ui'
-import { COLOR_PRESETS } from '@/config/polling'
 import type { ThemePreset } from '@/config/polling'
+import { ColorInputField } from '@/components/ui'
 import {
   TypeDropdown,
   OptionsEditor,
@@ -401,10 +400,11 @@ export default function SettingsPanel({
 
         <div className="py-4">
           <h4 className="mb-3 text-xs font-semibold uppercase leading-none tracking-wider text-gray-700">Text</h4>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-600">Visualization text color</span>
-            <ColorPickerDropdown value={settings.textColor ?? '#374151'} onChange={(c) => { handleSettingsField('textColor', c); onBlur() }} colors={COLOR_PRESETS} />
-          </div>
+          <ColorInputField
+            label="Visualization text color"
+            value={settings.textColor ?? '#374151'}
+            onChange={(color) => { handleSettingsField('textColor', color); onBlur() }}
+          />
         </div>
 
         <div className="border-t border-gray-100 my-1" />
@@ -412,10 +412,11 @@ export default function SettingsPanel({
         <div className="py-4">
           <h4 className="mb-3 text-xs font-semibold uppercase leading-none tracking-wider text-gray-700">Background</h4>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-600">Background color</span>
-              <ColorPickerDropdown value={settings.bgColor ?? '#F3F4F6'} onChange={(c) => { handleSettingsField('bgColor', c); onBlur() }} colors={COLOR_PRESETS} />
-            </div>
+            <ColorInputField
+              label="Background color"
+              value={settings.bgColor ?? '#F3F4F6'}
+              onChange={(color) => { handleSettingsField('bgColor', color); onBlur() }}
+            />
             <button
               onClick={() => { onSettingsChange({ ...settings, textColor: undefined, bgColor: undefined }); onBlur() }}
               className="mt-1 cursor-pointer self-start text-xs font-medium text-primary-500 transition-colors hover:text-primary-600"

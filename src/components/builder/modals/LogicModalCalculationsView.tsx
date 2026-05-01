@@ -22,6 +22,9 @@ import {
   CONDITION_FIELD_TYPE_LABELS,
   createDateReferenceTokenHtml,
   createFieldReferenceTokenHtml,
+  formatGroupedNumberInput,
+  isPlainNumberInput,
+  normalizeGroupedNumberInput,
   stripHtmlToText,
 } from "@/utils/form";
 import type {
@@ -29,11 +32,11 @@ import type {
   CalculationRule,
   CalculationType,
   ConditionGroup,
-  ConditionNode,
   FormCalculation,
   FormField,
 } from "@/types/form";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
+import { countConditionNodes } from "@/components/builder/layout/reference/fieldConditionUtils";
 import type { LogicModalCalculationsController } from "@/hooks/builder/useLogicModalCalculations";
 
 const CALCULATION_TYPE_SELECT_OPTIONS: ConditionSelectOption[] = (
@@ -116,10 +119,12 @@ function getCalculationTypeBadgeClass(type: CalculationType) {
   return "bg-sky-100 text-sky-700";
 }
 
-function countConditionNodes(tree: ConditionGroup): number {
-  return tree.items.reduce<number>((count, item: ConditionNode) => {
-    return count + (item.type === "group" ? countConditionNodes(item) : 1);
-  }, 0);
+function formatCalculationNumberEditorValue(value?: string) {
+  return isPlainNumberInput(value) ? formatGroupedNumberInput(value) : value ?? "";
+}
+
+function normalizeCalculationNumberEditorValue(value: string) {
+  return isPlainNumberInput(value) ? normalizeGroupedNumberInput(value) : value;
 }
 
 type Props = {
@@ -658,23 +663,19 @@ export default function LogicModalCalculationsView({
                               : "text"
                           }
                           value={
-                            calculationDetail.type === "number" &&
-                            calculationInitialValue &&
-                            !/^-?\d*\.?\d*$/.test(calculationInitialValue)
-                              ? ""
+                            calculationDetail.type === "number"
+                              ? formatCalculationNumberEditorValue(
+                                  calculationInitialValue,
+                                )
                               : calculationInitialValue
                           }
                           onChange={(event) => {
                             const nextValue = event.target.value;
-                            if (
-                              calculationDetail.type === "number" &&
-                              nextValue &&
-                              !/^-?\d*\.?\d*$/.test(nextValue)
-                            ) {
-                              return;
-                            }
-
-                            setCalculationInitialValue(nextValue);
+                            setCalculationInitialValue(
+                              calculationDetail.type === "number"
+                                ? normalizeCalculationNumberEditorValue(nextValue)
+                                : nextValue,
+                            );
                           }}
                           placeholder={
                             calculationDetail.type === "number"
@@ -813,13 +814,24 @@ export default function LogicModalCalculationsView({
                                     availableFieldGroups={
                                       calculationRuleAvailableFieldGroups
                                     }
-                                    value={rule.value ?? ""}
+                                    value={
+                                      calculationDetail.type === "number"
+                                        ? formatCalculationNumberEditorValue(
+                                            rule.value,
+                                          )
+                                        : (rule.value ?? "")
+                                    }
                                     onChange={(value) =>
                                       updateCalculationRule(
                                         rule.id,
                                         (currentRule) => ({
                                           ...currentRule,
-                                          value,
+                                          value:
+                                            calculationDetail.type === "number"
+                                              ? normalizeCalculationNumberEditorValue(
+                                                  value,
+                                                )
+                                              : value,
                                         }),
                                       )
                                     }

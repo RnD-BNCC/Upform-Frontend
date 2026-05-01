@@ -1,9 +1,9 @@
 ﻿import { useMemo, useState } from "react";
 import {
   EnvelopeSimpleIcon,
-  SpinnerGapIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
+import { Spinner } from "@/components/ui";
 import {
   useQueryEmailBlastDetail,
   useQueryEmailBlasts,
@@ -61,7 +61,7 @@ export default function EmailActivityPanel({ eventId }: EmailActivityPanelProps)
 
       {blastsQuery.isLoading ? (
         <div className="flex h-56 items-center justify-center text-sm font-semibold text-gray-400">
-          <SpinnerGapIcon size={18} className="mr-2 animate-spin" />
+          <Spinner size={18} className="mr-2" />
           Loading activity...
         </div>
       ) : blasts.length === 0 ? (
@@ -153,7 +153,7 @@ export default function EmailActivityPanel({ eventId }: EmailActivityPanelProps)
           <div className="min-w-0">
             {detailQuery.isLoading && !selectedBlast ? (
               <div className="flex h-full min-h-[260px] items-center justify-center text-sm font-semibold text-gray-400">
-                <SpinnerGapIcon size={18} className="mr-2 animate-spin" />
+                <Spinner size={18} className="mr-2" />
                 Loading logs...
               </div>
             ) : selectedBlast ? (

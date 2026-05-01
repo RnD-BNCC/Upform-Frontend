@@ -11,6 +11,7 @@ type Props = {
   errors: Record<string, string>;
   fieldsRef: RefObject<Record<string, HTMLDivElement | null>>;
   isLightTheme?: boolean;
+  logoClassName?: string;
   nextButtonLabel?: string;
   onAnimationComplete: (fieldId: string) => void;
   onAnswer: (fieldId: string, value: string | string[]) => void;

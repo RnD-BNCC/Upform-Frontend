@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SpinnerGap } from "@phosphor-icons/react";
+import SubmittingSpinner from "./SubmittingSpinner";
 
 type Props = {
   options: string[];
@@ -31,9 +31,7 @@ export default function MCInput({ options, onSubmit, isPending }: Props) {
         className="bg-primary-500 text-white font-bold py-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 mt-2 cursor-pointer disabled:cursor-not-allowed"
       >
         {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <SpinnerGap size={16} className="animate-spin" /> Submitting...
-          </span>
+          <SubmittingSpinner />
         ) : (
           "Submit"
         )}

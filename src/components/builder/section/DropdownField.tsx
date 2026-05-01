@@ -10,9 +10,10 @@ type Props = {
   defaultValue?: string;
   hasError?: boolean;
   onChange: (value?: string) => void;
-  options: string[];
+  options: Array<string | { label: string; value: string }>;
   placeholder?: string;
   showClearButton?: boolean;
+  size?: "default" | "compact";
 };
 
 export default function DropdownField({
@@ -22,9 +23,21 @@ export default function DropdownField({
   options,
   placeholder,
   showClearButton = false,
+  size = "default",
 }: Props) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const normalizedOptions = options.map((option) =>
+    typeof option === "string" ? { label: option, value: option } : option,
+  );
+  const selectedOption = normalizedOptions.find(
+    (option) => option.value === defaultValue,
+  );
+
+  const triggerPaddingClassName =
+    size === "compact" ? "px-2.5 py-1.5" : "px-3 py-2.5";
+  const triggerTextClassName = size === "compact" ? "text-xs" : "text-sm";
+  const optionTextClassName = size === "compact" ? "text-xs" : "text-sm";
 
   useEffect(() => {
     if (!open) {
@@ -48,7 +61,7 @@ export default function DropdownField({
           event.stopPropagation();
           setOpen((value) => !value);
         }}
-        className={`theme-answer-input flex cursor-pointer items-center rounded-lg border bg-white px-3 py-2.5 transition-colors ${
+        className={`theme-answer-input flex cursor-pointer items-center rounded-lg border bg-white ${triggerPaddingClassName} transition-colors ${
           hasError
             ? "border-red-400"
             : open
@@ -58,10 +71,12 @@ export default function DropdownField({
       >
         <span
           className={`flex-1 ${
-            defaultValue ? "text-sm text-gray-700" : "text-xs text-gray-300"
+            selectedOption
+              ? `${triggerTextClassName} text-gray-700`
+              : "text-xs text-gray-300"
           } ${defaultValue ? "" : "theme-answer-placeholder"}`}
         >
-          {defaultValue || placeholder || "Select an option"}
+          {selectedOption?.label || placeholder || "Select an option"}
         </span>
         {showClearButton && defaultValue ? (
           <>
@@ -80,26 +95,26 @@ export default function DropdownField({
         ) : null}
         <CaretDownIcon size={14} className="shrink-0 text-gray-400" />
       </div>
-      {open && options.length > 0 && (
+      {open && normalizedOptions.length > 0 && (
         <div className="absolute left-0 right-0 top-full z-[100] mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-sm">
-          {options.map((option, index) => {
-            const isSelected = defaultValue === option;
+          {normalizedOptions.map((option, index) => {
+            const isSelected = defaultValue === option.value;
 
             return (
               <div
-                key={`${option}-${index}`}
+                key={`${option.value}-${index}`}
                 onClick={(event) => {
                   event.stopPropagation();
-                  onChange(isSelected ? undefined : option);
+                  onChange(isSelected ? undefined : option.value);
                   setOpen(false);
                 }}
-                className={`mx-1 my-0.5 cursor-pointer rounded-md px-3 py-2 text-sm transition-colors ${
+                className={`mx-1 my-0.5 cursor-pointer rounded-md px-3 py-2 ${optionTextClassName} transition-colors ${
                   isSelected
                     ? "theme-primary-soft bg-primary-50 font-medium text-primary-700"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                {option}
+                {option.label}
               </div>
             );
           })}
@@ -140,6 +155,7 @@ export const dropdownFieldPlugin = createFieldPlugin({
       onChange={(value) => onChange({ defaultValue: value })}
       options={field.options?.length ? field.options : ["Option 1", "Option 2"]}
       placeholder={resolvedPlaceholder}
+      showClearButton
     />
   ),
   renderSettingsSections: ({ field, onChange }) => ({
@@ -151,20 +167,14 @@ export const dropdownFieldPlugin = createFieldPlugin({
               Default value
             </span>
           </div>
-          <select
-            value={field.defaultValue ?? ""}
-            onChange={(event) =>
-              onChange({ defaultValue: event.target.value || undefined })
-            }
-            className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-300"
-          >
-            <option value="">None</option>
-            {field.options?.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <DropdownField
+            defaultValue={field.defaultValue}
+            onChange={(value) => onChange({ defaultValue: value })}
+            options={field.options ?? []}
+            placeholder="None"
+            showClearButton
+            size="compact"
+          />
         </div>
       ) : null,
     options: (

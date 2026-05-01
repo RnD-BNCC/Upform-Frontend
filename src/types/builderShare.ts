@@ -1,7 +1,7 @@
 import type { FormField, FormSection } from "@/types/form";
 
 export type EventStatus = "draft" | "active" | "closed";
-export type ShareTab = "embed" | "send";
+export type ShareTab = "embed" | "send" | "submit";
 export type EmbedType = "standard" | "popup" | "fullscreen" | "slider";
 export type EmbedButtonSize = "default" | "large" | "small";
 export type PopupWidth = "small" | "medium" | "large";
@@ -20,10 +20,18 @@ export type BuilderSharePanelProps = {
   formTitle: string;
   isDirty?: boolean;
   isPublishing?: boolean;
+  onSendFormStateChange?: (state: SubmitSettingsEditorState) => void;
+  onSubmitSettingsStateChange?: (state: SubmitSettingsEditorState) => void;
   onPublish: () => void;
   publicFormUrl: string;
   sections?: FormSection[];
   showToast?: ShareToast;
+};
+
+export type SubmitSettingsEditorState = {
+  dirty: boolean;
+  save?: (options?: { showFeedback?: boolean }) => Promise<boolean>;
+  saving: boolean;
 };
 
 export type EmailStyle = "formatted" | "basic";
@@ -83,6 +91,7 @@ export type SendFormModalProps = {
   formTitle: string;
   publicFormUrl: string;
   activeTheme?: string;
+  onStateChange?: (state: SubmitSettingsEditorState) => void;
   sections?: FormSection[];
   showToast?: ShareToast;
 };

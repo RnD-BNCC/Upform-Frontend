@@ -48,10 +48,10 @@ export default function OpinionScaleField({
                 event.stopPropagation();
                 onChange(isSelected ? undefined : String(number));
               }}
-              className={`cursor-pointer rounded border py-1.5 text-center text-xs font-medium transition-colors ${
+              className={`theme-answer-input cursor-pointer rounded border py-1.5 text-center text-xs font-medium transition-colors ${
                 isSelected
-                  ? "border-yellow-400 bg-yellow-50 text-yellow-700"
-                  : "border-gray-200 bg-white text-gray-400 hover:border-gray-300"
+                  ? "theme-primary-border theme-primary-soft theme-primary-text border-primary-400 bg-primary-50 text-primary-700"
+                  : "theme-answer-border theme-answer-text border-gray-200 bg-white text-gray-400 hover:opacity-90"
               }`}
             >
               {number}
@@ -60,7 +60,7 @@ export default function OpinionScaleField({
         })}
       </div>
       {(minLabel || maxLabel) && (
-        <div className="flex justify-between text-xs text-gray-400">
+        <div className="theme-answer-placeholder flex justify-between text-xs text-gray-400">
           <span>{minLabel}</span>
           <span>{maxLabel}</span>
         </div>

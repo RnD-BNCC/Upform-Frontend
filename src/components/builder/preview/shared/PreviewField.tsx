@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { type RefObject } from "react";
 import { motion } from "framer-motion";
-import { CheckCircleIcon } from "@phosphor-icons/react";
-import { useMutationUploadFile } from "@/api/upload";
+import {
+  CheckCircleIcon,
+  InfoIcon,
+  WarningCircleIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 import AddressField from "@/components/builder/section/AddressField";
 import { BuilderMultiselectField } from "@/components/builder/section/BuilderMultiselectField";
 import CheckboxField from "@/components/builder/section/CheckboxField";
@@ -9,10 +13,6 @@ import CurrencyField from "@/components/builder/section/CurrencyField";
 import DatePickerField from "@/components/builder/section/DatePickerField";
 import DropdownField from "@/components/builder/section/DropdownField";
 import EmailField from "@/components/builder/section/EmailField";
-import {
-  FileUploadFieldCard,
-  type FileUploadListItem,
-} from "@/components/builder/section/FileUploadField";
 import { LinearScaleField } from "@/components/builder/section/LinearScaleField";
 import MultipleChoiceField from "@/components/builder/section/MultipleChoiceField";
 import NumberField from "@/components/builder/section/NumberField";
@@ -27,14 +27,15 @@ import TimeField from "@/components/builder/section/TimeField";
 import { SelectionCheckIcon } from "@/components/icons";
 import type { FormCalculation, FormField } from "@/types/form";
 import {
-  getAcceptedFileMimeList,
-  isAllowedFileType,
-} from "@/utils/form/fileTypes";
-import {
   resolveReferenceHtml,
   resolveReferenceText,
   stripHtmlToText,
 } from "@/utils/form/referenceTokens";
+import {
+  parsePhoneAnswer,
+  serializePhoneAnswer,
+} from "@/utils/form/phoneAnswer";
+import RuntimeFileUploadField from "./RuntimeFileUploadField";
 
 const shakeVariants = {
   shake: {
@@ -46,14 +47,49 @@ const shakeVariants = {
   idle: { opacity: 1, y: 0, x: 0 },
 };
 
-function parseFileValue(value: string): { name: string; url: string } {
-  const separatorIndex = value.indexOf("::");
-  if (separatorIndex === -1) return { name: value, url: "" };
+const BANNER_STYLES = {
+  info: {
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    icon: "text-blue-500",
+    text: "text-blue-900",
+  },
+  warning: {
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    icon: "text-amber-500",
+    text: "text-amber-900",
+  },
+  error: {
+    bg: "bg-red-50",
+    border: "border-red-200",
+    icon: "text-red-500",
+    text: "text-red-900",
+  },
+  success: {
+    bg: "bg-green-50",
+    border: "border-green-200",
+    icon: "text-green-500",
+    text: "text-green-900",
+  },
+} as const;
 
-  return {
-    name: value.slice(0, separatorIndex),
-    url: value.slice(separatorIndex + 2),
-  };
+function BannerIcon({ type }: { type: FormField["bannerType"] }) {
+  const iconType = type ?? "info";
+
+  if (iconType === "warning") {
+    return <WarningIcon size={16} weight="fill" />;
+  }
+
+  if (iconType === "error") {
+    return <WarningCircleIcon size={16} weight="fill" />;
+  }
+
+  if (iconType === "success") {
+    return <CheckCircleIcon size={16} weight="fill" />;
+  }
+
+  return <InfoIcon size={16} weight="fill" />;
 }
 
 function getRankingOptions(value: string | string[] | undefined, field: FormField) {
@@ -97,293 +133,6 @@ function parseAddressValue(value: string | string[] | undefined) {
   return {};
 }
 
-type RuntimeFileUploadFieldProps = {
-  field: FormField;
-  hasError: boolean;
-  onAnswer: (value: string | string[]) => void;
-  pendingFilesRef?: RefObject<Record<string, File[]>>;
-  value?: string | string[];
-};
-
-type RuntimeUploadItem = FileUploadListItem & {
-  id: string;
-  localPreviewUrl?: string;
-  storageValue?: string;
-};
-
-function getStoredFileValues(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value : value ? [value] : [];
-}
-
-function isPreviewableFileName(name: string) {
-  return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
-}
-
-function createStoredUploadItem(storedValue: string, index: number): RuntimeUploadItem {
-  const { name, url } = parseFileValue(storedValue);
-  const canPreview = isPreviewableFileName(name);
-
-  return {
-    id: `stored-${index}-${name}`,
-    canPreview,
-    name,
-    previewUrl: canPreview ? url : undefined,
-    progress: 100,
-    status: "complete",
-    storageValue: storedValue,
-    url,
-  };
-}
-
-function revokeUploadPreview(item: RuntimeUploadItem) {
-  if (item.localPreviewUrl?.startsWith("blob:")) {
-    URL.revokeObjectURL(item.localPreviewUrl);
-  }
-}
-
-function getUploadProgressPercent(
-  loaded: number,
-  total: number | undefined,
-  currentProgress: number,
-) {
-  if (typeof total === "number" && total > 0) {
-    return Math.min(99, Math.max(2, Math.round((loaded / total) * 100)));
-  }
-
-  return Math.min(95, Math.max(2, currentProgress + 7));
-}
-
-function RuntimeFileUploadField({
-  field,
-  hasError,
-  onAnswer,
-  pendingFilesRef,
-  value,
-}: RuntimeFileUploadFieldProps) {
-  const [uploadError, setUploadError] = useState("");
-  const [uploadItems, setUploadItems] = useState<RuntimeUploadItem[]>(() =>
-    getStoredFileValues(value).map((file, index) => createStoredUploadItem(file, index)),
-  );
-  const uploadFile = useMutationUploadFile();
-  const uploadControllersRef = useRef<Record<string, AbortController>>({});
-  const uploadItemsRef = useRef<RuntimeUploadItem[]>(uploadItems);
-
-  const maxCount = field.maxFileCount ?? 1;
-  const maxSizeMb = field.maxFileSizeMb ?? 10;
-  const canAddMore = uploadItems.length < maxCount;
-  const acceptTypes = getAcceptedFileMimeList(field.allowedFileTypes);
-  const isUploading = uploadItems.some((item) => item.status === "uploading");
-
-  const syncAnswer = (items: RuntimeUploadItem[]) => {
-    const completedFiles = items
-      .filter((item) => item.status === "complete" && item.storageValue)
-      .map((item) => item.storageValue as string);
-
-    if (completedFiles.length === 0) {
-      onAnswer("");
-      return;
-    }
-
-    onAnswer(maxCount === 1 ? completedFiles[0] : completedFiles);
-  };
-
-  useEffect(() => {
-    uploadItemsRef.current = uploadItems;
-  }, [uploadItems]);
-
-  useEffect(() => {
-    const storedValues = getStoredFileValues(value);
-    const storedValueKey = storedValues.join("\u0000");
-
-    setUploadItems((current) => {
-      const currentStoredKey = current
-        .filter((item) => item.status === "complete" && item.storageValue)
-        .map((item) => item.storageValue as string)
-        .join("\u0000");
-
-      if (storedValueKey === currentStoredKey) {
-        return current;
-      }
-
-      const hasUploadingItems = current.some((item) => item.status === "uploading");
-      if (!storedValues.length && hasUploadingItems) {
-        return current;
-      }
-
-      current.forEach((item) => {
-        if (item.status !== "uploading") {
-          revokeUploadPreview(item);
-        }
-      });
-
-      const preservedUploads = current.filter((item) => item.status === "uploading");
-      const nextStoredItems = storedValues.map((file, index) =>
-        createStoredUploadItem(file, index),
-      );
-
-      return preservedUploads.length > 0
-        ? [...preservedUploads, ...nextStoredItems]
-        : nextStoredItems;
-    });
-  }, [value]);
-
-  useEffect(
-    () => () => {
-      Object.values(uploadControllersRef.current).forEach((controller) =>
-        controller.abort(),
-      );
-      uploadItemsRef.current.forEach(revokeUploadPreview);
-    },
-    [],
-  );
-
-  const handleFiles = async (selectedFiles: FileList) => {
-    setUploadError("");
-
-    const remaining = maxCount - uploadItems.length;
-    const filesToUpload = Array.from(selectedFiles).slice(0, remaining);
-
-    for (const file of filesToUpload) {
-      if (!isAllowedFileType(file, field.allowedFileTypes)) {
-        setUploadError(`"${file.name}" - jenis file tidak diizinkan.`);
-        return;
-      }
-
-      if ((field.limitFileSize ?? false) && file.size > maxSizeMb * 1024 * 1024) {
-        setUploadError(`"${file.name}" - ukuran file melebihi ${maxSizeMb} MB.`);
-        return;
-      }
-    }
-
-    pendingFilesRef?.current && (pendingFilesRef.current[field.id] = []);
-
-    const newItems = filesToUpload.map((file, index) => {
-      const canPreview = file.type.startsWith("image/") || isPreviewableFileName(file.name);
-      const localPreviewUrl = canPreview ? URL.createObjectURL(file) : undefined;
-
-      return {
-        id: `${field.id}-${Date.now()}-${index}-${file.name}`,
-        canPreview,
-        localPreviewUrl,
-        name: file.name,
-        previewUrl: localPreviewUrl,
-        progress: 2,
-        status: "uploading" as const,
-      };
-    });
-
-    setUploadItems((current) => [...current, ...newItems]);
-
-    await Promise.all(
-      newItems.map(async (item, itemIndex) => {
-        const file = filesToUpload[itemIndex];
-        const controller = new AbortController();
-        uploadControllersRef.current[item.id] = controller;
-
-        try {
-          const result = await uploadFile.mutateAsync({
-            file,
-            onUploadProgress: (event) => {
-              setUploadItems((current) =>
-                current.map((entry) =>
-                  entry.id === item.id
-                    ? {
-                        ...entry,
-                        progress: getUploadProgressPercent(
-                          event.loaded,
-                          event.total,
-                          entry.progress ?? 0,
-                        ),
-                      }
-                    : entry,
-                ),
-              );
-            },
-            signal: controller.signal,
-          });
-
-          setUploadItems((current) => {
-            const nextItems = current.map((entry) =>
-              entry.id === item.id
-                ? {
-                    ...entry,
-                    progress: 100,
-                    status: "complete" as const,
-                    storageValue: `${result.filename}::${result.url}`,
-                    url: result.url,
-                  }
-                : entry,
-            );
-
-            syncAnswer(nextItems);
-            return nextItems;
-          });
-        } catch (error) {
-          if (controller.signal.aborted) {
-            return;
-          }
-
-          console.error("[handleFileUpload]:", error);
-          setUploadError("Gagal mengupload file. Silakan coba lagi.");
-          setUploadItems((current) =>
-            current.map((entry) =>
-              entry.id === item.id
-                ? {
-                    ...entry,
-                    errorMessage: "Upload gagal",
-                    progress: entry.progress ?? 0,
-                    status: "error" as const,
-                  }
-                : entry,
-            ),
-          );
-        } finally {
-          delete uploadControllersRef.current[item.id];
-        }
-      }),
-    );
-  };
-
-  const removeFile = (index: number) => {
-    const removedItem = uploadItems[index];
-    if (!removedItem) {
-      return;
-    }
-
-    uploadControllersRef.current[removedItem.id]?.abort();
-    delete uploadControllersRef.current[removedItem.id];
-    revokeUploadPreview(removedItem);
-
-    const nextItems = uploadItems.filter((_, itemIndex) => itemIndex !== index);
-    setUploadItems(nextItems);
-    syncAnswer(nextItems);
-  };
-
-  const displayFiles = uploadItems;
-
-  return (
-    <div className={hasError ? "rounded-xl ring-1 ring-red-200 ring-inset" : ""}>
-      <FileUploadFieldCard
-        accept={acceptTypes}
-        allowedFileTypes={field.allowedFileTypes}
-        files={displayFiles}
-        hideDropzone={!canAddMore}
-        isUploading={isUploading}
-        limitFileSize={field.limitFileSize}
-        maxFileCount={field.maxFileCount}
-        maxFileSizeMb={field.maxFileSizeMb}
-        multiple={maxCount > 1}
-        onFilesSelected={(nextFiles) => {
-          void handleFiles(nextFiles);
-        }}
-        onRemoveFile={removeFile}
-        showUploadLimits={field.showUploadLimits}
-        uploadError={uploadError}
-      />
-    </div>
-  );
-}
-
 type Props = {
   answers?: Record<string, string | string[]>;
   calculations?: FormCalculation[];
@@ -422,6 +171,10 @@ export default function PreviewField({
     field.description,
     referenceContext,
   );
+  const resolvedSubtitleHtml = resolveReferenceHtml(
+    field.subtitle,
+    referenceContext,
+  );
   const resolvedPlaceholder = resolveReferenceText(
     field.placeholder,
     referenceContext,
@@ -433,6 +186,7 @@ export default function PreviewField({
   const getResolvedPlaceholder = (fallback: string) =>
     hasConfiguredPlaceholder ? resolvedPlaceholder : fallback;
   const cardSurfaceClass = "theme-question-card rounded-xl bg-white";
+  const displaySurfaceClass = "rounded-xl bg-transparent";
   const responseCardClass = `${cardSurfaceClass} p-5 sm:p-6 ${
     hasError ? "ring-1 ring-red-300" : ""
   }`;
@@ -535,44 +289,50 @@ export default function PreviewField({
 
   if (field.type === "thank_you_block") {
     return (
-      <div className={`${cardSurfaceClass} flex flex-col items-center gap-2 px-5 py-6 text-center`}>
-        <CheckCircleIcon size={40} weight="fill" className="text-emerald-500" />
-        <h3
-          className="theme-question-title text-lg font-bold text-gray-900 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+      <div className={`${displaySurfaceClass} flex flex-col items-center gap-2 px-5 py-6 text-center`}>
+        {!field.hideIcon ? (
+          <CheckCircleIcon size={40} weight="fill" className="text-emerald-500" />
+        ) : null}
+        <div
+          className="theme-question-title upform-rich-text-display w-full text-center text-lg font-bold text-gray-900 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
           dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "Thank You!" }}
         />
-        {field.subtitle ? (
-          <p className="theme-question-caption text-sm text-gray-500">
-            {field.subtitle}
-          </p>
+        {resolvedSubtitleHtml ? (
+          <div
+            className="theme-question-caption upform-rich-text-display w-full text-center text-sm text-gray-500 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: resolvedSubtitleHtml }}
+          />
         ) : null}
       </div>
     );
   }
 
   if (field.type === "banner_block") {
+    const bannerStyle = BANNER_STYLES[field.bannerType ?? "info"];
+
     return (
-      <div className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
+      <div className="px-5 sm:px-6">
         <div
-          className="text-sm leading-relaxed text-blue-900 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
-          dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "" }}
-        />
+          className={`${bannerStyle.bg} ${bannerStyle.border} flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5`}
+        >
+          <span className={`${bannerStyle.icon} shrink-0`}>
+            <BannerIcon type={field.bannerType} />
+          </span>
+          <div
+            className={`${bannerStyle.text} upform-rich-text-display min-w-0 flex-1 whitespace-pre-wrap text-sm leading-normal`}
+            dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "" }}
+          />
+        </div>
       </div>
     );
   }
 
   if (field.type === "paragraph") {
     return (
-      <div className={`${cardSurfaceClass} px-5 pb-4 pt-5`}>
-        {resolvedLabelHtml ? (
-          <p
-            className="mb-1 text-base leading-snug text-gray-900"
-            dangerouslySetInnerHTML={{ __html: resolvedLabelHtml }}
-          />
-        ) : null}
+      <div className={`${displaySurfaceClass} px-5 pb-4 pt-5`}>
         {resolvedDefaultHtml ? (
           <div
-            className="text-sm leading-relaxed text-gray-700 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+            className="theme-question-caption whitespace-pre-wrap text-sm leading-relaxed text-gray-700 [&_li]:leading-normal [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
             dangerouslySetInnerHTML={{ __html: resolvedDefaultHtml }}
           />
         ) : null}
@@ -619,7 +379,7 @@ export default function PreviewField({
 
   if (field.type === "title_block") {
     return (
-      <div className={`${cardSurfaceClass} px-5 pb-4 pt-5`}>
+      <div className={`${displaySurfaceClass} px-5 pb-4 pt-5`}>
         {field.headerImage ? (
           <img
             src={field.headerImage}
@@ -663,7 +423,7 @@ export default function PreviewField({
             alt=""
           />
           {field.imageCaption ? (
-            <p className="mt-1 text-center text-xs text-gray-500">
+            <p className="theme-question-caption mt-1 text-center text-xs text-gray-500">
               {field.imageCaption}
             </p>
           ) : null}
@@ -877,13 +637,36 @@ export default function PreviewField({
       ) : null}
 
       {field.type === "phone" ? (
-        <PhoneField
-          countryCode={field.countryCode ?? "US"}
-          defaultValue={(val as string) ?? ""}
-          hasError={hasError}
-          onChange={(nextValue) => onAnswer(nextValue)}
-          placeholder={hasConfiguredPlaceholder ? resolvedPlaceholder : undefined}
-        />
+        (() => {
+          const phoneAnswer = parsePhoneAnswer(val, field.countryCode ?? "US");
+
+          return (
+            <PhoneField
+              countryCode={phoneAnswer.countryCode}
+              defaultValue={phoneAnswer.number}
+              hasError={hasError}
+              onChange={(nextValue) =>
+                onAnswer(
+                  serializePhoneAnswer({
+                    ...phoneAnswer,
+                    number: nextValue,
+                  }),
+                )
+              }
+              onCountryChange={(nextCountryCode) =>
+                onAnswer(
+                  serializePhoneAnswer({
+                    ...phoneAnswer,
+                    countryCode: nextCountryCode,
+                  }),
+                )
+              }
+              placeholder={
+                hasConfiguredPlaceholder ? resolvedPlaceholder : undefined
+              }
+            />
+          );
+        })()
       ) : null}
 
       {field.type === "currency" ? (
@@ -934,15 +717,23 @@ export default function PreviewField({
       ) : null}
 
       {field.type === "single_checkbox" ? (
-        <label className="flex cursor-pointer select-none items-start gap-3">
+        <label
+          className={`theme-answer-input flex w-full cursor-pointer select-none items-start gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
+            val === "true"
+              ? "theme-primary-border theme-primary-soft border-primary-400 bg-primary-50"
+              : hasError
+                ? "border-red-400"
+                : "theme-answer-border border-gray-200 bg-white hover:opacity-90"
+          }`}
+        >
           <div
             onClick={() => onAnswer(val === "true" ? "" : "true")}
-            className={`theme-primary-border mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
               val === "true"
-                ? "bg-primary-500"
+                ? "theme-primary-border bg-primary-500"
                 : hasError
                   ? "border-red-400"
-                  : "border-gray-300 hover:border-gray-400"
+                  : "theme-answer-border border-gray-300 hover:opacity-90"
             }`}
             style={
               val === "true"
@@ -957,7 +748,11 @@ export default function PreviewField({
             {val === "true" ? <SelectionCheckIcon className="text-white" /> : null}
           </div>
           <span
-            className="theme-question-title text-sm leading-snug text-gray-700"
+            className={`text-sm leading-snug ${
+              val === "true"
+                ? "theme-primary-text font-medium text-primary-700"
+                : "theme-answer-text text-gray-500"
+            }`}
             dangerouslySetInnerHTML={{ __html: resolvedLabelHtml || "I agree" }}
           />
         </label>

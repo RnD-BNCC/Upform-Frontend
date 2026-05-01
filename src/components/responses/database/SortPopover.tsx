@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   PlusIcon,
   SortAscendingIcon,
   TrashSimpleIcon,
 } from "@phosphor-icons/react";
+import { usePopoverClose } from "@/hooks/usePopoverClose";
 import ConditionSelect from "@/components/builder/layout/reference/ConditionSelect";
 import type { FormField } from "@/types/form";
 import type { ResultSortDirection, ResultSortRule } from "@/types/results";
@@ -27,7 +28,7 @@ export default function SortPopover({
   onChange,
 }: SortPopoverProps) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = usePopoverClose(open, () => setOpen(false), "[data-condition-select-root]");
 
   const fieldOptions = useMemo(
     () =>
@@ -40,17 +41,6 @@ export default function SortPopover({
   const firstSort = sortRules[0];
   const firstSortField = fields.find((field) => field.id === firstSort?.fieldId);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement;
-      if (rootRef.current?.contains(target)) return;
-      if (target.closest("[data-condition-select-root]")) return;
-      setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
 
   const addSort = (fieldId?: string) => {
     const firstAvailable = fields.find(

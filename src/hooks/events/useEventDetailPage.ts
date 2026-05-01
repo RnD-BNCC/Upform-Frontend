@@ -24,7 +24,6 @@ import {
 } from "@/utils/form/logicModalEvents";
 import {
   applyRuntimePageLogicToSections,
-  buildRuntimePageLogicBranches,
   reorderSectionsByPageLogic,
   type RuntimePageLogicBranch,
 } from "@/utils/form/pageLogic";
@@ -40,7 +39,7 @@ import {
 } from "@/components/builder/section/fieldRegistry";
 import type { FieldType, FormField, FormSection } from "@/types/form";
 
-type Tab = "questions" | "share" | "responses";
+type Tab = "questions" | "share" | "game" | "responses";
 type LeftPanelMode = "fields" | "theme";
 type BuilderRouteState = {
   sections?: FormSection[];
@@ -519,14 +518,15 @@ export function useEventDetailPage() {
   const buildSectionsForPageLogic = useCallback(
     (
       sourceSections: FormSection[] = sections,
-      branches: RuntimePageLogicBranch[] = buildRuntimePageLogicBranches(
-        sourceSections,
-      ),
-    ) =>
-      reorderSectionsByPageLogic(
+      branches?: RuntimePageLogicBranch[],
+    ) => {
+      if (!branches) return sourceSections;
+
+      return reorderSectionsByPageLogic(
         applyRuntimePageLogicToSections(sourceSections, branches),
         branches,
-      ),
+      );
+    },
     [sections],
   );
 
