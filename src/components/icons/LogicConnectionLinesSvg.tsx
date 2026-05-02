@@ -38,16 +38,6 @@ function getLogicBranchId(
     : `default:${safeFromId}`;
 }
 
-function getBranchConditionLabel(
-  branch: Pick<LogicBranchLike, "conditionTree" | "label">,
-) {
-  if (branch.conditionTree?.items?.length) {
-    return "Condition";
-  }
-
-  return branch.label;
-}
-
 export default function LogicConnectionLinesSvg({
   nodes,
   branches,
@@ -128,7 +118,6 @@ export default function LogicConnectionLinesSvg({
           const mx = (x1 + x2) / 2;
           const my = (y1 + y2) / 2;
           const isHovered = hoveredBranchId === branchId;
-          const branchLabel = getBranchConditionLabel(branch);
           const branchKey = `${branchId}-${branch.toId}-${branchIndex}`;
 
           return (
@@ -156,18 +145,6 @@ export default function LogicConnectionLinesSvg({
                 markerEnd={isHovered ? "url(#lm-arrow-hover)" : "url(#lm-arrow)"}
                 style={{ cursor: "pointer", transition: "stroke 0.15s" }}
               />
-              {branchLabel ? (
-                <text
-                  x={mx}
-                  y={my - 6}
-                  fontSize="10"
-                  fill={isHovered ? "#ef4444" : "#6b7280"}
-                  textAnchor="middle"
-                  fontFamily="inherit"
-                >
-                  {branchLabel}
-                </text>
-              ) : null}
               {isHovered ? (
                 <foreignObject
                   x={mx - 10}
