@@ -1,5 +1,8 @@
 import type { MouseEventHandler, ReactNode, RefObject } from "react";
-import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
+import {
+  ArrowsLeftRightIcon,
+  ArrowsOutCardinalIcon,
+} from "@phosphor-icons/react";
 import {
   getThemeCssVariables,
   getThemeFormLayout,
@@ -130,7 +133,7 @@ export default function ThemeFormLayout({
             }}
             className="absolute right-4 top-4 z-20 flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 opacity-0 shadow-sm transition-all duration-150 hover:bg-gray-50 group-hover/theme-image:opacity-100"
           >
-            <ArrowsLeftRightIcon size={14} />
+            <ArrowsOutCardinalIcon size={14} />
             Position
           </button>
         ) : null}
@@ -142,11 +145,10 @@ export default function ThemeFormLayout({
 
   if (layout.imagePlacement === "top" || layout.imagePlacement === "bottom") {
     const imagePanel = (
-      <ThemeImagePanel
-        imagePosition={imagePosition}
-        imageUrl={themeConfig.formImageUrl}
-        onImagePositionClick={onImagePositionClick}
-        className="h-52 w-full shrink-0 sm:h-64 lg:h-72"
+      <img
+        src={themeConfig.formImageUrl}
+        alt=""
+        className="block w-full shrink-0 object-contain"
       />
     );
 
