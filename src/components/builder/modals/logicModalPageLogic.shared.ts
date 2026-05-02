@@ -34,9 +34,9 @@ export type PendingDrop = {
   y: number;
 };
 
-export const NODE_W = 220;
+export const NODE_W = 280;
 export const NODE_H = 56;
-export const H_GAP = 270;
+export const H_GAP = 340;
 export const COND_ROW_H = 30;
 export const COND_PANEL_TOP = NODE_H + 9;
 

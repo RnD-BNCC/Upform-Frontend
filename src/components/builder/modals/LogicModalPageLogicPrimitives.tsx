@@ -416,14 +416,20 @@ export function NodeCard({
             className="min-w-0 flex-1 rounded border border-primary-400 bg-white px-1 text-xs font-semibold text-gray-800 outline-none"
           />
         ) : (
-          <span
-            className="min-w-0 flex-1 truncate text-xs font-semibold text-gray-800"
-            onDoubleClick={(event) => {
-              event.stopPropagation();
-              onDoubleClickTitle?.();
-            }}
-          >
-            {node.title}
+          <span className="group/title relative min-w-0 flex-1">
+            <span
+              className="block truncate text-xs font-semibold text-gray-800"
+              title={node.title}
+              onDoubleClick={(event) => {
+                event.stopPropagation();
+                onDoubleClickTitle?.();
+              }}
+            >
+              {node.title}
+            </span>
+            <span className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden max-w-64 rounded-lg bg-gray-900 px-2.5 py-1.5 text-[11px] font-semibold leading-snug text-white shadow-lg group-hover/title:block">
+              {node.title}
+            </span>
           </span>
         )}
 

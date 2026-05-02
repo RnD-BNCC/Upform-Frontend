@@ -1,6 +1,10 @@
 import { RichInput } from "@/components/builder/utils";
 import type { FormSection } from "@/types/form";
-import CoverPageLayout, { type CoverPageThemeConfig } from "./CoverPageLayout";
+import { stripRichTextColorStyles } from "@/utils/form/richTextColor";
+import CoverPageLayout, {
+  getReadableCoverTextColor,
+  type CoverPageThemeConfig,
+} from "./CoverPageLayout";
 
 type Props = {
   coverBgImage: string | null;
@@ -23,8 +27,17 @@ export default function CoverPagePreview({
   onDescriptionChange,
   onTitleChange,
 }: Props) {
-  const coverTitle = (section.settings?.coverTitle as string) ?? "";
-  const coverDescription = (section.settings?.coverDescription as string) ?? "";
+  const coverTitle = stripRichTextColorStyles(
+    (section.settings?.coverTitle as string) ?? "",
+  );
+  const coverDescription = stripRichTextColorStyles(
+    (section.settings?.coverDescription as string) ?? "",
+  );
+  const coverTextColor = getReadableCoverTextColor(themeConfig);
+  const coverTextStyle = {
+    color: coverTextColor,
+    WebkitTextFillColor: coverTextColor,
+  };
 
   return (
     <div
@@ -39,11 +52,14 @@ export default function CoverPagePreview({
         descriptionContent={
           <RichInput
             value={coverDescription}
-            onChange={onDescriptionChange}
+            onChange={(value) =>
+              onDescriptionChange(stripRichTextColorStyles(value))
+            }
             placeholder="Add a description..."
-            className={`w-full bg-transparent outline-none border-none ${
+            className={`upform-cover-theme-text w-full bg-transparent outline-none border-none ${
               coverLayout >= 3 ? "text-center text-base" : "text-base"
             }`}
+            contentStyle={coverTextStyle}
             stopPropagation
             noLists
           />
@@ -53,7 +69,7 @@ export default function CoverPagePreview({
         titleContent={
           <RichInput
             value={coverTitle}
-            onChange={onTitleChange}
+            onChange={(value) => onTitleChange(stripRichTextColorStyles(value))}
             placeholder="Type your title..."
             placeholderClassName={
               coverLayout === 3
@@ -62,9 +78,10 @@ export default function CoverPagePreview({
                   ? "text-center text-4xl font-bold italic text-gray-300"
                   : "text-3xl font-bold italic text-gray-300"
             }
-            className={`w-full bg-transparent outline-none border-none font-bold italic ${
+            className={`upform-cover-theme-text w-full bg-transparent outline-none border-none font-bold italic ${
               coverLayout >= 3 ? "text-center text-4xl" : "text-3xl"
             }`}
+            contentStyle={coverTextStyle}
             stopPropagation
             noLists
           />

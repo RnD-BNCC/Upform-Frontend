@@ -1,4 +1,5 @@
 import { resolveReferenceHtml } from "@/utils/form/referenceTokens";
+import { stripRichTextColorStyles } from "@/utils/form/richTextColor";
 import type { FormSection } from "@/types/form";
 import CoverPageLayout, {
   type CoverPageThemeConfig,
@@ -37,9 +38,11 @@ export default function RuntimeCoverPagePreview({
   onStart,
 }: Props) {
   const settings = section.settings ?? {};
-  const coverTitle = resolveReferenceHtml((settings.coverTitle as string) ?? "");
-  const coverDescription = resolveReferenceHtml(
-    (settings.coverDescription as string) ?? "",
+  const coverTitle = stripRichTextColorStyles(
+    resolveReferenceHtml((settings.coverTitle as string) ?? ""),
+  );
+  const coverDescription = stripRichTextColorStyles(
+    resolveReferenceHtml((settings.coverDescription as string) ?? ""),
   );
 
   return (
