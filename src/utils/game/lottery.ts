@@ -18,6 +18,8 @@ export type LotteryNumberSettings = Pick<
   "rafflePadding" | "rafflePrefix" | "raffleStart" | "raffleSuffix"
 >;
 
+export const LOTTERY_ID_ANSWER_KEY = "__upform_lottery_id";
+
 export const LOTTERY_BALL_COLORS = [
   "#e53935",
   "#1e88e5",
@@ -51,6 +53,36 @@ export function buildLotteryNumber(index: number, settings: LotteryNumberSetting
   return `${settings.rafflePrefix}${number}${settings.raffleSuffix}`;
 }
 
+export function getStoredLotteryId(response: FormResponse) {
+  const explicitLotteryId = response.lotteryId ?? response.raffleNumber;
+  if (typeof explicitLotteryId === "string" && explicitLotteryId.trim()) {
+    return explicitLotteryId;
+  }
+
+  const answerValue = response.answers[LOTTERY_ID_ANSWER_KEY];
+  if (typeof answerValue === "string" && answerValue.trim()) {
+    return answerValue;
+  }
+
+  return null;
+}
+
+export function getLotteryAnswers(
+  answers: FormResponse["answers"],
+  lotteryId: string,
+) {
+  return {
+    ...answers,
+    [LOTTERY_ID_ANSWER_KEY]: lotteryId,
+  };
+}
+
+export function removeLotteryAnswer(answers: FormResponse["answers"]) {
+  const nextAnswers = { ...answers };
+  delete nextAnswers[LOTTERY_ID_ANSWER_KEY];
+  return nextAnswers;
+}
+
 export function buildLotteryParticipants(
   responses: FormResponse[],
   settings: LotteryNumberSettings,
@@ -64,7 +96,7 @@ export function buildLotteryParticipants(
     .map((response, index) => ({
       color: LOTTERY_BALL_COLORS[index % LOTTERY_BALL_COLORS.length],
       id: response.id,
-      number: buildLotteryNumber(index, settings),
+      number: getStoredLotteryId(response) ?? buildLotteryNumber(index, settings),
       submittedAt: response.submittedAt,
     }));
 }

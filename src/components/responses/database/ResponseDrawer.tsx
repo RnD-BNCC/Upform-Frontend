@@ -15,6 +15,7 @@ import ResponseFieldEditor from "./ResponseFieldEditor";
 type ResponseDrawerProps = {
   fields: FormField[];
   index: number;
+  lotteryId?: string;
   response: FormResponse;
   saveStatus: ResponseSaveStatus;
   total: number;
@@ -56,6 +57,7 @@ function SaveStatusLabel({ status }: { status: ResponseSaveStatus }) {
 export default function ResponseDrawer({
   fields,
   index,
+  lotteryId,
   onClose,
   onMove,
   onUpdateAnswer,
@@ -119,6 +121,19 @@ export default function ResponseDrawer({
                 className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 shadow-sm outline-none"
               />
             </div>
+
+            {lotteryId ? (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-gray-600">
+                  Lottery ID
+                </label>
+                <input
+                  value={lotteryId}
+                  disabled
+                  className="h-10 w-full rounded-md border border-amber-100 bg-amber-50 px-3 font-mono text-sm font-semibold text-amber-800 shadow-sm outline-none"
+                />
+              </div>
+            ) : null}
 
             {fields.map((field) => (
               <div key={field.id}>

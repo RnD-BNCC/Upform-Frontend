@@ -16,6 +16,13 @@ import {
 import { QUERY_KEYS } from "@/api/queryKeys";
 import { FIELD_TYPE_META } from "@/components/builder/section/fieldTypeMeta";
 import { ConfirmModal } from "@/components/modal";
+import {
+  buildLotteryNumber,
+  getLotteryAnswers,
+  getStoredLotteryId,
+  removeLotteryAnswer,
+} from "@/utils/game";
+import type { SubmitFormSettings as ApiSubmitFormSettings } from "@/types/api";
 import type { FormField, FormResponse, FormResponseProgress } from "@/types/form";
 import type {
   ResultDatabaseView,
@@ -61,6 +68,7 @@ type DatabaseViewProps = {
   progressResponses?: FormResponseProgress[];
   responses: FormResponse[];
   showToast?: ShareToast;
+  submitFormSettings?: ApiSubmitFormSettings | null;
   title?: string;
 };
 
@@ -74,6 +82,7 @@ type RecordActionMenuState = {
 const SELECT_COL_WIDTH = 38;
 const EXPAND_COL_WIDTH = 44;
 const ID_COL_WIDTH = 198;
+const LOTTERY_COL_WIDTH = 132;
 const EMAIL_COL_WIDTH = 220;
 const DEFAULT_DATE_FILTER: AnalyticsDateFilter = { preset: "all" };
 
@@ -186,6 +195,7 @@ export default function DatabaseView({
   progressResponses = [],
   responses,
   showToast,
+  submitFormSettings = null,
   title = "My form database",
 }: DatabaseViewProps) {
   const showViewSelector = mode === "database";
@@ -214,6 +224,7 @@ export default function DatabaseView({
   const [createViewModalOpen, setCreateViewModalOpen] = useState(false);
   const [saveStatuses, setSaveStatuses] = useState<Record<string, ResponseSaveStatus>>({});
   const saveTimers = useRef<Map<string, number>>(new Map());
+  const lotteryBackfillRef = useRef<Set<string>>(new Set());
   const queryClient = useQueryClient();
   const duplicateResponse = useMutationSubmitResponse(eventId, {
     onSuccess: () => {
@@ -257,6 +268,41 @@ export default function DatabaseView({
       })),
     [allDatabaseResponses, draftAnswers],
   );
+  const lotteryIdByResponseId = useMemo(() => {
+    const map = new Map<string, string>();
+    const submittedResponses = responsesWithDrafts
+      .filter((response) => response.status !== "in_progress")
+      .sort(
+        (left, right) =>
+          new Date(getResponseTimestamp(left)).getTime() -
+          new Date(getResponseTimestamp(right)).getTime(),
+      );
+
+    submittedResponses.forEach((response, index) => {
+      const storedLotteryId = getStoredLotteryId(response);
+      const generatedLotteryId =
+        submitFormSettings?.raffleEnabled && storedLotteryId === null
+          ? buildLotteryNumber(index, submitFormSettings)
+          : null;
+      const lotteryId = storedLotteryId ?? generatedLotteryId;
+
+      if (lotteryId) {
+        map.set(response.id, lotteryId);
+      }
+    });
+
+    return map;
+  }, [
+    responsesWithDrafts,
+    submitFormSettings?.raffleEnabled,
+    submitFormSettings?.rafflePadding,
+    submitFormSettings?.rafflePrefix,
+    submitFormSettings?.raffleStart,
+    submitFormSettings?.raffleSuffix,
+  ]);
+  const showLotteryColumn =
+    mode !== "inProgress" &&
+    (Boolean(submitFormSettings?.raffleEnabled) || lotteryIdByResponseId.size > 0);
 
   const orderedFields = useMemo(
     () => getOrderedFields(databaseFields, activeView.fieldOrder),
@@ -268,7 +314,9 @@ export default function DatabaseView({
   const columns = createFieldColumns(visibleFields);
   const stickyEmailFieldId =
     visibleFields.find((field) => field.type === "email")?.id ?? null;
-  const emailStickyLeft = SELECT_COL_WIDTH + EXPAND_COL_WIDTH + ID_COL_WIDTH;
+  const lotteryStickyLeft = SELECT_COL_WIDTH + EXPAND_COL_WIDTH + ID_COL_WIDTH;
+  const emailStickyLeft =
+    lotteryStickyLeft + (showLotteryColumn ? LOTTERY_COL_WIDTH : 0);
 
   const displayedResponses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -284,6 +332,7 @@ export default function DatabaseView({
 
       const searchableText = [
         toStableResponseUuid(response),
+        lotteryIdByResponseId.get(response.id) ?? "",
         response.status ?? "",
         getResponseTimestamp(response),
         ...Object.values(response.answers).map(formatAnswerValue),
@@ -302,6 +351,7 @@ export default function DatabaseView({
     activeView.filterGroup,
     activeView.sortRules,
     dateFilter,
+    lotteryIdByResponseId,
     responsesWithDrafts,
     search,
     showListFilters,
@@ -330,6 +380,58 @@ export default function DatabaseView({
     },
     [],
   );
+
+  useEffect(() => {
+    if (!submitFormSettings?.raffleEnabled) return;
+
+    const submittedResponses = [...responses]
+      .filter((response) => response.status !== "in_progress")
+      .sort(
+        (left, right) =>
+          new Date(getResponseTimestamp(left)).getTime() -
+          new Date(getResponseTimestamp(right)).getTime(),
+      );
+
+    submittedResponses.forEach((response, index) => {
+      if (getStoredLotteryId(response)) return;
+      if (lotteryBackfillRef.current.has(response.id)) return;
+
+      const lotteryId = buildLotteryNumber(index, submitFormSettings);
+      lotteryBackfillRef.current.add(response.id);
+
+      updateResponse.mutate(
+        {
+          responseId: response.id,
+          payload: {
+            answers: getLotteryAnswers(response.answers, lotteryId),
+            lotteryId,
+            raffleNumber: lotteryId,
+          },
+        },
+        {
+          onSuccess: (updatedResponse) => {
+            queryClient.setQueryData<FormResponse[]>(
+              [QUERY_KEYS.RESPONSES, eventId],
+              (current) =>
+                current?.map((item) =>
+                  item.id === updatedResponse.id ? updatedResponse : item,
+                ),
+            );
+          },
+        },
+      );
+    });
+  }, [
+    eventId,
+    queryClient,
+    responses,
+    submitFormSettings?.raffleEnabled,
+    submitFormSettings?.rafflePadding,
+    submitFormSettings?.rafflePrefix,
+    submitFormSettings?.raffleStart,
+    submitFormSettings?.raffleSuffix,
+    updateResponse,
+  ]);
 
   useEffect(() => {
     if (!recordActionMenu) return;
@@ -441,6 +543,7 @@ export default function DatabaseView({
     );
     const columns = [
       "ID",
+      ...(showLotteryColumn ? ["Lottery ID"] : []),
       ...fieldsForView.map((field) => cleanResultLabel(field.label)),
     ];
 
@@ -449,6 +552,7 @@ export default function DatabaseView({
       fileName: view.name || "responses",
       rows: rows.map((response) => [
         toStableResponseUuid(response),
+        ...(showLotteryColumn ? [lotteryIdByResponseId.get(response.id) ?? ""] : []),
         ...fieldsForView.map((field) =>
           formatAnswerValue(response.answers[field.id]),
         ),
@@ -460,6 +564,7 @@ export default function DatabaseView({
   const exportDisplayedList = () => {
     const columns = [
       "ID",
+      ...(showLotteryColumn ? ["Lottery ID"] : []),
       ...visibleFields.map((field) => cleanResultLabel(field.label)),
     ];
 
@@ -468,6 +573,7 @@ export default function DatabaseView({
       fileName: activeViewName || title || "responses",
       rows: displayedResponses.map((response) => [
         toStableResponseUuid(response),
+        ...(showLotteryColumn ? [lotteryIdByResponseId.get(response.id) ?? ""] : []),
         ...visibleFields.map((field) =>
           formatAnswerValue(response.answers[field.id]),
         ),
@@ -574,7 +680,7 @@ export default function DatabaseView({
   const duplicateRecord = (response: FormResponse) => {
     showToast?.("Duplicating record...", "info", 0);
     duplicateResponse.mutate({
-      answers: { ...response.answers },
+      answers: removeLotteryAnswer(response.answers),
       deviceType: response.deviceType,
       respondentUuid: createRespondentUuid(),
       sectionHistory: response.sectionHistory,
@@ -808,6 +914,17 @@ export default function DatabaseView({
                   ID
                 </span>
               </th>
+              {showLotteryColumn ? (
+                <th
+                  className="sticky top-0 z-40 overflow-hidden border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700"
+                  style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
+                >
+                  <span className="flex items-center gap-2">
+                    <HashIcon size={15} className="text-amber-500" />
+                    Lottery ID
+                  </span>
+                </th>
+              ) : null}
               {columns.map((column) => {
                 const field = visibleFields.find((item) => item.id === column.id);
                 if (!field) return null;
@@ -928,6 +1045,17 @@ export default function DatabaseView({
                       {toStableResponseUuid(response)}
                     </span>
                   </td>
+                  {showLotteryColumn ? (
+                    <td
+                      className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-3 font-mono text-xs font-semibold text-amber-800 ${stickyCellBackground}`}
+                      style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
+                      title={lotteryIdByResponseId.get(response.id) ?? ""}
+                    >
+                      <span className="block truncate">
+                        {lotteryIdByResponseId.get(response.id) ?? ""}
+                      </span>
+                    </td>
+                  ) : null}
 
                   {columns.map((column) => {
                     const field = visibleFields.find((item) => item.id === column.id);
@@ -977,6 +1105,12 @@ export default function DatabaseView({
                       ID_COL_WIDTH,
                     )}
                   />
+                  {showLotteryColumn ? (
+                    <td
+                      className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
+                      style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
+                    />
+                  ) : null}
                   {columns.map((column) => (
                     <td
                       key={column.id}
@@ -1050,6 +1184,7 @@ export default function DatabaseView({
         <ResponseDrawer
           fields={visibleFields}
           index={drawerIndex ?? 0}
+          lotteryId={lotteryIdByResponseId.get(selectedResponse.id)}
           response={selectedResponse}
           saveStatus={saveStatuses[selectedResponse.id] ?? "saved"}
           total={displayedResponses.length}
