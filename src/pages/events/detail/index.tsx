@@ -221,6 +221,8 @@ export default function EventDetailPage() {
   const canAdjustThemeImage =
     activePageType === "page" &&
     themeConfig.formPosition !== "center" &&
+    themeConfig.formPosition !== "image-top" &&
+    themeConfig.formPosition !== "image-bottom" &&
     !!themeConfig.formImageUrl;
   const hasUnsavedChanges =
     isDirty || submitSettingsState.dirty || sendFormState.dirty;
@@ -1000,6 +1002,7 @@ export default function EventDetailPage() {
 
       {isThemeImagePositionOpen ? (
         <ThemeImagePositionModal
+          formPosition={themeConfig.formPosition}
           imageUrl={themeConfig.formImageUrl}
           isOpen
           value={{

@@ -1,12 +1,20 @@
 import {
+  useEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { ArrowsLeftRightIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowsDownUpIcon,
+  ArrowsLeftRightIcon,
+  ArrowsOutCardinalIcon,
+  XIcon,
+} from "@phosphor-icons/react";
+import type { ThemeFormPosition } from "@/utils/form/themeConfig";
 
 type ThemeImagePositionModalProps = {
+  formPosition: ThemeFormPosition;
   imageUrl: string | null;
   isOpen: boolean;
   value: {
@@ -27,11 +35,53 @@ type DragState = {
   width: number;
 };
 
+type PositionFrameMode = "full" | "horizontal" | "vertical";
+
+const HORIZONTAL_FRAME_HEIGHT = 118;
+const VERTICAL_FRAME_WIDTH = 120;
+
 function clampPosition(value: number) {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+function getPositionFrameMode(formPosition: ThemeFormPosition): PositionFrameMode {
+  if (formPosition === "image-top" || formPosition === "image-bottom") {
+    return "horizontal";
+  }
+
+  if (formPosition === "image-background") {
+    return "full";
+  }
+
+  return "vertical";
+}
+
+function getPositionDraft(
+  value: { x: number; y: number },
+  frameMode: PositionFrameMode,
+) {
+  if (frameMode === "horizontal") {
+    return {
+      x: 50,
+      y: clampPosition(value.y),
+    };
+  }
+
+  if (frameMode === "vertical") {
+    return {
+      x: clampPosition(value.x),
+      y: 50,
+    };
+  }
+
+  return {
+    x: clampPosition(value.x),
+    y: clampPosition(value.y),
+  };
+}
+
 export default function ThemeImagePositionModal({
+  formPosition,
   imageUrl,
   isOpen,
   onClose,
@@ -40,7 +90,20 @@ export default function ThemeImagePositionModal({
 }: ThemeImagePositionModalProps) {
   const previewRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
-  const [draft, setDraft] = useState(value);
+  const frameMode = getPositionFrameMode(formPosition);
+  const [draft, setDraft] = useState(() => getPositionDraft(value, frameMode));
+  const PositionIcon =
+    frameMode === "horizontal"
+      ? ArrowsDownUpIcon
+      : frameMode === "full"
+        ? ArrowsOutCardinalIcon
+        : ArrowsLeftRightIcon;
+
+  useEffect(() => {
+    if (isOpen) {
+      setDraft(getPositionDraft(value, frameMode));
+    }
+  }, [frameMode, isOpen, value.x, value.y]);
 
   if (!isOpen || !imageUrl) return null;
 
@@ -64,6 +127,35 @@ export default function ThemeImagePositionModal({
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const dragState = dragRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    if (frameMode === "horizontal") {
+      const movableHeight = Math.max(
+        1,
+        dragState.height - HORIZONTAL_FRAME_HEIGHT,
+      );
+      const nextY =
+        dragState.startY +
+        ((event.clientY - dragState.startClientY) / movableHeight) * 100;
+
+      setDraft({
+        x: 50,
+        y: clampPosition(nextY),
+      });
+      return;
+    }
+
+    if (frameMode === "vertical") {
+      const movableWidth = Math.max(1, dragState.width - VERTICAL_FRAME_WIDTH);
+      const nextX =
+        dragState.startX +
+        ((event.clientX - dragState.startClientX) / movableWidth) * 100;
+
+      setDraft({
+        x: clampPosition(nextX),
+        y: 50,
+      });
+      return;
+    }
 
     const nextX =
       dragState.startX +
@@ -97,7 +189,7 @@ export default function ThemeImagePositionModal({
         <div className="flex h-[58px] items-center justify-between border-b border-gray-100 px-5">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-              <ArrowsLeftRightIcon size={15} />
+              <PositionIcon size={15} />
             </span>
             <h2 className="text-base font-bold">Change image position</h2>
           </div>
@@ -129,15 +221,39 @@ export default function ThemeImagePositionModal({
             }}
           >
             <div className="pointer-events-none absolute inset-0 bg-black/45" />
-            <div
-              className="pointer-events-none absolute inset-y-0 w-[105px] border-x border-dashed border-white bg-cover"
-              style={{
-                backgroundImage: `url(${imageUrl})`,
-                backgroundPosition: `${draft.x}% ${draft.y}%`,
-                left: `${draft.x}%`,
-                transform: "translateX(-50%)",
-              }}
-            />
+            {frameMode === "vertical" ? (
+              <div
+                className="pointer-events-none absolute inset-y-0 w-[120px] bg-cover"
+                style={{
+                  backgroundImage: `url(${imageUrl})`,
+                  backgroundPosition: `${draft.x}% ${draft.y}%`,
+                  left: `calc(${draft.x}% - ${
+                    (VERTICAL_FRAME_WIDTH * draft.x) / 100
+                  }px)`,
+                }}
+              />
+            ) : null}
+            {frameMode === "horizontal" ? (
+              <div
+                className="pointer-events-none absolute inset-x-0 h-[118px] bg-cover"
+                style={{
+                  backgroundImage: `url(${imageUrl})`,
+                  backgroundPosition: `${draft.x}% ${draft.y}%`,
+                  top: `calc(${draft.y}% - ${
+                    (HORIZONTAL_FRAME_HEIGHT * draft.y) / 100
+                  }px)`,
+                }}
+              />
+            ) : null}
+            {frameMode === "full" ? (
+              <div
+                className="pointer-events-none absolute inset-0 bg-cover"
+                style={{
+                  backgroundImage: `url(${imageUrl})`,
+                  backgroundPosition: `${draft.x}% ${draft.y}%`,
+                }}
+              />
+            ) : null}
           </div>
         </div>
 
