@@ -9,6 +9,7 @@ import {
   FieldPluginToggleRow,
   normalizeFieldSettingValue,
 } from "./FieldSettingControls";
+import { getOtherOptionText, getOtherOptionValue } from "@/utils/form/optionSelection";
 
 type Props = {
   defaultValue?: string;
@@ -37,10 +38,10 @@ export default function MultipleChoiceField({
 }: Props) {
   const visibleOptions = options.length ? options : ["Option 1", "Option 2"];
   const optionsToRender = visibleOptions.slice(0, maxVisibleOptions);
-  const isRuntimeMode = selectionMode === "label";
-  const isOtherSelected = isRuntimeMode && (defaultValue ?? "").startsWith("__other__:");
+  const otherDefaultValue = getOtherOptionValue(defaultValue);
+  const isOtherSelected = showOtherOption && Boolean(otherDefaultValue);
   const resolvedOtherText =
-    otherText ?? (isOtherSelected ? (defaultValue ?? "").slice("__other__:".length) : "");
+    otherText ?? (isOtherSelected ? getOtherOptionText(otherDefaultValue) : "");
 
   const getIsSelected = (option: string, index: number) =>
     selectionMode === "label"
@@ -118,7 +119,7 @@ export default function MultipleChoiceField({
           </div>
         );
       })}
-      {isRuntimeMode && showOtherOption ? (
+      {showOtherOption ? (
         <div
           onClick={(event) => {
             event.stopPropagation();
@@ -217,6 +218,7 @@ export const multipleChoiceFieldPlugin = createFieldPlugin({
       maxVisibleOptions={field.options?.length || 2}
       onChange={(value) => onChange({ defaultValue: value })}
       options={field.options?.length ? field.options : ["Option 1", "Option 2"]}
+      showOtherOption={field.hasOtherOption}
     />
   ),
   renderSettingsSections: ({

@@ -3,7 +3,11 @@ import ReferenceTextEditor from "@/components/builder/layout/reference/Reference
 import { SelectionCheckIcon } from "@/components/icons";
 import {
   formatOptionIndexes,
+  getOtherOptionText,
+  getOtherOptionValue,
   parseOptionIndexes,
+  removeOtherOptionValue,
+  setOtherOptionValue,
 } from "@/utils/form/optionSelection";
 import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
 import {
@@ -49,8 +53,12 @@ export default function CheckboxField({
   const runtimeOtherValue = runtimeSelections.find((value) =>
     value.startsWith("__other__:"),
   );
+  const builderOtherValue = isRuntimeMode
+    ? undefined
+    : getOtherOptionValue(defaultValue);
+  const selectedOtherValue = runtimeOtherValue ?? builderOtherValue;
   const resolvedOtherText =
-    otherText ?? runtimeOtherValue?.slice("__other__:".length) ?? "";
+    otherText ?? (selectedOtherValue ? getOtherOptionText(selectedOtherValue) : "");
 
   const getIsSelected = (option: string, optionIndex: number) =>
     isRuntimeMode
@@ -142,33 +150,42 @@ export default function CheckboxField({
           </div>
         );
       })}
-      {isRuntimeMode && showOtherOption ? (
+      {showOtherOption ? (
         <div
           onClick={(event) => {
             event.stopPropagation();
-            const hasOther = runtimeSelections.some((value) =>
-              value.startsWith("__other__:"),
-            );
-            updateRuntimeSelections(
-              hasOther
-                ? runtimeSelections.filter((value) => !value.startsWith("__other__:"))
-                : [...runtimeSelections, `__other__:${resolvedOtherText}`],
+            if (isRuntimeMode) {
+              const hasOther = runtimeSelections.some((value) =>
+                value.startsWith("__other__:"),
+              );
+              updateRuntimeSelections(
+                hasOther
+                  ? runtimeSelections.filter((value) => !value.startsWith("__other__:"))
+                  : [...runtimeSelections, `__other__:${resolvedOtherText}`],
+              );
+              return;
+            }
+
+            onChange(
+              selectedOtherValue
+                ? removeOtherOptionValue(defaultValue)
+                : setOtherOptionValue(defaultValue, resolvedOtherText),
             );
           }}
           className={`theme-answer-input flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-2.5 transition-colors ${
-            runtimeOtherValue
+            selectedOtherValue
               ? "theme-primary-border theme-primary-soft border-primary-400 bg-primary-50"
               : "theme-answer-border border-gray-200 bg-white hover:opacity-90"
           }`}
         >
           <span
             className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
-              runtimeOtherValue
+              selectedOtherValue
                 ? "theme-primary-border bg-primary-500"
                 : "theme-answer-border border-gray-300"
             }`}
             style={
-              runtimeOtherValue
+              selectedOtherValue
                 ? {
                     background: "var(--upform-theme-primary, #0054a5)",
                     borderColor: "var(--upform-theme-primary, #0054a5)",
@@ -176,12 +193,12 @@ export default function CheckboxField({
                 : undefined
             }
           >
-            {runtimeOtherValue ? <SelectionCheckIcon className="text-white" /> : null}
+            {selectedOtherValue ? <SelectionCheckIcon className="text-white" /> : null}
           </span>
           <div className="min-w-0 flex-1">
             <span
               className={`block text-sm ${
-                runtimeOtherValue
+                selectedOtherValue
                   ? "theme-primary-text font-medium text-primary-700"
                   : "theme-answer-text text-gray-500"
               }`}
@@ -195,12 +212,24 @@ export default function CheckboxField({
               onChange={(event) => {
                 const nextValue = event.target.value;
                 onOtherTextChange?.(nextValue);
+                if (!isRuntimeMode) {
+                  onChange(setOtherOptionValue(defaultValue, nextValue));
+                  return;
+                }
+
                 updateRuntimeSelections([
                   ...runtimeSelections.filter((value) => !value.startsWith("__other__:")),
                   `__other__:${nextValue}`,
                 ]);
               }}
               onFocus={() => {
+                if (!isRuntimeMode) {
+                  if (!builderOtherValue) {
+                    onChange(setOtherOptionValue(defaultValue, resolvedOtherText));
+                  }
+                  return;
+                }
+
                 if (runtimeOtherValue) return;
                 updateRuntimeSelections([
                   ...runtimeSelections.filter((value) => !value.startsWith("__other__:")),
@@ -253,6 +282,7 @@ export const checkboxFieldPlugin = createFieldPlugin({
       maxVisibleOptions={field.options?.length || 2}
       onChange={(value) => onChange({ defaultValue: value })}
       options={field.options?.length ? field.options : ["Option 1", "Option 2"]}
+      showOtherOption={field.hasOtherOption}
     />
   ),
   renderSettingsSections: ({
