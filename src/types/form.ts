@@ -247,6 +247,8 @@ export type RespondentDeviceType = 'desktop' | 'tablet' | 'mobile' | 'unknown'
 
 export interface FormResponse {
   id: string
+  lotteryId?: string
+  raffleNumber?: string
   respondentUuid?: string
   uuid?: string
   status?: FormResponseStatus

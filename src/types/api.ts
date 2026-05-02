@@ -76,7 +76,9 @@ export type UpdateSectionPayload = {
 export type SubmitResponsePayload = {
   answers: Record<string, FormAnswerValue>
   deviceType?: RespondentDeviceType
+  lotteryId?: string
   progressId?: string | null
+  raffleNumber?: string
   respondentUuid?: string
   sectionHistory?: number[]
   startedAt?: string
@@ -85,6 +87,8 @@ export type SubmitResponsePayload = {
 
 export type UpdateResponsePayload = {
   answers: Record<string, FormAnswerValue>
+  lotteryId?: string
+  raffleNumber?: string
 }
 
 export type SaveResponseProgressPayload = {
