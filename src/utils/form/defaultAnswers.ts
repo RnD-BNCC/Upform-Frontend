@@ -1,5 +1,5 @@
 import type { FormCalculation, FormField, FormSection } from "@/types/form";
-import { getIndexedOptionValues } from "./optionSelection";
+import { getIndexedOptionValues, getOtherOptionValue } from "./optionSelection";
 import { serializePhoneAnswer, sanitizePhoneNumber } from "./phoneAnswer";
 import { resolveReferenceText } from "./referenceTokens";
 
@@ -41,12 +41,22 @@ export function getRuntimeDefaultAnswer(
   }
 
   if (field.type === "multiple_choice") {
-    return getIndexedOptionValues(field.options, field.defaultValue)[0];
+    const otherDefault = field.hasOtherOption
+      ? getOtherOptionValue(field.defaultValue)
+      : undefined;
+
+    return otherDefault ?? getIndexedOptionValues(field.options, field.defaultValue)[0];
   }
 
   if (field.type === "checkbox" || field.type === "multiselect") {
     const defaults = getIndexedOptionValues(field.options, field.defaultValue);
-    return defaults.length > 0 ? defaults : undefined;
+    const otherDefault =
+      field.type === "checkbox" && field.hasOtherOption
+        ? getOtherOptionValue(field.defaultValue)
+        : undefined;
+    const nextDefaults = otherDefault ? [...defaults, otherDefault] : defaults;
+
+    return nextDefaults.length > 0 ? nextDefaults : undefined;
   }
 
   if (field.type === "address") {

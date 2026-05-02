@@ -1,5 +1,43 @@
 import type { FormField } from "@/types/form";
 
+export const OTHER_OPTION_VALUE_PREFIX = "__other__:";
+
+export function isOtherOptionValue(value: string) {
+  return value.startsWith(OTHER_OPTION_VALUE_PREFIX);
+}
+
+export function getOtherOptionValue(value?: string | string[]) {
+  if (Array.isArray(value)) {
+    return value.find(isOtherOptionValue);
+  }
+
+  return (value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .find(isOtherOptionValue);
+}
+
+export function getOtherOptionText(value?: string | string[]) {
+  const otherValue = getOtherOptionValue(value);
+  return otherValue?.slice(OTHER_OPTION_VALUE_PREFIX.length) ?? "";
+}
+
+export function removeOtherOptionValue(value?: string) {
+  const remaining = (value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && !isOtherOptionValue(part));
+
+  return remaining.length ? remaining.join(", ") : undefined;
+}
+
+export function setOtherOptionValue(value: string | undefined, text: string) {
+  const withoutOther = removeOtherOptionValue(value);
+  const otherValue = `${OTHER_OPTION_VALUE_PREFIX}${text}`;
+
+  return withoutOther ? `${withoutOther}, ${otherValue}` : otherValue;
+}
+
 export function parseOptionIndexes(value?: string): number[] {
   const seen = new Set<number>();
 

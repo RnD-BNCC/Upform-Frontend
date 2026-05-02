@@ -168,10 +168,10 @@ export default function ReferenceTextEditor({
   );
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative min-w-0 max-w-full">
       {editorText && displayPlaceholder ? (
         <span
-          className={`pointer-events-none absolute inset-0 ${placeholderClassName}`}
+          className={`pointer-events-none absolute inset-0 min-w-0 max-w-full truncate ${placeholderClassName}`}
         >
           {displayPlaceholder}
         </span>
@@ -226,7 +226,11 @@ export default function ReferenceTextEditor({
           emitChange();
           syncPickerToSelection();
         }}
-        className={`relative z-[1] min-h-[34px] w-full cursor-text rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none transition-colors focus:border-primary-400 focus:ring-1 focus:ring-primary-300 ${multiline ? "min-h-[72px] whitespace-pre-wrap" : "whitespace-nowrap"} ${className}`}
+        className={`upform-reference-text-editor relative z-[1] min-h-[34px] min-w-0 max-w-full cursor-text rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none transition-colors focus:border-primary-400 focus:ring-1 focus:ring-primary-300 ${
+          multiline
+            ? "min-h-[72px] overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+            : "overflow-x-auto overflow-y-hidden whitespace-nowrap"
+        } ${className}`}
       />
 
       <ReferencePickerPopover
