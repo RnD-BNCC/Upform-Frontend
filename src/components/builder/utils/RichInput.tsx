@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -25,6 +25,7 @@ import {
   stripHtmlToText,
   type DateReferenceOption,
 } from '@/utils/form/referenceTokens'
+import { stripRichTextColorStyles } from '@/utils/form/richTextColor'
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
 
 const isEmpty = (html: string) =>
@@ -34,11 +35,21 @@ const isEmpty = (html: string) =>
 const sanitizePaste = (html: string): string => {
   const tmp = document.createElement('div')
   tmp.innerHTML = html
-  tmp.querySelectorAll('img, picture, video, audio, iframe, canvas, svg').forEach((el) => el.remove())
+  tmp.querySelectorAll('img, picture, video, audio, iframe, canvas, svg, script, style').forEach((el) => el.remove())
   tmp.querySelectorAll('pre, code').forEach((el) => {
     el.replaceWith(document.createTextNode(el.textContent ?? ''))
   })
-  return tmp.innerHTML
+  tmp.querySelectorAll<HTMLElement>('*').forEach((el) => {
+    el.removeAttribute('color')
+    el.removeAttribute('bgcolor')
+    el.removeAttribute('text')
+
+    if (el.getAttribute('data-reference-token') !== 'true') {
+      el.removeAttribute('class')
+    }
+  })
+
+  return stripRichTextColorStyles(tmp.innerHTML)
 }
 
 const hasActiveReferenceTrigger = (root: HTMLElement | null) => {
@@ -64,6 +75,7 @@ type Props = {
   placeholderClassName?: string
   className?: string
   containerClassName?: string
+  contentStyle?: CSSProperties
   readOnly?: boolean
   stopPropagation?: boolean
   noLists?: boolean
@@ -89,6 +101,7 @@ export default function RichInput({
   placeholderClassName,
   className = '',
   containerClassName = 'w-full',
+  contentStyle,
   readOnly = false,
   stopPropagation,
   noLists,
@@ -688,6 +701,7 @@ export default function RichInput({
                 }
           }
           className={`relative z-1 outline-none ${readOnly ? 'cursor-default select-text' : 'cursor-text'} [&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:leading-normal [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:text-base [&_h4]:font-semibold [&_h5]:text-sm [&_h5]:font-semibold ${className}`}
+          style={contentStyle}
         />
       </div>
 
