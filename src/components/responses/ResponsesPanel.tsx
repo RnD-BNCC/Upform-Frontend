@@ -12,6 +12,7 @@ import {
   useQueryResponseProgress,
   useQueryResponses,
 } from "@/api/responses";
+import { useQuerySubmitFormSettings } from "@/api/email-blasts";
 import { QUERY_KEYS } from "@/api/queryKeys";
 import type { FormField, FormResponse, FormSection } from "@/types/form";
 import type { ResultsSection } from "@/types/results";
@@ -54,9 +55,11 @@ export default function ResponsesPanel({
   const responsesQuery = useQueryResponses(eventId);
   const progressQuery = useQueryResponseProgress(eventId);
   const analyticsEventsQuery = useQueryAnalyticsEvents(eventId);
+  const submitSettingsQuery = useQuerySubmitFormSettings(eventId, !!eventId);
   const currentResponses = responsesQuery.data ?? responses;
   const progressResponses = progressQuery.data ?? [];
   const analyticsEvents = analyticsEventsQuery.data ?? [];
+  const submitFormSettings = submitSettingsQuery.data ?? null;
 
   const refreshResults = () => {
     if (!eventId) return Promise.resolve();
@@ -83,6 +86,7 @@ export default function ResponsesPanel({
           progressResponses={progressResponses}
           responses={currentResponses}
           showToast={showToast}
+          submitFormSettings={submitFormSettings}
           title="My form database"
         />
       );
@@ -98,6 +102,7 @@ export default function ResponsesPanel({
           onRefresh={refreshResults}
           responses={currentResponses}
           showToast={showToast}
+          submitFormSettings={submitFormSettings}
           title="Submissions"
         />
       );
