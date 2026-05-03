@@ -73,24 +73,44 @@ export default function RuntimeSectionFields({
 }: Props) {
   const visibleFields = getVisibleFields(section.fields, { answers, calculations });
   const rows = buildRows(visibleFields);
+  const backButtonClassNameBase =
+    "flex h-10 w-10 items-center justify-center transition-opacity hover:opacity-80 cursor-pointer";
+  const backButton =
+    showBack && onBack ? (
+      <button
+        type="button"
+        onClick={onBack}
+        className={backButtonClassNameBase}
+        style={{ color: themeConfig.textColor }}
+        aria-label="Back"
+      >
+        <ArrowLeftIcon size={18} weight="bold" />
+      </button>
+    ) : null;
+  const floatingBackButton =
+    showBack && onBack ? (
+      <div className={`fixed z-40 hidden sm:block ${backButtonClassName}`}>
+        <button
+          type="button"
+          onClick={onBack}
+          className={backButtonClassNameBase}
+          style={{ color: themeConfig.textColor }}
+          aria-label="Back"
+        >
+          <ArrowLeftIcon size={18} weight="bold" />
+        </button>
+      </div>
+    ) : null;
 
   return (
     <>
-      {showBack && onBack ? (
-        <div className={`fixed z-40 ${backButtonClassName}`}>
-          <button
-            onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center text-gray-700 transition-colors hover:text-gray-900 cursor-pointer"
-            aria-label="Back"
-          >
-            <ArrowLeftIcon size={18} weight="bold" />
-          </button>
-        </div>
-      ) : null}
+      {floatingBackButton}
 
       <ThemeFormLayout
+        headerStart={backButton}
         pageType={(section.pageType ?? "page") === "ending" ? "ending" : "page"}
         logoClassName={logoClassName}
+        logoPlacement="responsive"
         surfaceClassName="scheme-light rounded-xl bg-white p-4 sm:p-6"
         themeConfig={themeConfig}
       >

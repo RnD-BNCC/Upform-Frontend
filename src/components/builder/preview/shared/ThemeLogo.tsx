@@ -5,12 +5,14 @@ import { getThemeLogoIconName } from "@/utils/form/themeLogo";
 
 type Props = {
   className?: string;
+  display?: "always" | "desktop" | "mobile";
   insideSurface: boolean;
   themeConfig: Pick<ThemeConfig, "logoEnabled" | "logoUrl">;
 };
 
 export default function ThemeLogo({
   className = "",
+  display = "always",
   insideSurface,
   themeConfig,
 }: Props) {
@@ -27,9 +29,15 @@ export default function ThemeLogo({
     iconName && iconName in PhosphorIcons
       ? (PhosphorIcons[iconName as keyof typeof PhosphorIcons] as Icon)
       : null;
+  const displayClassName =
+    display === "desktop"
+      ? "hidden sm:flex"
+      : display === "mobile"
+        ? "flex sm:hidden"
+        : "flex";
 
   return (
-    <div className={`flex justify-end ${className}`.trim()}>
+    <div className={`${displayClassName} justify-end ${className}`.trim()}>
       {Icon ? (
         <Icon size={48} className="text-gray-600" />
       ) : (

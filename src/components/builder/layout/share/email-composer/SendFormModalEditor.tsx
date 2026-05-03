@@ -27,7 +27,6 @@ import {
 import { Spinner } from "@/components/ui";
 import { BrandLogo } from "@/components/layout";
 import { ImagePickerModal } from "@/components/modal";
-import { getBrandLogoVariantForBackground } from "@/constants/brand";
 import {
   useMutationCreateEmailBlast,
   useMutationSaveEmailComposerDraft,
@@ -490,9 +489,7 @@ export default function SendFormModalEditor({
                 >
                   {emailStyle === "formatted" ? (
                     <BrandLogo
-                      variant={getBrandLogoVariantForBackground(
-                        resolvedEmailTheme.config.canvasBg,
-                      )}
+                      variant="blue"
                       className="mx-auto mb-5 h-9 w-auto max-w-[170px]"
                     />
                   ) : null}

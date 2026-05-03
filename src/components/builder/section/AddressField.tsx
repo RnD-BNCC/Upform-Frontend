@@ -50,9 +50,9 @@ export default function AddressField({
   return (
     <div className={`${isRuntimeMode ? "" : "pointer-events-none"} space-y-2 select-none`}>
       <div>
-        <span className="theme-question-caption mb-1 block text-xs text-gray-400">Address</span>
+        <span className="theme-question-caption mb-1 block text-left text-xs text-gray-400">Address</span>
         <div
-          className={`theme-answer-input flex items-center gap-2 rounded-lg border bg-white px-3 py-2.5 ${
+          className={`theme-answer-input flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2.5 ${
             hasError ? "border-red-400" : "border-gray-200"
           }`}
         >
@@ -64,22 +64,22 @@ export default function AddressField({
               onChange={(event) => updateValue("street", event.target.value)}
               onClick={(event) => event.stopPropagation()}
               placeholder={streetPlaceholder ?? "Street address"}
-              className="theme-answer-input w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
+              className="theme-answer-text theme-answer-placeholder w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
             />
           ) : (
             <span
-              className={`text-xs ${streetValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
+              className={`block min-w-0 truncate text-xs ${streetValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
             >
               {streetValue ?? streetPlaceholder ?? "Street address"}
             </span>
           )}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <span className="theme-question-caption mb-1 block text-xs text-gray-600">City</span>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2">
+        <div className="min-w-0">
+          <span className="theme-question-caption mb-1 block text-left text-xs leading-snug text-gray-600">City</span>
           <div
-            className={`theme-answer-input rounded-lg border bg-white px-3 py-2 ${
+            className={`theme-answer-input min-w-0 rounded-lg border bg-white px-3 py-2 ${
               hasError ? "border-red-400" : "border-gray-200"
             }`}
           >
@@ -90,23 +90,23 @@ export default function AddressField({
                 onChange={(event) => updateValue("city", event.target.value)}
                 onClick={(event) => event.stopPropagation()}
                 placeholder={cityPlaceholder ?? "City"}
-                className="theme-answer-input w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
+                className="theme-answer-text theme-answer-placeholder w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
               />
             ) : (
               <span
-                className={`text-xs ${cityValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
+                className={`block min-w-0 truncate text-xs ${cityValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
               >
                 {cityValue ?? cityPlaceholder ?? "City"}
               </span>
             )}
           </div>
         </div>
-        <div>
-          <span className="theme-question-caption mb-1 block text-xs text-gray-600">
+        <div className="min-w-0">
+          <span className="theme-question-caption mb-1 block text-left text-xs leading-snug text-gray-600">
             State / Province
           </span>
           <div
-            className={`theme-answer-input rounded-lg border bg-white px-3 py-2 ${
+            className={`theme-answer-input min-w-0 rounded-lg border bg-white px-3 py-2 ${
               hasError ? "border-red-400" : "border-gray-200"
             }`}
           >
@@ -117,23 +117,23 @@ export default function AddressField({
                 onChange={(event) => updateValue("state", event.target.value)}
                 onClick={(event) => event.stopPropagation()}
                 placeholder={statePlaceholder ?? "State"}
-                className="theme-answer-input w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
+                className="theme-answer-text theme-answer-placeholder w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
               />
             ) : (
               <span
-                className={`text-xs ${stateValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
+                className={`block min-w-0 truncate text-xs ${stateValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
               >
                 {stateValue ?? statePlaceholder ?? "State"}
               </span>
             )}
           </div>
         </div>
-        <div>
-          <span className="theme-question-caption mb-1 block text-xs text-gray-600">
+        <div className="min-w-0">
+          <span className="theme-question-caption mb-1 block text-left text-xs leading-snug text-gray-600">
             ZIP / Postal code
           </span>
           <div
-            className={`theme-answer-input rounded-lg border bg-white px-3 py-2 ${
+            className={`theme-answer-input min-w-0 rounded-lg border bg-white px-3 py-2 ${
               hasError ? "border-red-400" : "border-gray-200"
             }`}
           >
@@ -144,11 +144,11 @@ export default function AddressField({
                 onChange={(event) => updateValue("zip", event.target.value)}
                 onClick={(event) => event.stopPropagation()}
                 placeholder={zipPlaceholder ?? "ZIP"}
-                className="theme-answer-input w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
+                className="theme-answer-text theme-answer-placeholder w-full bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-300"
               />
             ) : (
               <span
-                className={`text-xs ${zipValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
+                className={`block min-w-0 truncate text-xs ${zipValue ? "text-gray-600" : "theme-answer-placeholder text-gray-300"}`}
               >
                 {zipValue ?? zipPlaceholder ?? "ZIP"}
               </span>
