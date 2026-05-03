@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -25,6 +25,7 @@ import { useMutationSaveSubmitFormSettings, useQuerySubmitFormSettings } from "@
 import ConditionSelect, {
   type ConditionSelectOption,
 } from "@/components/builder/layout/reference/ConditionSelect";
+import { BrandLogo } from "@/components/layout";
 import { ImagePickerModal } from "@/components/modal";
 import { Toggle } from "@/components/ui";
 import {
@@ -39,6 +40,7 @@ import {
   DEFAULT_EMAIL_IMAGE_URL,
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
+  EMAIL_STYLE_OPTIONS,
 } from "../email-composer/constants";
 import { generateHtml, uid } from "../email-composer/utils";
 import {
@@ -51,6 +53,7 @@ import type { FormField, FormSection } from "@/types/form";
 import type {
   EmailBlock,
   EmailBlockPatch,
+  EmailStyle,
   ShareToast,
   SubmitSettingsEditorState,
 } from "@/types/builderShare";
@@ -68,6 +71,7 @@ type SubmitFormSettings = {
   blocks: EmailBlock[];
   body: string;
   enabled: boolean;
+  emailStyle: EmailStyle;
   emailThemeValue: string | null;
   raffleEnabled: boolean;
   rafflePadding: number;
@@ -121,6 +125,7 @@ function getDefaultSettings(formTitle: string): SubmitFormSettings {
   return {
     blocks: createDefaultMessageBlocks(),
     body: DEFAULT_BODY,
+    emailStyle: "formatted",
     emailThemeValue: null,
     enabled: false,
     raffleEnabled: true,
@@ -170,6 +175,19 @@ function normalizeMessageBody(value: string) {
   return value.includes("\n") ? value.replace(/\r?\n/g, "<br />") : value;
 }
 
+function isEmailStyle(value: unknown): value is EmailStyle {
+  return value === "basic" || value === "formatted";
+}
+
+function inferEmailStyleFromBody(body?: string | null): EmailStyle {
+  const value = body ?? "";
+  return value.includes('alt="UpForm"') ||
+    value.includes("logo_blue.png") ||
+    value.includes("logo_white.png")
+    ? "formatted"
+    : "basic";
+}
+
 function isEmailBlock(value: unknown): value is EmailBlock {
   if (!value || typeof value !== "object") return false;
   const block = value as Partial<EmailBlock>;
@@ -191,6 +209,9 @@ function normalizeSettings(settings: SubmitFormSettings): SubmitFormSettings {
     ...settings,
     blocks: normalizeMessageBlocks(settings.blocks, settings.body),
     body: normalizeMessageBody(settings.body),
+    emailStyle: isEmailStyle(settings.emailStyle)
+      ? settings.emailStyle
+      : "formatted",
     rafflePadding: normalizePadding(settings.rafflePadding),
     raffleStart: Math.max(0, Math.round(settings.raffleStart) || 0),
     recipientFieldIds: normalizeRecipientFieldIds(settings.recipientFieldIds),
@@ -207,6 +228,9 @@ function getSettingsFromApi(
   return normalizeSettings({
     blocks: normalizeMessageBlocks(settings.blocks, settings.body || defaults.body),
     body: settings.body || defaults.body,
+    emailStyle: isEmailStyle(settings.emailStyle)
+      ? settings.emailStyle
+      : inferEmailStyleFromBody(settings.body),
     emailThemeValue: settings.emailThemeValue ?? defaults.emailThemeValue,
     enabled: settings.enabled,
     raffleEnabled: settings.raffleEnabled,
@@ -272,6 +296,19 @@ export default function SubmitFormPanel({
     () => resolveTheme(settings.emailThemeValue ?? activeTheme ?? "light"),
     [activeTheme, settings.emailThemeValue],
   );
+  const eventIdRef = useRef(eventId);
+  const formTitleRef = useRef(formTitle);
+  const settingsRef = useRef(settings);
+  const emailThemeConfigRef = useRef(emailTheme.config);
+  const saveSubmitSettingsAsyncRef = useRef(saveSubmitSettings.mutateAsync);
+  const showToastRef = useRef(showToast);
+
+  eventIdRef.current = eventId;
+  formTitleRef.current = formTitle;
+  settingsRef.current = settings;
+  emailThemeConfigRef.current = emailTheme.config;
+  saveSubmitSettingsAsyncRef.current = saveSubmitSettings.mutateAsync;
+  showToastRef.current = showToast;
   const themeOptions = useMemo<ConditionSelectOption[]>(
     () => [
       ...(currentFormTheme.isCustom
@@ -319,28 +356,38 @@ export default function SubmitFormPanel({
 
   const saveSettings = useCallback(async (options?: { showFeedback?: boolean }) => {
     const showFeedback = options?.showFeedback ?? true;
+    const currentEventId = eventIdRef.current;
+    const currentFormTitle = formTitleRef.current;
+    const currentSettings = settingsRef.current;
+    const currentShowToast = showToastRef.current;
 
-    if (!eventId) {
-      showToast?.("Form belum tersimpan. Save form dulu ya.", "error");
+    if (!currentEventId) {
+      currentShowToast?.("Form belum tersimpan. Save form dulu ya.", "error");
       return false;
     }
 
-    if (settings.enabled && settings.recipientFieldIds.length === 0) {
-      showToast?.("Choose at least one email field first", "error");
+    if (currentSettings.enabled && currentSettings.recipientFieldIds.length === 0) {
+      currentShowToast?.("Choose at least one email field first", "error");
       return false;
     }
 
     const blocksToSave =
-      settings.blocks.length > 0 ? settings.blocks : createDefaultMessageBlocks();
+      currentSettings.blocks.length > 0
+        ? currentSettings.blocks
+        : createDefaultMessageBlocks();
     const normalizedSettings = normalizeSettings({
-      ...settings,
+      ...currentSettings,
       blocks: blocksToSave,
-      body: generateHtml(blocksToSave, "basic", emailTheme.config),
+      body: generateHtml(
+        blocksToSave,
+        currentSettings.emailStyle,
+        emailThemeConfigRef.current,
+      ),
     });
 
     try {
-      const saved = await saveSubmitSettings.mutateAsync({
-        eventId,
+      const saved = await saveSubmitSettingsAsyncRef.current({
+        eventId: currentEventId,
         ...normalizedSettings,
         recipientFieldId: normalizedSettings.recipientFieldIds[0] ?? "",
       });
@@ -350,22 +397,22 @@ export default function SubmitFormPanel({
           recipientFieldIds:
             saved.recipientFieldIds ?? normalizedSettings.recipientFieldIds,
         },
-        formTitle,
+        currentFormTitle,
       );
       setSettings(nextSettings);
       setSavedSnapshot(serializeSettings(nextSettings));
       if (showFeedback) {
-        showToast?.("Submit form settings saved");
+        currentShowToast?.("Submit form settings saved");
       }
       return true;
     } catch (error) {
       console.error("[SubmitFormPanel] save settings failed:", error);
       if (showFeedback) {
-        showToast?.("Failed to save submit form settings", "error");
+        currentShowToast?.("Failed to save submit form settings", "error");
       }
       return false;
     }
-  }, [emailTheme.config, eventId, formTitle, saveSubmitSettings, settings, showToast]);
+  }, []);
 
   useEffect(() => {
     onStateChange?.({
@@ -750,6 +797,30 @@ export default function SubmitFormPanel({
           </div>
 
           <div>
+            <p className="mb-2 text-xs font-semibold text-gray-500">Style</p>
+            <div className="grid max-w-md grid-cols-2 overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+              {EMAIL_STYLE_OPTIONS.map(({ Icon, label, value }) => {
+                const isSelected = settings.emailStyle === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => updateSettings({ emailStyle: value })}
+                    className={`flex h-16 items-center justify-center gap-2 border-r border-gray-200 text-sm font-semibold transition-colors last:border-r-0 ${
+                      isSelected
+                        ? "bg-white text-gray-800 ring-1 ring-inset ring-gray-900"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon size={17} />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
             <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-500">
@@ -778,75 +849,100 @@ export default function SubmitFormPanel({
             <div className="grid overflow-hidden rounded-md border border-gray-200 bg-white xl:grid-cols-[minmax(0,1fr)_240px]">
               <div className="min-h-[32rem] bg-gray-100/70 p-7">
                 <div
-                  className="mx-auto min-h-[18rem] w-full max-w-[54rem] rounded-xl px-8 py-7 shadow-sm"
+                  className={`mx-auto min-h-[18rem] w-full max-w-[54rem] shadow-sm ${
+                    settings.emailStyle === "formatted"
+                      ? "rounded-xl px-8 py-7"
+                      : "px-8 py-7"
+                  }`}
                   style={{
-                    background: emailTheme.config.bg,
-                    color: emailTheme.config.textColor,
+                    background:
+                      settings.emailStyle === "formatted"
+                        ? emailTheme.config.canvasBg
+                        : emailTheme.config.bg,
                     fontFamily: emailTheme.config.fontFamily,
                   }}
                 >
-                  {settings.blocks.length === 0 ? (
-                    <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
-                      <AddBlockDropdown onAdd={(type) => addBlock(type)} />
-                    </div>
-                  ) : (
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <SortableContext
-                        items={settings.blocks.map((block) => block.id)}
-                        strategy={verticalListSortingStrategy}
+                  {settings.emailStyle === "formatted" ? (
+                    <BrandLogo
+                      variant="blue"
+                      className="mx-auto mb-5 h-9 w-auto max-w-[170px]"
+                    />
+                  ) : null}
+
+                  <div
+                    className={`min-h-[14rem] ${
+                      settings.emailStyle === "formatted"
+                        ? "rounded-lg px-8 py-7"
+                        : ""
+                    }`}
+                    style={{
+                      background: emailTheme.config.bg,
+                      color: emailTheme.config.textColor,
+                    }}
+                  >
+                    {settings.blocks.length === 0 ? (
+                      <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                        <AddBlockDropdown onAdd={(type) => addBlock(type)} />
+                      </div>
+                    ) : (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
                       >
-                        <div>
-                          {settings.blocks.map((block, index) => (
-                            <div key={block.id}>
-                              <BlockInsertControl
-                                isVisible={
-                                  selectedBlockId === block.id ||
-                                  selectedBlockId ===
-                                    settings.blocks[index - 1]?.id
-                                }
-                                onAdd={(type) =>
-                                  addBlock(
-                                    type,
-                                    index === 0
-                                      ? null
-                                      : settings.blocks[index - 1]?.id,
-                                  )
-                                }
-                              />
-                              <SortableBlock
-                                block={block}
-                                isSelected={selectedBlockId === block.id}
-                                onDelete={() => deleteBlock(block.id)}
-                                onDuplicate={() => duplicateBlock(block.id)}
-                                onPickImage={() => setImagePickerFor(block.id)}
-                                onSelect={() => setSelectedBlockId(block.id)}
-                                onUpdate={(patch) =>
-                                  updateBlock(block.id, patch)
-                                }
-                              />
-                            </div>
-                          ))}
-                          <BlockInsertControl
-                            isVisible={
-                              selectedBlockId ===
-                              settings.blocks[settings.blocks.length - 1]?.id
-                            }
-                            onAdd={(type) =>
-                              addBlock(
-                                type,
-                                settings.blocks[settings.blocks.length - 1]
-                                  ?.id ?? null,
-                              )
-                            }
-                          />
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  )}
+                        <SortableContext
+                          items={settings.blocks.map((block) => block.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div>
+                            {settings.blocks.map((block, index) => (
+                              <div key={block.id}>
+                                <BlockInsertControl
+                                  isVisible={
+                                    selectedBlockId === block.id ||
+                                    selectedBlockId ===
+                                      settings.blocks[index - 1]?.id
+                                  }
+                                  onAdd={(type) =>
+                                    addBlock(
+                                      type,
+                                      index === 0
+                                        ? null
+                                        : settings.blocks[index - 1]?.id,
+                                    )
+                                  }
+                                />
+                                <SortableBlock
+                                  block={block}
+                                  isSelected={selectedBlockId === block.id}
+                                  onDelete={() => deleteBlock(block.id)}
+                                  onDuplicate={() => duplicateBlock(block.id)}
+                                  onPickImage={() => setImagePickerFor(block.id)}
+                                  onSelect={() => setSelectedBlockId(block.id)}
+                                  onUpdate={(patch) =>
+                                    updateBlock(block.id, patch)
+                                  }
+                                />
+                              </div>
+                            ))}
+                            <BlockInsertControl
+                              isVisible={
+                                selectedBlockId ===
+                                settings.blocks[settings.blocks.length - 1]?.id
+                              }
+                              onAdd={(type) =>
+                                addBlock(
+                                  type,
+                                  settings.blocks[settings.blocks.length - 1]
+                                    ?.id ?? null,
+                                )
+                              }
+                            />
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    )}
+                  </div>
                 </div>
               </div>
 

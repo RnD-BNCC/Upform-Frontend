@@ -1,9 +1,6 @@
 ﻿import type { EmailComposerDraft as ApiEmailComposerDraft } from "@/types/api";
 import type { FormResponse, FormSection } from "@/types/form";
-import {
-  getBrandLogoSrc,
-  getBrandLogoVariantForBackground,
-} from "@/constants/brand";
+import { getBrandLogoSrc } from "@/constants/brand";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
 import {
   DEFAULT_IMAGE_MAX_HEIGHT,
@@ -53,10 +50,8 @@ function getEmailFontFamily(fontFamily: string) {
   return escapeHtml(fontFamily.replace(/"/g, "'"));
 }
 
-function getEmailBrandLogoHtml(theme: ThemeConfig) {
-  const logoSrc = escapeHtml(
-    getBrandLogoSrc(getBrandLogoVariantForBackground(theme.canvasBg), true),
-  );
+function getEmailBrandLogoHtml() {
+  const logoSrc = escapeHtml(getBrandLogoSrc("blue", true));
 
   return `<div style="text-align:center;margin-bottom:18px;"><img src="${logoSrc}" alt="UpForm" width="150" style="display:inline-block;width:150px;max-width:60%;height:auto;border:0;outline:none;text-decoration:none;" /></div>`;
 }
@@ -449,7 +444,7 @@ ${blocksHtml}
 
   return `<div style="font-family:${fontFamily};background:${theme.canvasBg};padding:32px 16px;">
 <div style="max-width:660px;margin:0 auto;">
-  ${getEmailBrandLogoHtml(theme)}
+  ${getEmailBrandLogoHtml()}
   <div style="background:${theme.bg};border-radius:10px;padding:28px 32px;color:${theme.textColor};">
 ${blocksHtml}
   </div>
