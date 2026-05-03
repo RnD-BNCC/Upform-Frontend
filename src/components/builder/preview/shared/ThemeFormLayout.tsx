@@ -14,9 +14,10 @@ import ThemeLogo from "./ThemeLogo";
 type Props = {
   children: ReactNode;
   formEndRef?: RefObject<HTMLDivElement | null>;
+  headerStart?: ReactNode;
   pageType: "page" | "ending";
   logoClassName?: string;
-  logoPlacement?: "absolute" | "fixed";
+  logoPlacement?: "absolute" | "fixed" | "inline" | "responsive";
   surfaceClassName: string;
   themeConfig: ThemeConfig;
   onFormClick?: MouseEventHandler<HTMLDivElement>;
@@ -62,6 +63,7 @@ function ThemeImagePanel({
 export default function ThemeFormLayout({
   children,
   formEndRef,
+  headerStart,
   pageType,
   logoClassName,
   logoPlacement = "fixed",
@@ -77,7 +79,16 @@ export default function ThemeFormLayout({
   const hasLayoutImage =
     pageType === "page" && layout.hasImage && !!themeConfig.formImageUrl;
   const topPaddingClassName = "pt-8";
-  const floatingLogo = hasLogo ? (
+  const inlineLogo =
+    (logoPlacement === "inline" || logoPlacement === "responsive") && hasLogo ? (
+      <ThemeLogo
+        className="ml-auto shrink-0"
+        display={logoPlacement === "responsive" ? "mobile" : "always"}
+        insideSurface={false}
+        themeConfig={themeConfig}
+      />
+    ) : null;
+  const floatingLogo = logoPlacement !== "inline" && hasLogo ? (
     <ThemeLogo
       className={
         logoClassName ??
@@ -85,6 +96,7 @@ export default function ThemeFormLayout({
           ? "absolute right-3 top-3 z-30 sm:right-4 sm:top-4"
           : "fixed right-3 top-3 z-40 sm:right-4 sm:top-4")
       }
+      display={logoPlacement === "responsive" ? "desktop" : "always"}
       insideSurface={false}
       themeConfig={themeConfig}
     />
@@ -95,6 +107,16 @@ export default function ThemeFormLayout({
       style={{ maxWidth: `${themeConfig.formWidth}px` }}
       onClick={onFormClick}
     >
+      {headerStart || inlineLogo ? (
+        <div
+          className={`mb-3 flex min-h-10 w-full items-center gap-3 ${
+            logoPlacement === "responsive" ? "sm:hidden" : ""
+          }`}
+        >
+          {headerStart ? <div className="shrink-0">{headerStart}</div> : null}
+          {inlineLogo}
+        </div>
+      ) : null}
       <div
         className={`upform-theme-scope upform-theme-form-surface theme-field-stack ${surfaceClassName}`}
         style={themeVars}

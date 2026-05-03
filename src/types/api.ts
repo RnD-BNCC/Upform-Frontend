@@ -203,6 +203,7 @@ export type SubmitFormSettings = {
   id: string
   eventId: string
   enabled: boolean
+  emailStyle?: 'formatted' | 'basic'
   emailThemeValue: string | null
   recipientFieldId: string
   recipientFieldIds?: string[]
@@ -221,6 +222,7 @@ export type SaveSubmitFormSettingsPayload = {
   eventId: string
   blocks: unknown
   enabled: boolean
+  emailStyle: 'formatted' | 'basic'
   emailThemeValue: string | null
   recipientFieldId: string
   recipientFieldIds?: string[]

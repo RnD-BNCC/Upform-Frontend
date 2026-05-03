@@ -442,14 +442,17 @@ export default function PreviewField({
       className={responseCardClass}
     >
       {field.type !== "single_checkbox" ? (
-        <p className="theme-question-title mb-1 text-[15px] font-medium leading-snug text-gray-900">
-          <span
+        <div className="theme-question-title mb-1 flex items-start gap-1 text-[15px] font-medium leading-snug text-gray-900">
+          <div
+            className="upform-rich-text-display min-w-0"
             dangerouslySetInnerHTML={{
               __html: resolvedLabelHtml || "Untitled Question",
             }}
           />
-          {field.required ? <span className="ml-1 text-red-500">*</span> : null}
-        </p>
+          {field.required ? (
+            <span className="shrink-0 text-red-500">*</span>
+          ) : null}
+        </div>
       ) : null}
 
       {resolvedDescriptionHtml ? (

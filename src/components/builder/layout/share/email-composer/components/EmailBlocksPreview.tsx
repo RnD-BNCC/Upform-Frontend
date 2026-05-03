@@ -1,5 +1,4 @@
 import { BrandLogo } from "@/components/layout";
-import { getBrandLogoVariantForBackground } from "@/constants/brand";
 import type { EmailBlock, EmailStyle } from "@/types/builderShare";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
 import {
@@ -35,7 +34,7 @@ export default function EmailBlocksPreview({
     >
       {emailStyle === "formatted" ? (
         <BrandLogo
-          variant={getBrandLogoVariantForBackground(theme.canvasBg)}
+          variant="blue"
           className="mx-auto mb-6 h-9 w-auto max-w-[170px]"
         />
       ) : null}

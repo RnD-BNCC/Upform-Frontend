@@ -133,6 +133,7 @@ export function useMutationSaveSubmitFormSettings(
         [QUERY_KEYS.SUBMIT_FORM_SETTINGS, variables.eventId],
         {
           ...data,
+          emailStyle: data.emailStyle ?? variables.emailStyle,
           recipientFieldIds: variables.recipientFieldIds ?? data.recipientFieldIds,
         },
       )
