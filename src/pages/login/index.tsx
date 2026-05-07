@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GoogleBrandIcon, SpinnerArcIcon } from "@/components/icons";
 import { BrandLogo } from "@/components/layout";
@@ -117,8 +117,26 @@ export default function LoginPage() {
               Contact us
             </a>
           </p>
+          <div className="mt-4 flex items-center justify-center gap-3 text-[10px] font-semibold text-gray-400">
+            <Link to="/privacy-policy" className="underline hover:text-gray-600">
+              Privacy Policy
+            </Link>
+            <span>/</span>
+            <Link to="/terms-of-service" className="underline hover:text-gray-600">
+              Terms
+            </Link>
+          </div>
         </div>
       </motion.div>
+
+      <div className="mt-6 flex justify-center gap-3 text-xs text-white/70">
+        <Link to="/privacy-policy" className="underline hover:text-white">
+          Privacy Policy
+        </Link>
+        <Link to="/terms-of-service" className="underline hover:text-white">
+          Terms of Service
+        </Link>
+      </div>
 
       <p className="mt-6 text-center text-xs text-white/60">
         © {new Date().getFullYear()} UpForm. All Rights Reserved.
