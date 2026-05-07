@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GoogleBrandIcon, SpinnerArcIcon } from "@/components/icons";
 import { BrandLogo } from "@/components/layout";
@@ -51,13 +52,23 @@ function useTypewriter(words: string[], speed = 100, pause = 1500) {
 
 export default function LoginPage() {
   const greeting = useTypewriter(GREETINGS);
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
+
+  const getCallbackUrl = () => {
+    const redirect = new URLSearchParams(location.search).get("redirect");
+    const safeRedirect =
+      redirect && redirect.startsWith("/") && !redirect.startsWith("//")
+        ? redirect
+        : "/";
+    return `${window.location.origin}${safeRedirect}`;
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: `${window.location.origin}/`,
+      callbackURL: getCallbackUrl(),
     });
   };
 
