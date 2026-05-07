@@ -58,6 +58,8 @@ export const Api = {
   galleryFileDelete: '/gallery/file',
   galleryFilePreview: '/gallery/file/preview',
   galleryEventShare: (eventId: string) => `/gallery/events/${eventId}/share`,
+  galleryEventShareDriveAuth: (eventId: string) =>
+    `/gallery/events/${eventId}/share/drive/auth`,
   galleryEventShareDrive: (eventId: string) =>
     `/gallery/events/${eventId}/share/drive`,
   galleryShare: (token: string) => `/gallery/share/${token}`,
