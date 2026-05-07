@@ -20,6 +20,7 @@ export type GalleryShare = {
   shareUrl: string
   driveFolderId: string | null
   driveFolderUrl: string | null
+  driveOwnerEmail: string | null
   driveSyncEnabled: boolean
   members: GalleryShareMember[]
 }
@@ -32,6 +33,7 @@ export type GalleryShareSummary = {
   memberCount: number
   driveSyncEnabled: boolean
   driveFolderUrl: string | null
+  driveOwnerEmail: string | null
 }
 
 export type GalleryFileEntry = {
