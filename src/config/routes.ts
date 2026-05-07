@@ -1,6 +1,7 @@
 import type { Route } from '@/types/route'
 import HomePage from '@/pages/home'
 import GalleryPage from '@/pages/gallery'
+import SharedGalleryPage from '@/pages/gallery/share'
 import LoginPage from '@/pages/login'
 import EventDetailPage from '@/pages/events/detail'
 import EventPreviewPage from '@/pages/events/preview'
@@ -62,6 +63,15 @@ export const publicRoutes: Route[] = [
     component: GalleryPage,
     isEnabled: true,
     noLayout: true,
+  },
+  {
+    key: 'shared-gallery',
+    title: 'Shared Gallery',
+    path: '/gallery/share/:token',
+    component: SharedGalleryPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
   },
   {
     key: 'polls',
