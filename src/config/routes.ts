@@ -12,6 +12,8 @@ import PollPresentPage from '@/pages/polls/present'
 import LiveJoinPage from '@/pages/live'
 import LiveVotePage from '@/pages/live/vote'
 import NotFoundPage from '@/pages/not-found'
+import PrivacyPolicyPage from '@/pages/legal/privacy-policy'
+import TermsOfServicePage from '@/pages/legal/terms-of-service'
 
 export const publicRoutes: Route[] = [
   {
@@ -111,6 +113,24 @@ export const publicRoutes: Route[] = [
     title: 'Live Poll',
     path: '/live/:code',
     component: LiveVotePage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
+  },
+  {
+    key: 'privacy-policy',
+    title: 'Privacy Policy',
+    path: '/privacy-policy',
+    component: PrivacyPolicyPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
+  },
+  {
+    key: 'terms-of-service',
+    title: 'Terms of Service',
+    path: '/terms-of-service',
+    component: TermsOfServicePage,
     isEnabled: true,
     noLayout: true,
     isUnguarded: true,
