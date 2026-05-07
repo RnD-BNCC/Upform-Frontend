@@ -32,7 +32,6 @@ type Props = {
   onClose: () => void;
   onCopy: (url: string) => void;
   onConnectDrive: () => void;
-  onChooseDriveAccount: () => void;
   onSave: (payload: {
     visibility: GalleryShareVisibility;
     publicRole: GalleryShareRole;
@@ -199,7 +198,6 @@ export default function GalleryShareModal({
   onClose,
   onCopy,
   onConnectDrive,
-  onChooseDriveAccount,
   onSave,
 }: Props) {
   const [visibility, setVisibility] =
@@ -226,6 +224,22 @@ export default function GalleryShareModal({
     !!normalizedEmail &&
     normalizedEmail.includes("@") &&
     !members.some((member) => member.email === normalizedEmail);
+  const driveConnections = share?.driveConnections ?? [];
+  const visibleDriveConnections =
+    driveConnections.length > 0
+      ? driveConnections
+      : share?.driveFolderUrl
+        ? [
+            {
+              id: "legacy",
+              ownerEmail: share.driveOwnerEmail ?? "Connected account",
+              folderId: share.driveFolderId ?? "legacy",
+              folderUrl: share.driveFolderUrl,
+              syncEnabled: share.driveSyncEnabled,
+            },
+          ]
+        : [];
+  const hasDriveConnections = visibleDriveConnections.length > 0;
 
   const statusText = useMemo(() => {
     if (visibility === "public") return "Anyone with the link";
@@ -407,42 +421,49 @@ export default function GalleryShareModal({
                     Google Drive
                   </p>
                   <p className="truncate text-[11px] text-gray-400">
-                    {share?.driveFolderUrl
-                      ? `Connected as ${share.driveOwnerEmail ?? "Google Drive"}`
-                      : "Create a Drive folder for this gallery."}
+                    {hasDriveConnections
+                      ? `${visibleDriveConnections.length} Drive account${
+                          visibleDriveConnections.length > 1 ? "s" : ""
+                        } connected.`
+                      : "Create a Drive folder with the signed-in account."}
                   </p>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {share?.driveFolderUrl && (
-                  <button
-                    onClick={onConnectDrive}
-                    disabled={isConnectingDrive}
-                    className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-600 disabled:opacity-50"
-                  >
-                    {isConnectingDrive ? "Syncing..." : "Sync files"}
-                  </button>
-                )}
-                <button
-                  onClick={onChooseDriveAccount}
-                  disabled={isConnectingDrive}
-                  className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-600 disabled:opacity-50"
-                >
-                  {share?.driveFolderUrl ? "Change" : "Choose account"}
-                </button>
-              </div>
+              <button
+                onClick={onConnectDrive}
+                disabled={isConnectingDrive}
+                className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-600 disabled:opacity-50"
+              >
+                {isConnectingDrive
+                  ? hasDriveConnections
+                    ? "Syncing..."
+                    : "Connecting..."
+                  : hasDriveConnections
+                    ? "Connect / Sync"
+                    : "Connect"}
+              </button>
             </div>
 
-            {share?.driveFolderUrl && (
-              <a
-                href={share.driveFolderUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 flex items-center gap-1.5 truncate rounded-md bg-gray-50 px-2.5 py-2 text-xs font-semibold text-primary-600 hover:bg-primary-50"
-              >
-                <Link size={13} weight="bold" />
-                Open Drive folder
-              </a>
+            {visibleDriveConnections.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {visibleDriveConnections.map((connection) => (
+                  <a
+                    key={connection.id}
+                    href={connection.folderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-md bg-gray-50 px-2.5 py-2 text-xs font-semibold text-primary-600 hover:bg-primary-50"
+                  >
+                    <Link size={13} weight="bold" className="shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {connection.ownerEmail}
+                    </span>
+                    <span className="shrink-0 text-[10px] text-gray-400">
+                      Open
+                    </span>
+                  </a>
+                ))}
+              </div>
             )}
           </div>
 
