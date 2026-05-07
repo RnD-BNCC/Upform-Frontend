@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { X } from "@phosphor-icons/react";
+import { getGalleryPreviewUrl } from "../utils";
 
 type Props = {
   url: string;
@@ -12,6 +13,8 @@ export default function ImagePreviewModal({
   filename,
   onClose,
 }: Props) {
+  const previewUrl = getGalleryPreviewUrl(url);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -29,7 +32,7 @@ export default function ImagePreviewModal({
         onClick={(event) => event.stopPropagation()}
       >
         <img
-          src={url}
+          src={previewUrl}
           alt={filename}
           className="max-h-[85vh] w-full object-contain rounded-xl"
         />
@@ -46,4 +49,3 @@ export default function ImagePreviewModal({
     </motion.div>
   );
 }
-
