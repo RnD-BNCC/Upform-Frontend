@@ -16,7 +16,7 @@ export default function ActionToast({ message, icon, bottom = 'bottom-20' }: Pro
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
-          className={`fixed ${bottom} left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg`}
+          className={`fixed ${bottom} left-1/2 -translate-x-1/2 z-[10050] flex items-center gap-1.5 bg-gray-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-lg`}
         >
           {icon}
           {message}

@@ -734,7 +734,7 @@ export default function GalleryPage() {
           isSaving={updateShareMutation.isPending}
           isConnectingDrive={connectDriveMutation.isPending}
           onClose={() => setShareTarget(null)}
-          onCopy={handleCopyUrl}
+          onCopy={(url) => copyGalleryUrl(url, "Share link copied")}
           onConnectDrive={handleConnectDrive}
           onSave={handleShareSave}
         />
