@@ -32,6 +32,7 @@ type Props = {
   onClose: () => void;
   onCopy: (url: string) => void;
   onConnectDrive: () => void;
+  onChooseDriveAccount: () => void;
   onSave: (payload: {
     visibility: GalleryShareVisibility;
     publicRole: GalleryShareRole;
@@ -198,6 +199,7 @@ export default function GalleryShareModal({
   onClose,
   onCopy,
   onConnectDrive,
+  onChooseDriveAccount,
   onSave,
 }: Props) {
   const [visibility, setVisibility] =
@@ -406,18 +408,29 @@ export default function GalleryShareModal({
                   </p>
                   <p className="truncate text-[11px] text-gray-400">
                     {share?.driveFolderUrl
-                      ? "Folder connected"
+                      ? `Connected as ${share.driveOwnerEmail ?? "Google Drive"}`
                       : "Create a Drive folder for this gallery."}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={onConnectDrive}
-                disabled={isConnectingDrive}
-                className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-600 disabled:opacity-50"
-              >
-                {isConnectingDrive ? "Connecting..." : "Connect"}
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {share?.driveFolderUrl && (
+                  <button
+                    onClick={onConnectDrive}
+                    disabled={isConnectingDrive}
+                    className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-600 disabled:opacity-50"
+                  >
+                    {isConnectingDrive ? "Syncing..." : "Sync files"}
+                  </button>
+                )}
+                <button
+                  onClick={onChooseDriveAccount}
+                  disabled={isConnectingDrive}
+                  className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-600 disabled:opacity-50"
+                >
+                  {share?.driveFolderUrl ? "Change" : "Choose account"}
+                </button>
+              </div>
             </div>
 
             {share?.driveFolderUrl && (
