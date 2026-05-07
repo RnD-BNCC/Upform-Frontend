@@ -117,15 +117,6 @@ export default function LoginPage() {
               Contact us
             </a>
           </p>
-          <div className="mt-4 flex items-center justify-center gap-3 text-[10px] font-semibold text-gray-400">
-            <Link to="/privacy-policy" className="underline hover:text-gray-600">
-              Privacy Policy
-            </Link>
-            <span>/</span>
-            <Link to="/terms-of-service" className="underline hover:text-gray-600">
-              Terms
-            </Link>
-          </div>
         </div>
       </motion.div>
 

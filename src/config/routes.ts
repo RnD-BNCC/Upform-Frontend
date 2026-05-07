@@ -1,5 +1,6 @@
 import type { Route } from '@/types/route'
 import HomePage from '@/pages/home'
+import PublicHomePage from '@/pages/public-home'
 import GalleryPage from '@/pages/gallery'
 import SharedGalleryPage from '@/pages/gallery/share'
 import LoginPage from '@/pages/login'
@@ -32,6 +33,15 @@ export const publicRoutes: Route[] = [
     isEnabled: true,
     noLayout: true,
     isPublic: true,
+  },
+  {
+    key: 'public-home',
+    title: 'UpForm',
+    path: '/home',
+    component: PublicHomePage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
   },
   {
     key: 'form-builder',
