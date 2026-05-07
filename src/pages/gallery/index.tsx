@@ -26,7 +26,6 @@ import {
   type GalleryFileEntry,
 } from "@/api/gallery";
 import { useMutationUploadImage } from "@/api/upload";
-import { Api } from "@/constants/api";
 import {
   ArrowSquareOut,
   Copy,
@@ -274,15 +273,6 @@ export default function GalleryPage() {
     [updateShareMutation],
   );
 
-  const handleChooseDriveAccount = useCallback(() => {
-    if (!shareTarget) return;
-
-    const redirect = encodeURIComponent(window.location.href);
-    window.location.href = `${import.meta.env.VITE_API_URL}/api${Api.galleryEventShareDriveAuth(
-      shareTarget.eventId,
-    )}?redirect=${redirect}`;
-  }, [shareTarget]);
-
   const handleConnectDrive = useCallback(() => {
     connectDriveMutation.mutate(undefined, {
       onSuccess: () => {
@@ -291,7 +281,7 @@ export default function GalleryPage() {
       onError: () => {
         setStatus({
           type: "error",
-          message: "Failed to sync Google Drive. Choose a Drive account again.",
+          message: "Failed to connect Google Drive. Re-login with Drive access.",
         });
       },
     });
@@ -746,7 +736,6 @@ export default function GalleryPage() {
           onClose={() => setShareTarget(null)}
           onCopy={handleCopyUrl}
           onConnectDrive={handleConnectDrive}
-          onChooseDriveAccount={handleChooseDriveAccount}
           onSave={handleShareSave}
         />
       )}
