@@ -56,6 +56,11 @@ export const Api = {
   galleryFiles: '/gallery/files',
   galleryMedia: '/gallery/media',
   galleryFileDelete: '/gallery/file',
+  galleryFilePreview: '/gallery/file/preview',
+  galleryEventShare: (eventId: string) => `/gallery/events/${eventId}/share`,
+  galleryEventShareDrive: (eventId: string) =>
+    `/gallery/events/${eventId}/share/drive`,
+  galleryShare: (token: string) => `/gallery/share/${token}`,
 
   // Email blasts
   emailBlasts: '/email-blasts',
