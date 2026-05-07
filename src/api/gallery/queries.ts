@@ -11,6 +11,14 @@ export type GalleryShareMember = {
   role: GalleryShareRole
 }
 
+export type GalleryDriveConnection = {
+  id: string
+  ownerEmail: string
+  folderId: string
+  folderUrl: string
+  syncEnabled: boolean
+}
+
 export type GalleryShare = {
   id: string
   eventId: string
@@ -22,6 +30,7 @@ export type GalleryShare = {
   driveFolderUrl: string | null
   driveOwnerEmail: string | null
   driveSyncEnabled: boolean
+  driveConnections: GalleryDriveConnection[]
   members: GalleryShareMember[]
 }
 
@@ -34,6 +43,7 @@ export type GalleryShareSummary = {
   driveSyncEnabled: boolean
   driveFolderUrl: string | null
   driveOwnerEmail: string | null
+  driveConnections: GalleryDriveConnection[]
 }
 
 export type GalleryFileEntry = {
@@ -109,10 +119,15 @@ function buildLocalShareUrl(token: string, fallback: string) {
   return `${window.location.origin}/gallery/share/${token}`
 }
 
-function normalizeShareUrl<T extends { shareUrl: string; token: string }>(share: T): T {
+function normalizeShareUrl<T extends {
+  shareUrl: string
+  token: string
+  driveConnections?: GalleryDriveConnection[]
+}>(share: T): T & { driveConnections: GalleryDriveConnection[] } {
   return {
     ...share,
     shareUrl: buildLocalShareUrl(share.token, share.shareUrl),
+    driveConnections: share.driveConnections ?? [],
   }
 }
 
