@@ -302,6 +302,7 @@ export default function SubmitFormPanel({
   const emailThemeConfigRef = useRef(emailTheme.config);
   const saveSubmitSettingsAsyncRef = useRef(saveSubmitSettings.mutateAsync);
   const showToastRef = useRef(showToast);
+  const logoAutoFixedRef = useRef(false);
 
   eventIdRef.current = eventId;
   formTitleRef.current = formTitle;
@@ -413,6 +414,28 @@ export default function SubmitFormPanel({
       return false;
     }
   }, []);
+
+  useEffect(() => {
+    if (settingsQuery.isLoading) return;
+    if (logoAutoFixedRef.current) return;
+    if (!eventId) return;
+
+    const storedBody = settingsQuery.data?.body ?? "";
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+    if (!currentOrigin || currentOrigin.includes("localhost")) return;
+
+    const needsFix =
+      storedBody.includes("/logo_blue.png") &&
+      !storedBody.includes(`${currentOrigin}/logo_blue.png`);
+
+    if (!needsFix) return;
+
+    logoAutoFixedRef.current = true;
+    const timer = setTimeout(() => {
+      saveSettings({ showFeedback: false });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [eventId, settingsQuery.isLoading, settingsQuery.data, saveSettings]);
 
   useEffect(() => {
     onStateChange?.({
@@ -846,7 +869,7 @@ export default function SubmitFormPanel({
                 <AddBlockDropdown onAdd={(type) => addBlock(type)} />
               </div>
             </div>
-            <div className="grid overflow-hidden rounded-md border border-gray-200 bg-white xl:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="grid rounded-md border border-gray-200 bg-white xl:grid-cols-[minmax(0,1fr)_240px]">
               <div className="min-h-[32rem] bg-gray-100/70 p-7">
                 <div
                   className={`mx-auto min-h-[18rem] w-full max-w-[54rem] shadow-sm ${

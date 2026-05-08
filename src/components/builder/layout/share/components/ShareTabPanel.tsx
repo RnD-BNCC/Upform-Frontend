@@ -50,7 +50,7 @@ export default function ShareTabPanel({
     <div className="mt-10 border-t border-gray-200 pt-8">
       <h2 className="text-xl font-bold text-gray-900">Other</h2>
 
-      <div className="mt-5 overflow-hidden rounded-sm border border-gray-200 bg-white">
+      <div className="mt-5 rounded-sm border border-gray-200 bg-white">
         <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
           <div className="inline-flex rounded-sm border border-gray-200 bg-gray-100 p-0.5">
             <button

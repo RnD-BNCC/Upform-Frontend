@@ -5,6 +5,7 @@ import type {
   GalleryResponse,
 } from "@/api/gallery";
 import type { FolderView } from "@/components/utils";
+import { Api } from "@/constants/api";
 
 export type GalleryTab = "files" | "media";
 
@@ -39,9 +40,21 @@ export function formatGalleryDate(iso: string) {
   });
 }
 
-export function isGalleryImageFile(filename: string) {
-  const extension = filename.split(".").pop()?.toLowerCase() ?? "";
-  return IMAGE_EXTENSIONS.has(extension);
+function getFileExtension(value: string) {
+  const cleanValue = value.split("?")[0].split("#")[0];
+  return cleanValue.split(".").pop()?.toLowerCase() ?? "";
+}
+
+export function isGalleryImageFile(filename: string, url?: string) {
+  const extension = getFileExtension(filename);
+  const urlExtension = url ? getFileExtension(url) : "";
+  return IMAGE_EXTENSIONS.has(extension) || IMAGE_EXTENSIONS.has(urlExtension);
+}
+
+export function getGalleryPreviewUrl(url: string) {
+  const baseUrl = import.meta.env.VITE_API_URL;
+  const separator = Api.galleryFilePreview.includes("?") ? "&" : "?";
+  return `${baseUrl}/api${Api.galleryFilePreview}${separator}url=${encodeURIComponent(url)}`;
 }
 
 export function filterGalleryEvents(

@@ -60,9 +60,12 @@ export function getBrandLogoSrc(
 ) {
   const src = BRAND_LOGOS[variant];
 
-  if (!absolute || typeof window === "undefined" || !window.location?.origin) {
-    return src;
-  }
+  if (!absolute) return src;
+
+  const appUrl = import.meta.env.VITE_APP_URL as string | undefined;
+  if (appUrl) return `${appUrl}${src}`;
+
+  if (typeof window === "undefined" || !window.location?.origin) return src;
 
   return `${window.location.origin}${src}`;
 }

@@ -30,6 +30,17 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       await authClient.signOut();
+      const redirect = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}`,
+      );
+      window.location.href = `/login?redirect=${redirect}`;
+    }
+
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.error === "Unauthorized email"
+    ) {
+      await authClient.signOut();
       window.location.href = "/login";
     }
     return Promise.reject(error);
