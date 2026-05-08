@@ -302,6 +302,7 @@ export default function SubmitFormPanel({
   const emailThemeConfigRef = useRef(emailTheme.config);
   const saveSubmitSettingsAsyncRef = useRef(saveSubmitSettings.mutateAsync);
   const showToastRef = useRef(showToast);
+  const logoAutoFixedRef = useRef(false);
 
   eventIdRef.current = eventId;
   formTitleRef.current = formTitle;
@@ -341,6 +342,28 @@ export default function SubmitFormPanel({
     setSettings(nextSettings);
     setSavedSnapshot(serializeSettings(nextSettings));
   }, [formTitle, settingsQuery.data, settingsQuery.isLoading]);
+
+  useEffect(() => {
+    if (settingsQuery.isLoading) return;
+    if (logoAutoFixedRef.current) return;
+    if (!eventId) return;
+
+    const storedBody = settingsQuery.data?.body ?? "";
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+    if (!currentOrigin || currentOrigin.includes("localhost")) return;
+
+    const needsFix =
+      storedBody.includes("/logo_blue.png") &&
+      !storedBody.includes(`${currentOrigin}/logo_blue.png`);
+
+    if (!needsFix) return;
+
+    logoAutoFixedRef.current = true;
+    const timer = setTimeout(() => {
+      saveSettings({ showFeedback: false });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [eventId, settingsQuery.isLoading, settingsQuery.data, saveSettings]);
 
   const updateSettings = (patch: Partial<SubmitFormSettings>) => {
     setSettings((current) => ({
