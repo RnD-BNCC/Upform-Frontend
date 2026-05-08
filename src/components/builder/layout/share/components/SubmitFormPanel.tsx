@@ -869,7 +869,7 @@ export default function SubmitFormPanel({
                 <AddBlockDropdown onAdd={(type) => addBlock(type)} />
               </div>
             </div>
-            <div className="grid overflow-hidden rounded-md border border-gray-200 bg-white xl:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="grid rounded-md border border-gray-200 bg-white xl:grid-cols-[minmax(0,1fr)_240px]">
               <div className="min-h-[32rem] bg-gray-100/70 p-7">
                 <div
                   className={`mx-auto min-h-[18rem] w-full max-w-[54rem] shadow-sm ${
