@@ -20,22 +20,34 @@ import {
   useQueryGalleryFiles,
   useQueryGalleryMedia,
   useMutationDeleteFile,
+  useMutationConnectGalleryDrive,
+  useMutationUpdateGalleryShare,
+  useQueryGalleryShare,
+  type GalleryFileEntry,
 } from "@/api/gallery";
 import { useMutationUploadImage } from "@/api/upload";
 import {
+  ArrowSquareOut,
+  Copy,
+  DownloadSimple,
+  Eye,
   File,
   Folder,
   FolderOpen,
   Images,
   Link,
   MagnifyingGlass,
+  ShareNetwork,
+  Trash,
   UploadSimple,
   User,
 } from "@phosphor-icons/react";
 import {
   FileCard,
   FolderItem,
+  GalleryContextMenu,
   GalleryHero,
+  GalleryShareModal,
   ImagePreviewModal,
   MediaCard,
 } from "./components";
@@ -47,9 +59,26 @@ import {
   findGalleryEvent,
   findGalleryResponse,
   formatGalleryDate,
+  getGalleryPreviewUrl,
   getGallerySearchPlaceholder,
+  isGalleryImageFile,
   type GalleryTab,
 } from "./utils";
+
+type GalleryContextMenuState =
+  | {
+      type: "event";
+      eventId: string;
+      eventName: string;
+      x: number;
+      y: number;
+    }
+  | {
+      type: "file";
+      file: GalleryFileEntry;
+      x: number;
+      y: number;
+    };
 
 export default function GalleryPage() {
   const [tab, setTab] = useState<GalleryTab>("files");
@@ -65,6 +94,12 @@ export default function GalleryPage() {
     url: string;
     filename: string;
   } | null>(null);
+  const [shareTarget, setShareTarget] = useState<{
+    eventId: string;
+    eventName: string;
+  } | null>(null);
+  const [contextMenu, setContextMenu] =
+    useState<GalleryContextMenuState | null>(null);
   const [status, setStatus] = useState<{
     type: StatusType;
     message: string;
@@ -77,6 +112,16 @@ export default function GalleryPage() {
 
   const filesQuery = useQueryGalleryFiles(filesPage, 20);
   const mediaQuery = useQueryGalleryMedia(mediaPage, 21);
+  const shareQuery = useQueryGalleryShare(
+    shareTarget?.eventId ?? "",
+    !!shareTarget,
+  );
+  const updateShareMutation = useMutationUpdateGalleryShare(
+    shareTarget?.eventId ?? "",
+  );
+  const connectDriveMutation = useMutationConnectGalleryDrive(
+    shareTarget?.eventId ?? "",
+  );
   const deleteMutation = useMutationDeleteFile();
   const uploadMutation = useMutationUploadImage();
 
@@ -98,6 +143,21 @@ export default function GalleryPage() {
         window.clearTimeout(toastTimeoutRef.current);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const driveStatus = url.searchParams.get("drive");
+    if (!driveStatus) return;
+
+    if (driveStatus === "connected") {
+      setStatus({ type: "success", message: "Google Drive connected and synced." });
+    } else {
+      setStatus({ type: "error", message: "Google Drive connection was not completed." });
+    }
+
+    url.searchParams.delete("drive");
+    window.history.replaceState({}, "", url.toString());
   }, []);
 
   const lowerSearch = search.toLowerCase().trim();
@@ -125,6 +185,10 @@ export default function GalleryPage() {
   const totalMedia =
     mediaQuery.data?.meta.total ?? mediaQuery.data?.items.length ?? 0;
   const searchPlaceholder = getGallerySearchPlaceholder(tab, folderView);
+  const contextEvent =
+    contextMenu?.type === "event"
+      ? allEvents.find((event) => event.id === contextMenu.eventId)
+      : undefined;
 
   const handleFolderNavigate = useCallback((view: FolderView) => {
     setFolderView(view);
@@ -179,6 +243,49 @@ export default function GalleryPage() {
     },
     [showToast],
   );
+
+  const openFileUrl = useCallback((url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
+
+  const copyGalleryUrl = useCallback(
+    (url: string, message = "URL copied") => {
+      void navigator.clipboard.writeText(url);
+      showToast(message);
+    },
+    [showToast],
+  );
+
+  const handleShareSave = useCallback(
+    (payload: Parameters<typeof updateShareMutation.mutate>[0]) => {
+      updateShareMutation.mutate(payload, {
+        onSuccess: () => {
+          setStatus({ type: "success", message: "Gallery sharing updated." });
+        },
+        onError: () => {
+          setStatus({
+            type: "error",
+            message: "Failed to update gallery sharing.",
+          });
+        },
+      });
+    },
+    [updateShareMutation],
+  );
+
+  const handleConnectDrive = useCallback(() => {
+    connectDriveMutation.mutate(undefined, {
+      onSuccess: () => {
+        setStatus({ type: "success", message: "Google Drive files synced." });
+      },
+      onError: () => {
+        setStatus({
+          type: "error",
+          message: "Failed to connect Google Drive. Re-login with Drive access.",
+        });
+      },
+    });
+  }, [connectDriveMutation]);
 
   return (
     <PageGridShell>
@@ -287,6 +394,11 @@ export default function GalleryPage() {
                                   key={event.id}
                                   icon={<Folder size={28} weight="fill" />}
                                   name={event.name}
+                                  meta={
+                                    event.share
+                                      ? `${event.share.visibility} sharing`
+                                      : undefined
+                                  }
                                   count={event.responses.length}
                                   countLabel={
                                     event.responses.length === 1
@@ -299,6 +411,30 @@ export default function GalleryPage() {
                                       eventId: event.id,
                                       eventName: event.name,
                                     })
+                                  }
+                                  onContextMenu={(mouseEvent) => {
+                                    mouseEvent.preventDefault();
+                                    setContextMenu({
+                                      type: "event",
+                                      eventId: event.id,
+                                      eventName: event.name,
+                                      x: mouseEvent.clientX,
+                                      y: mouseEvent.clientY,
+                                    });
+                                  }}
+                                  actions={
+                                    <button
+                                      onClick={() =>
+                                        setShareTarget({
+                                          eventId: event.id,
+                                          eventName: event.name,
+                                        })
+                                      }
+                                      className="flex size-7 items-center justify-center rounded-lg bg-white text-gray-400 shadow-sm transition-colors hover:text-primary-500"
+                                      title="Share gallery"
+                                    >
+                                      <ShareNetwork size={14} weight="bold" />
+                                    </button>
                                   }
                                 />
                               ))}
@@ -386,6 +522,21 @@ export default function GalleryPage() {
                                 url={fileEntry.url}
                                 filename={fileEntry.filename}
                                 fieldLabel={fileEntry.fieldLabel}
+                                fieldName={fileEntry.fieldName}
+                                onContextMenu={(event) => {
+                                  event.preventDefault();
+                                  setContextMenu({
+                                    type: "file",
+                                    file: fileEntry,
+                                    x: event.clientX,
+                                    y: event.clientY,
+                                  });
+                                }}
+                                onMissing={() =>
+                                  queryClient.invalidateQueries({
+                                    queryKey: ["gallery-files"],
+                                  })
+                                }
                                 onDelete={() =>
                                   setDeleteTarget({
                                     url: fileEntry.url,
@@ -474,6 +625,120 @@ export default function GalleryPage() {
       </div>
 
       <Footer />
+
+      <AnimatePresence>
+        {contextMenu?.type === "event" && contextEvent && (
+          <GalleryContextMenu
+            key="event-context"
+            x={contextMenu.x}
+            y={contextMenu.y}
+            kind="Gallery"
+            title={contextEvent.name}
+            subtitle={`${contextEvent.fileCount} ${
+              contextEvent.fileCount === 1 ? "file" : "files"
+            }`}
+            onClose={() => setContextMenu(null)}
+            actions={[
+              {
+                Icon: ArrowSquareOut,
+                label: "Open",
+                onClick: () =>
+                  handleFolderNavigate({
+                    level: "event",
+                    eventId: contextEvent.id,
+                    eventName: contextEvent.name,
+                  }),
+              },
+              {
+                Icon: ShareNetwork,
+                label: "Share",
+                onClick: () =>
+                  setShareTarget({
+                    eventId: contextEvent.id,
+                    eventName: contextEvent.name,
+                  }),
+              },
+              {
+                Icon: Copy,
+                label: "Copy share link",
+                disabled: !contextEvent.share?.shareUrl,
+                onClick: () =>
+                  contextEvent.share?.shareUrl &&
+                  copyGalleryUrl(contextEvent.share.shareUrl, "Share link copied"),
+              },
+              {
+                Icon: Link,
+                label: "Open Drive folder",
+                disabled: !contextEvent.share?.driveFolderUrl,
+                onClick: () =>
+                  contextEvent.share?.driveFolderUrl &&
+                  openFileUrl(contextEvent.share.driveFolderUrl),
+              },
+            ]}
+          />
+        )}
+
+        {contextMenu?.type === "file" && (
+          <GalleryContextMenu
+            key="file-context"
+            x={contextMenu.x}
+            y={contextMenu.y}
+            kind="File"
+            title={contextMenu.file.filename}
+            subtitle={contextMenu.file.fieldName ?? contextMenu.file.fieldLabel}
+            onClose={() => setContextMenu(null)}
+            actions={[
+              {
+                Icon: Eye,
+                label: "Preview",
+                disabled: !isGalleryImageFile(
+                  contextMenu.file.filename,
+                  contextMenu.file.url,
+                ),
+                onClick: () =>
+                  setPreviewFile({
+                    url: contextMenu.file.url,
+                    filename: contextMenu.file.filename,
+                  }),
+              },
+              {
+                Icon: Copy,
+                label: "Copy URL",
+                onClick: () => copyGalleryUrl(contextMenu.file.url),
+              },
+              {
+                Icon: DownloadSimple,
+                label: "Download",
+                onClick: () => openFileUrl(getGalleryPreviewUrl(contextMenu.file.url)),
+              },
+              {
+                Icon: Trash,
+                label: "Delete",
+                danger: true,
+                onClick: () =>
+                  setDeleteTarget({
+                    url: contextMenu.file.url,
+                    label: contextMenu.file.filename,
+                  }),
+              },
+            ]}
+          />
+        )}
+      </AnimatePresence>
+
+      {shareTarget && (
+        <GalleryShareModal
+          eventName={shareTarget.eventName}
+          share={shareQuery.data}
+          isLoading={shareQuery.isPending}
+          isSaving={updateShareMutation.isPending}
+          isConnectingDrive={connectDriveMutation.isPending}
+          onClose={() => setShareTarget(null)}
+          onCopy={(url) => copyGalleryUrl(url, "Share link copied")}
+          onConnectDrive={handleConnectDrive}
+          onSave={handleShareSave}
+        />
+      )}
 
       <ConfirmModal
         isOpen={!!deleteTarget}

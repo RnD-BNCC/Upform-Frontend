@@ -111,7 +111,7 @@ export function BlockInsertControl({
   onAdd: (type: EmailBlock["type"]) => void;
 }) {
   return (
-    <div className="group/insert relative z-30 h-0">
+    <div className="group/insert relative z-50 h-0">
       <div
         className={`absolute inset-x-0 top-0 flex h-5 -translate-y-1/2 items-center justify-center transition-opacity group-hover/insert:opacity-100 group-focus-within/insert:opacity-100 ${
           isVisible ? "opacity-100" : "opacity-0"

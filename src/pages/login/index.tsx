@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GoogleBrandIcon, SpinnerArcIcon } from "@/components/icons";
 import { BrandLogo } from "@/components/layout";
@@ -51,13 +52,23 @@ function useTypewriter(words: string[], speed = 100, pause = 1500) {
 
 export default function LoginPage() {
   const greeting = useTypewriter(GREETINGS);
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
+
+  const getCallbackUrl = () => {
+    const redirect = new URLSearchParams(location.search).get("redirect");
+    const safeRedirect =
+      redirect && redirect.startsWith("/") && !redirect.startsWith("//")
+        ? redirect
+        : "/";
+    return `${window.location.origin}${safeRedirect}`;
+  };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: `${window.location.origin}/`,
+      callbackURL: getCallbackUrl(),
     });
   };
 
@@ -108,6 +119,15 @@ export default function LoginPage() {
           </p>
         </div>
       </motion.div>
+
+      <div className="mt-6 flex justify-center gap-3 text-xs text-white/70">
+        <Link to="/privacy-policy" className="underline hover:text-white">
+          Privacy Policy
+        </Link>
+        <Link to="/terms-of-service" className="underline hover:text-white">
+          Terms of Service
+        </Link>
+      </div>
 
       <p className="mt-6 text-center text-xs text-white/60">
         © {new Date().getFullYear()} UpForm. All Rights Reserved.
