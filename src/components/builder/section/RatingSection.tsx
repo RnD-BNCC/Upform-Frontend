@@ -40,7 +40,7 @@ export const RatingSection = memo(function RatingSection({
   if (allowHalfStar && activeKey === "star") {
     return (
       <div className="space-y-2 select-none">
-        <div className="flex gap-1.5">
+        <div className="flex w-full items-center justify-between">
           {Array.from({ length: count }, (_, i) => i + 1).map((n) => {
             const full = displayed >= n;
             const half = !full && displayed >= n - 0.5;
@@ -89,7 +89,7 @@ export const RatingSection = memo(function RatingSection({
 
   return (
     <div className="space-y-2 select-none">
-      <div className="flex gap-1.5">
+      <div className="flex w-full items-center justify-between">
         {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
           <ActiveIcon
             key={n}
