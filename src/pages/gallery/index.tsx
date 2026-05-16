@@ -150,14 +150,16 @@ export default function GalleryPage() {
     const driveStatus = url.searchParams.get("drive");
     if (!driveStatus) return;
 
-    if (driveStatus === "connected") {
-      setStatus({ type: "success", message: "Google Drive connected and synced." });
-    } else {
-      setStatus({ type: "error", message: "Google Drive connection was not completed." });
-    }
+    const nextStatus =
+      driveStatus === "connected"
+        ? { type: "success" as const, message: "Google Drive connected and synced." }
+        : { type: "error" as const, message: "Google Drive connection was not completed." };
+    const statusTimer = window.setTimeout(() => setStatus(nextStatus), 0);
 
     url.searchParams.delete("drive");
     window.history.replaceState({}, "", url.toString());
+
+    return () => window.clearTimeout(statusTimer);
   }, []);
 
   const lowerSearch = search.toLowerCase().trim();
@@ -422,20 +424,6 @@ export default function GalleryPage() {
                                       y: mouseEvent.clientY,
                                     });
                                   }}
-                                  actions={
-                                    <button
-                                      onClick={() =>
-                                        setShareTarget({
-                                          eventId: event.id,
-                                          eventName: event.name,
-                                        })
-                                      }
-                                      className="flex size-7 items-center justify-center rounded-lg bg-white text-gray-400 shadow-sm transition-colors hover:text-primary-500"
-                                      title="Share gallery"
-                                    >
-                                      <ShareNetwork size={14} weight="bold" />
-                                    </button>
-                                  }
                                 />
                               ))}
                             </div>

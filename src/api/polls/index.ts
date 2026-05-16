@@ -6,6 +6,7 @@ export {
   useMutationCreatePoll,
   useMutationUpdatePoll,
   useMutationDeletePoll,
+  useMutationRestorePoll,
   useMutationCreateSlide,
   useMutationUpdateSlide,
   useMutationDeleteSlide,

@@ -36,11 +36,11 @@ export function QuestionCardDragHandle({
     <div
       {...dragProps}
       onClick={(event) => event.stopPropagation()}
-      className={`w-6 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing text-gray-300 transition-opacity touch-none self-stretch ${
-        visible ? "opacity-100" : "opacity-0"
+      className={`w-9 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing text-gray-400 transition-opacity touch-none self-stretch hover:text-primary-500 ${
+        visible ? "opacity-100" : "opacity-45 group-hover:opacity-100"
       }`}
     >
-      <DotsNineIcon size={14} weight="bold" />
+      <DotsNineIcon size={18} weight="bold" />
     </div>
   );
 }

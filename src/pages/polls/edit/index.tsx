@@ -49,6 +49,8 @@ type PollEditorRouteState = {
   isNewDraft?: boolean;
 };
 
+type EditorSaveStatus = "error" | "saved" | "saving" | "unsaved";
+
 const RANK_BADGES = [
   "bg-amber-400 text-amber-950",
   "bg-slate-300 text-slate-900",
@@ -71,6 +73,15 @@ function getThemeSlideSettings(theme: ThemePreset): SlideSettings {
     showQrCode: true,
     textColor: theme.textColor,
   };
+}
+
+function serializeSlideDraft(input: {
+  options: string[];
+  question: string;
+  settings: SlideSettings;
+  type: SlideType;
+}) {
+  return JSON.stringify(input);
 }
 
 function createLocalSlide(theme: ThemePreset, pollId = "new"): PollSlide {
@@ -155,6 +166,7 @@ function PollEditorLargeScreenNotice({ onBack }: { onBack: () => void }) {
 function useSlideState(
   slide: PollSlide,
   pollId: string,
+  onSaveStatusChange?: (status: EditorSaveStatus) => void,
   onSaved?: () => void,
 ) {
   const updateSlide = useMutationUpdateSlide(pollId);
@@ -167,6 +179,10 @@ function useSlideState(
   );
 
   const pendingRef = useRef({ question, type, options, settings });
+  const savedSnapshotRef = useRef(serializeSlideDraft(pendingRef.current));
+  const saveTimerRef = useRef<number | null>(null);
+  const isSavingRef = useRef(false);
+  const queuedSaveRef = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -175,6 +191,7 @@ function useSlideState(
       const o = slide.options ?? [];
       const s = (slide.settings as SlideSettings) ?? {};
       pendingRef.current = { question: q, type: t, options: o, settings: s };
+      savedSnapshotRef.current = serializeSlideDraft(pendingRef.current);
       setQuestionState(q);
       setTypeState(t);
       setOptionsState(o);
@@ -184,23 +201,8 @@ function useSlideState(
     return () => window.clearTimeout(timer);
   }, [slide.id, slide.options, slide.question, slide.settings, slide.type]);
 
-  const setQuestion = useCallback((q: string) => {
-    pendingRef.current.question = q;
-    setQuestionState(q);
-  }, []);
-
-  const setOptions = useCallback((o: string[]) => {
-    pendingRef.current.options = o;
-    setOptionsState(o);
-  }, []);
-
-  const setSettings = useCallback((s: SlideSettings) => {
-    pendingRef.current.settings = s;
-    setSettingsState(s);
-  }, []);
-
   const doSave = useCallback(
-    (
+    async (
       overrides?: Partial<{
         question: string;
         type: SlideType;
@@ -208,24 +210,108 @@ function useSlideState(
         settings: SlideSettings;
       }>,
     ) => {
-      updateSlide.mutate(
-        {
+      if (!pollId) return false;
+
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+
+      pendingRef.current = {
+        question: overrides?.question ?? pendingRef.current.question,
+        type: overrides?.type ?? pendingRef.current.type,
+        options: overrides?.options ?? pendingRef.current.options,
+        settings: overrides?.settings ?? pendingRef.current.settings,
+      };
+
+      if (serializeSlideDraft(pendingRef.current) === savedSnapshotRef.current) {
+        onSaveStatusChange?.("saved");
+        return true;
+      }
+
+      if (isSavingRef.current) {
+        queuedSaveRef.current = true;
+        onSaveStatusChange?.("unsaved");
+        return false;
+      }
+
+      isSavingRef.current = true;
+      onSaveStatusChange?.("saving");
+
+      try {
+        const payload = { ...pendingRef.current };
+        await updateSlide.mutateAsync({
           slideId: slide.id,
-          question: overrides?.question ?? pendingRef.current.question,
-          type: overrides?.type ?? pendingRef.current.type,
-          options: overrides?.options ?? pendingRef.current.options,
-          settings: overrides?.settings ?? pendingRef.current.settings,
-        },
-        { onSuccess: () => onSaved?.() },
-      );
+          ...payload,
+        });
+        savedSnapshotRef.current = serializeSlideDraft(payload);
+        onSaveStatusChange?.("saved");
+        onSaved?.();
+        return true;
+      } catch (error) {
+        console.error("[PollSlideSave]", error);
+        onSaveStatusChange?.("error");
+        return false;
+      } finally {
+        isSavingRef.current = false;
+        if (
+          queuedSaveRef.current ||
+          serializeSlideDraft(pendingRef.current) !== savedSnapshotRef.current
+        ) {
+          queuedSaveRef.current = false;
+          saveTimerRef.current = window.setTimeout(() => {
+            void doSave();
+          }, 0);
+        }
+      }
     },
-    [slide.id, updateSlide, onSaved],
+    [onSaveStatusChange, onSaved, pollId, slide.id, updateSlide],
   );
+
+  const scheduleSave = useCallback(
+    (delay = 900) => {
+      if (!pollId) return;
+      onSaveStatusChange?.("unsaved");
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+      saveTimerRef.current = window.setTimeout(() => {
+        void doSave();
+      }, delay);
+    },
+    [doSave, onSaveStatusChange, pollId],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const setQuestion = useCallback((q: string) => {
+    pendingRef.current.question = q;
+    setQuestionState(q);
+    scheduleSave();
+  }, [scheduleSave]);
+
+  const setOptions = useCallback((o: string[]) => {
+    pendingRef.current.options = o;
+    setOptionsState(o);
+    scheduleSave();
+  }, [scheduleSave]);
+
+  const setSettings = useCallback((s: SlideSettings) => {
+    pendingRef.current.settings = s;
+    setSettingsState(s);
+    scheduleSave();
+  }, [scheduleSave]);
 
   const handleTypeChange = (newType: SlideType) => {
     pendingRef.current.type = newType;
     setTypeState(newType);
-    doSave({ type: newType });
+    void doSave({ type: newType });
   };
 
   return {
@@ -274,13 +360,83 @@ export default function PollEditPage() {
   const [isCreatingPoll, setIsCreatingPoll] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [liveQuestion, setLiveQuestion] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<EditorSaveStatus>("saved");
   const slideSaveRef = useRef<(() => void) | null>(null);
   const saveReorderRef = useRef<(() => void) | null>(null);
   const routeIdRef = useRef(pollId);
+  const titleRef = useRef(title);
+  const savedTitleRef = useRef(title);
+  const titleSaveTimerRef = useRef<number | null>(null);
+  const isTitleSavingRef = useRef(false);
 
   const showToast = useCallback((msg = "Saved successfully") => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+
+  const saveTitle = useCallback(async () => {
+    if (!persistedPollId) return false;
+    const nextTitle = titleRef.current;
+    if (nextTitle === savedTitleRef.current) return true;
+
+    if (isTitleSavingRef.current) return false;
+
+    isTitleSavingRef.current = true;
+    setSaveStatus("saving");
+
+    try {
+      await updatePoll.mutateAsync({ pollId: persistedPollId, title: nextTitle });
+      savedTitleRef.current = nextTitle;
+      setSaveStatus("saved");
+      return true;
+    } catch (error) {
+      console.error("[PollTitleSave]", error);
+      setSaveStatus("error");
+      return false;
+    } finally {
+      isTitleSavingRef.current = false;
+      if (titleRef.current !== savedTitleRef.current) {
+        window.setTimeout(() => {
+          void saveTitle();
+        }, 0);
+      }
+    }
+  }, [persistedPollId, updatePoll]);
+
+  useEffect(() => {
+    if (!persistedPollId || !titleInit) return;
+
+    if (title === savedTitleRef.current) {
+      setSaveStatus("saved");
+      return;
+    }
+
+    setSaveStatus("unsaved");
+    if (titleSaveTimerRef.current) {
+      window.clearTimeout(titleSaveTimerRef.current);
+    }
+    titleSaveTimerRef.current = window.setTimeout(() => {
+      void saveTitle();
+    }, 900);
+
+    return () => {
+      if (titleSaveTimerRef.current) {
+        window.clearTimeout(titleSaveTimerRef.current);
+        titleSaveTimerRef.current = null;
+      }
+    };
+  }, [persistedPollId, saveTitle, title, titleInit]);
+
+  useEffect(() => {
+    return () => {
+      if (titleSaveTimerRef.current) {
+        window.clearTimeout(titleSaveTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -297,12 +453,14 @@ export default function PollEditPage() {
       const draftPoll = createLocalPoll(DEFAULT_POLL_THEME);
       setLocalPoll(draftPoll);
       setTitle(draftPoll.title);
+      savedTitleRef.current = draftPoll.title;
       setTitleInit(true);
       setPendingTheme(DEFAULT_POLL_THEME);
     } else {
       setLocalPoll(routeState?.poll ?? null);
       if (routeState?.poll) {
         setTitle(routeState.poll.title);
+        savedTitleRef.current = routeState.poll.title;
         setTitleInit(true);
       }
     }
@@ -328,7 +486,7 @@ export default function PollEditPage() {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         if (persistedPollId && title) {
-          updatePoll.mutate({ pollId: persistedPollId, title });
+          void saveTitle();
           slideSaveRef.current?.();
           saveReorderRef.current?.();
         }
@@ -337,7 +495,7 @@ export default function PollEditPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [persistedPollId, showToast, title, updatePoll]);
+  }, [persistedPollId, saveTitle, showToast, title]);
 
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
@@ -356,6 +514,7 @@ export default function PollEditPage() {
   useEffect(() => {
     if (poll && !titleInit) {
       setTitle(poll.title);
+      savedTitleRef.current = poll.title;
       setTitleInit(true);
     }
   }, [poll, titleInit]);
@@ -376,12 +535,12 @@ export default function PollEditPage() {
 
   const handleSaveTitle = () => {
     if (!persistedPollId) return;
-    updatePoll.mutate({ pollId: persistedPollId, title });
+    void saveTitle();
   };
 
   const handleSave = () => {
     if (persistedPollId && title) {
-      updatePoll.mutate({ pollId: persistedPollId, title });
+      void saveTitle();
       slideSaveRef.current?.();
       saveReorderRef.current?.();
     }
@@ -406,11 +565,13 @@ export default function PollEditPage() {
     }
 
     setLoadingModal(true);
+    setSaveStatus("saving");
     createSlide.mutate(
       {},
       {
         onSuccess: () => {
           setLoadingModal(false);
+          setSaveStatus("saved");
           setSelectedIndex(slides.length);
           setStatusModal({
             open: true,
@@ -421,6 +582,7 @@ export default function PollEditPage() {
         },
         onError: () => {
           setLoadingModal(false);
+          setSaveStatus("error");
           setStatusModal({
             open: true,
             type: "error",
@@ -455,9 +617,11 @@ export default function PollEditPage() {
         }
 
         setLoadingModal(true);
+        setSaveStatus("saving");
         deleteSlide.mutate(slideId, {
           onSuccess: () => {
             setLoadingModal(false);
+            setSaveStatus("saved");
             if (selectedIndex >= slides.length - 1)
               setSelectedIndex(Math.max(0, slides.length - 2));
             setStatusModal({
@@ -469,6 +633,7 @@ export default function PollEditPage() {
           },
           onError: () => {
             setLoadingModal(false);
+            setSaveStatus("error");
             setStatusModal({
               open: true,
               type: "error",
@@ -499,12 +664,17 @@ export default function PollEditPage() {
       return;
     }
 
+    setSaveStatus("saving");
     reorderSlides.mutate(orderedIds, {
       onSuccess: () => {
         if (selectedSlideId) {
           const newIndex = orderedIds.indexOf(selectedSlideId);
           if (newIndex !== -1) setSelectedIndex(newIndex);
         }
+        setSaveStatus("saved");
+      },
+      onError: () => {
+        setSaveStatus("error");
       },
     });
   };
@@ -582,6 +752,8 @@ export default function PollEditPage() {
         pendingTheme,
       );
       setTitle(name);
+      savedTitleRef.current = name;
+      setSaveStatus("saved");
       setLocalPoll(themedPoll);
       setWelcomeThemePicker(false);
       setWelcomeRename(false);
@@ -629,6 +801,7 @@ export default function PollEditPage() {
           onShowEdit={() => setActivePanel("edit")}
           onShowResults={() => setActivePanel("results")}
           isAddPending={createSlide.isPending}
+          saveStatus={saveStatus}
         />
 
         {activePanel === "results" ? (
@@ -641,6 +814,7 @@ export default function PollEditPage() {
             code={poll.code}
             saveRef={slideSaveRef}
             onSaved={showToast}
+            onSaveStatusChange={setSaveStatus}
             onQuestionLive={setLiveQuestion}
           />
         ) : (
@@ -853,6 +1027,7 @@ function SlideEditorBridge({
   code,
   saveRef,
   onSaved,
+  onSaveStatusChange,
   onQuestionLive,
 }: {
   slide: PollSlide;
@@ -860,6 +1035,7 @@ function SlideEditorBridge({
   code: string;
   saveRef: React.MutableRefObject<(() => void) | null>;
   onSaved: () => void;
+  onSaveStatusChange: (status: EditorSaveStatus) => void;
   onQuestionLive: (q: string | null) => void;
 }) {
   const {
@@ -872,7 +1048,7 @@ function SlideEditorBridge({
     setType,
     settings,
     type,
-  } = useSlideState(slide, pollId, onSaved);
+  } = useSlideState(slide, pollId, onSaveStatusChange, onSaved);
 
   useEffect(() => {
     saveRef.current = () => doSave();

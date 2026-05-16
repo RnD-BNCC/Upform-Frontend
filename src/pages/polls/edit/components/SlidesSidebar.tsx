@@ -1,4 +1,4 @@
-import { useState, useEffect, type RefObject } from 'react'
+import { useState, useEffect, useRef, type RefObject } from 'react'
 import type { PollSlide, SlideType } from '@/types/polling'
 import {
   Copy,
@@ -34,6 +34,7 @@ type SlidesSidebarProps = {
   onShowEdit: () => void
   onShowResults: () => void
   isAddPending: boolean
+  saveStatus: 'error' | 'saved' | 'saving' | 'unsaved'
 }
 import { DndContext, closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
@@ -169,9 +170,11 @@ export default function SlidesSidebar({
   onShowEdit,
   onShowResults,
   isAddPending,
+  saveStatus,
 }: SlidesSidebarProps) {
   const [localSlides, setLocalSlides] = useState(slides)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const requestedOrderRef = useRef('')
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -192,6 +195,25 @@ export default function SlidesSidebar({
   useEffect(() => {
     saveReorderRef.current = () => onReorderSlides(localSlides.map((s) => s.id))
   }, [localSlides, onReorderSlides, saveReorderRef])
+
+  useEffect(() => {
+    const localOrder = localSlides.map((slide) => slide.id).join('|')
+    const savedOrder = slides.map((slide) => slide.id).join('|')
+
+    if (localOrder === savedOrder) {
+      requestedOrderRef.current = ''
+      return
+    }
+
+    if (requestedOrderRef.current === localOrder) return
+
+    const timer = window.setTimeout(() => {
+      requestedOrderRef.current = localOrder
+      onReorderSlides(localSlides.map((slide) => slide.id))
+    }, 900)
+
+    return () => window.clearTimeout(timer)
+  }, [localSlides, onReorderSlides, slides])
 
   const slideIds = localSlides.map((s) => s.id)
   const activeSlideId = slides[selectedIndex]?.id
@@ -235,6 +257,38 @@ export default function SlidesSidebar({
           placeholder="Poll title..."
           className="w-full text-sm font-semibold text-gray-900 bg-transparent outline-none border-b border-gray-200 hover:border-gray-400 focus:border-primary-500 px-0.5 py-1.5 transition-colors placeholder:text-gray-300"
         />
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-semibold">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              saveStatus === 'error'
+                ? 'bg-red-500'
+                : saveStatus === 'saving'
+                  ? 'bg-primary-500'
+                  : saveStatus === 'unsaved'
+                    ? 'bg-amber-500'
+                    : 'bg-emerald-500'
+            }`}
+          />
+          <span
+            className={
+              saveStatus === 'error'
+                ? 'text-red-500'
+                : saveStatus === 'saving'
+                  ? 'text-primary-500'
+                  : saveStatus === 'unsaved'
+                    ? 'text-amber-500'
+                    : 'text-emerald-600'
+            }
+          >
+            {saveStatus === 'error'
+              ? 'Not saved'
+              : saveStatus === 'saving'
+                ? 'Saving...'
+                : saveStatus === 'unsaved'
+                  ? 'Unsaved changes'
+                  : 'Saved'}
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2.5 px-4 pb-4">
@@ -333,10 +387,11 @@ export default function SlidesSidebar({
       <div className="mt-auto border-t border-gray-100 p-3">
         <button
           onClick={onSave}
-          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-primary-500 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-600"
+          disabled={saveStatus === 'saving'}
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-primary-500 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FloppyDisk size={14} weight="bold" />
-          Save
+          {saveStatus === 'saving' ? 'Saving...' : 'Save now'}
         </button>
       </div>
     </aside>

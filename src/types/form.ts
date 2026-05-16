@@ -250,6 +250,7 @@ export interface FormResponse {
   lotteryId?: string
   raffleNumber?: string
   respondentUuid?: string
+  stsrc?: 'A' | 'U' | 'D'
   uuid?: string
   status?: FormResponseStatus
   startedAt?: string
@@ -269,6 +270,7 @@ export interface FormResponseProgress {
   id: string
   eventId?: string
   respondentUuid?: string
+  stsrc?: 'A' | 'U' | 'D'
   uuid?: string
   status?: 'in_progress'
   startedAt: string
@@ -322,6 +324,12 @@ export interface FormEvent {
   name: string
   description?: string
   status: 'draft' | 'active' | 'closed'
+  stsrc?: 'A' | 'U' | 'D'
+  createdBy?: string | null
+  updatedBy?: string | null
+  deletedBy?: string | null
+  deletedAt?: string | null
+  createdAt: string
   updatedAt: string
   responseCount: number
   color: string
@@ -329,6 +337,4 @@ export interface FormEvent {
   image?: string | null
   sections: FormSection[]
   responses?: FormResponse[]
-  spreadsheetId?: string | null
-  spreadsheetUrl?: string | null
 }

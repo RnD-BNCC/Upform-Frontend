@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, List, X, SignOut } from "@phosphor-icons/react";
+import { useQueryPermissionRequests } from "@/api/permission-requests";
 import { useAuth } from "@/hooks";
 import { authClient } from "@/lib";
 import BrandLogo from "./BrandLogo";
@@ -12,16 +13,22 @@ const NAV_ITEMS = [
   { label: "Gallery", path: "/gallery" },
 ];
 
+const APPROVER_NAV_ITEM = { label: "Permissions", path: "/permissions" };
+
 export default function Navbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { data: session } = useAuth();
+  const permissionRequestsQuery = useQueryPermissionRequests();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const isPolls = pathname === "/polls";
   const user = session?.user;
+  const navItems = permissionRequestsQuery.data?.approver
+    ? [...NAV_ITEMS, APPROVER_NAV_ITEM]
+    : NAV_ITEMS;
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -73,7 +80,7 @@ export default function Navbar() {
             <BrandLogo variant="white" className="h-7 w-auto max-w-[120px]" />
           </button>
           <nav className="hidden sm:flex items-center gap-1">
-            {NAV_ITEMS.map(({ label, path }) => {
+            {navItems.map(({ label, path }) => {
               const active = pathname === path;
               return (
                 <button
@@ -195,7 +202,7 @@ export default function Navbar() {
             className="sm:hidden absolute top-14 inset-x-0 z-10 bg-primary-800 border-t border-white/10 shadow-xl"
           >
             <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-0.5">
-              {NAV_ITEMS.map(({ label, path }) => {
+              {navItems.map(({ label, path }) => {
                 const active = pathname === path;
                 return (
                   <button

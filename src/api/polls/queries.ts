@@ -16,12 +16,12 @@ import type {
 } from '@/types/polling'
 
 
-export function useQueryPolls(page = 1, take = 9, search?: string) {
+export function useQueryPolls(page = 1, take = 9, search?: string, deleted = false) {
   return useQuery({
-    queryKey: [QUERY_KEYS.POLLS, page, take, search],
+    queryKey: [QUERY_KEYS.POLLS, page, take, search, deleted],
     queryFn: async () => {
       const { data } = await apiClient.get<PollListResponse>(Api.polls, {
-        params: { page, take, search: search || undefined },
+        params: { page, take, search: search || undefined, deleted: deleted || undefined },
       })
       return data
     },
@@ -91,7 +91,11 @@ export function useMutationUpdatePoll(
     },
     onSuccess: (data, variables, ...rest) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLLS] })
-      queryClient.setQueryData([QUERY_KEYS.POLL_DETAIL, variables.pollId], data)
+      queryClient.setQueryData(
+        [QUERY_KEYS.POLL_DETAIL, variables.pollId],
+        (old: Poll | undefined) =>
+          old ? { ...old, ...data, slides: old.slides ?? data.slides } : data,
+      )
       options?.onSuccess?.(data, variables, ...rest)
     },
     onError: options?.onError,
@@ -109,6 +113,24 @@ export function useMutationDeletePoll(
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLLS] })
       options?.onSuccess?.(...args)
+    },
+    onError: options?.onError,
+  })
+}
+
+export function useMutationRestorePoll(
+  options?: UseMutationOptions<Poll, Error, string>,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (pollId) => {
+      const { data } = await apiClient.post<Poll>(Api.pollRestore(pollId))
+      return data
+    },
+    onSuccess: (data, ...args) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLLS] })
+      queryClient.setQueryData([QUERY_KEYS.POLL_DETAIL, data.id], data)
+      options?.onSuccess?.(data, ...args)
     },
     onError: options?.onError,
   })

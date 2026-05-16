@@ -11,7 +11,7 @@ import {
 } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui'
 
-type Tab = 'questions' | 'share' | 'game' | 'responses'
+type Tab = 'questions' | 'share' | 'game' | 'responses' | 'logs'
 
 type BuilderHeaderProps = {
   formTitle: string
@@ -35,6 +35,7 @@ const NAV_TABS: { key: Tab; label: string }[] = [
   { key: 'share', label: 'Share' },
   { key: 'game', label: 'Game' },
   { key: 'responses', label: 'Results' },
+  { key: 'logs', label: 'Logs' },
 ]
 
 export default function BuilderHeader({
@@ -93,7 +94,7 @@ export default function BuilderHeader({
               <CaretDownIcon size={12} className="text-gray-400 shrink-0" />
             </button>
           )}
-          {isDirty && (
+          {(isDirty || isSaving) && (
             <span className="text-[10px] font-medium pointer-events-none whitespace-nowrap leading-none -mt-0.5">
               {isSaving ? (
                 <span className="flex items-center gap-1 text-primary-500">
@@ -106,6 +107,12 @@ export default function BuilderHeader({
                   Unsaved
                 </span>
               )}
+            </span>
+          )}
+          {!isDirty && !isSaving && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-600 pointer-events-none whitespace-nowrap leading-none -mt-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Saved
             </span>
           )}
         </div>

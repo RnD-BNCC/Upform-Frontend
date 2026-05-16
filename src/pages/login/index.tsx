@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { type FormEvent, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GoogleBrandIcon, SpinnerArcIcon } from "@/components/icons";
 import { BrandLogo } from "@/components/layout";
@@ -54,6 +54,10 @@ export default function LoginPage() {
   const greeting = useTypewriter(GREETINGS);
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"google" | "activist">("google");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const getCallbackUrl = () => {
     const redirect = new URLSearchParams(location.search).get("redirect");
@@ -66,10 +70,31 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setError(null);
     await authClient.signIn.social({
       provider: "google",
       callbackURL: getCallbackUrl(),
     });
+  };
+
+  const handleActivistSignIn = async (event: FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error: signInError } = await authClient.signIn.email({
+      email: email.trim().toLowerCase(),
+      password,
+      callbackURL: getCallbackUrl(),
+    });
+
+    if (signInError) {
+      setError(signInError.message || "Failed to sign in");
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = getCallbackUrl();
   };
 
   return (
@@ -94,19 +119,75 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <motion.button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            whileTap={loading ? undefined : { scale: 0.98 }}
-            className="flex w-full font-bold items-center justify-center gap-3 border border-gray-200 bg-white px-4 py-2.5 text-sm  text-gray-400 transition-colors duration-150 hover:border-primary-500 hover:bg-primary-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700"
-          >
-            {loading ? (
-              <SpinnerArcIcon size={16} className="animate-spin" />
-            ) : (
-              <GoogleBrandIcon />
-            )}
-            {loading ? "Signing in..." : "Sign in with Google"}
-          </motion.button>
+          <div className="mb-4 grid grid-cols-2 border border-gray-200 bg-gray-50 p-0.5 text-xs font-bold text-gray-500">
+            <button
+              type="button"
+              onClick={() => setMode("google")}
+              className={`py-2 transition-colors ${
+                mode === "google" ? "bg-white text-gray-900 shadow-sm" : ""
+              }`}
+            >
+              Organizer
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("activist")}
+              className={`py-2 transition-colors ${
+                mode === "activist" ? "bg-white text-gray-900 shadow-sm" : ""
+              }`}
+            >
+              Activist
+            </button>
+          </div>
+
+          {mode === "google" ? (
+            <motion.button
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              whileTap={loading ? undefined : { scale: 0.98 }}
+              className="flex w-full font-bold items-center justify-center gap-3 border border-gray-200 bg-white px-4 py-2.5 text-sm  text-gray-400 transition-colors duration-150 hover:border-primary-500 hover:bg-primary-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700"
+            >
+              {loading ? (
+                <SpinnerArcIcon size={16} className="animate-spin" />
+              ) : (
+                <GoogleBrandIcon />
+              )}
+              {loading ? "Signing in..." : "Continue as organizer"}
+            </motion.button>
+          ) : (
+            <form className="space-y-3" onSubmit={handleActivistSignIn}>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Activist email"
+                className="h-10 w-full border border-gray-200 px-3 text-sm text-gray-800 outline-none transition-colors focus:border-primary-500"
+                autoComplete="email"
+                required
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Password"
+                className="h-10 w-full border border-gray-200 px-3 text-sm text-gray-800 outline-none transition-colors focus:border-primary-500"
+                autoComplete="current-password"
+                required
+              />
+              {error ? (
+                <p className="text-xs font-semibold text-red-500">{error}</p>
+              ) : null}
+              <motion.button
+                type="submit"
+                disabled={loading}
+                whileTap={loading ? undefined : { scale: 0.98 }}
+                className="flex w-full items-center justify-center gap-2 bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? <SpinnerArcIcon size={16} className="animate-spin" /> : null}
+                {loading ? "Signing in..." : "Sign in as activist"}
+              </motion.button>
+            </form>
+          )}
 
           <p className="mt-5 text-center text-xs text-gray-400">
             Can't sign in?{" "}
@@ -119,15 +200,6 @@ export default function LoginPage() {
           </p>
         </div>
       </motion.div>
-
-      <div className="mt-6 flex justify-center gap-3 text-xs text-white/70">
-        <Link to="/privacy-policy" className="underline hover:text-white">
-          Privacy Policy
-        </Link>
-        <Link to="/terms-of-service" className="underline hover:text-white">
-          Terms of Service
-        </Link>
-      </div>
 
       <p className="mt-6 text-center text-xs text-white/60">
         © {new Date().getFullYear()} UpForm. All Rights Reserved.

@@ -1,6 +1,10 @@
 export const Api = {
   events: '/events',
+  eventBuilder: (id: string) => `/events/${id}/builder`,
   eventDetail: (id: string) => `/events/${id}`,
+  eventDuplicate: (id: string) => `/events/${id}/duplicate`,
+  eventQuestions: (id: string) => `/events/${id}/questions`,
+  eventRestore: (id: string) => `/events/${id}/restore`,
   sections: (eventId: string) => `/events/${eventId}/sections`,
   sectionDetail: (eventId: string, sectionId: string) =>
     `/events/${eventId}/sections/${sectionId}`,
@@ -26,6 +30,7 @@ export const Api = {
   // Polls
   polls: '/polls',
   pollDetail: (id: string) => `/polls/${id}`,
+  pollRestore: (id: string) => `/polls/${id}/restore`,
   pollSlides: (pollId: string) => `/polls/${pollId}/slides`,
   pollSlideDetail: (pollId: string, slideId: string) =>
     `/polls/${pollId}/slides/${slideId}`,
@@ -44,9 +49,6 @@ export const Api = {
 
   // Q&A Questions
   pollQuestions: (pollId: string) => `/polls/${pollId}/questions`,
-
-  // Spreadsheet integration
-  eventSpreadsheet: (eventId: string) => `/events/${eventId}/spreadsheet`,
 
   // Upload
   upload: '/upload',
@@ -71,4 +73,14 @@ export const Api = {
     `/email-blasts/events/${eventId}/draft`,
   submitFormSettings: (eventId: string) =>
     `/email-blasts/events/${eventId}/submit-settings`,
+
+  // Permission requests
+  permissionRequests: '/permission-requests',
+  permissionRequestApprove: (id: string) => `/permission-requests/${id}/approve`,
+  permissionRequestReject: (id: string) => `/permission-requests/${id}/reject`,
+
+  // Form audit logs
+  eventAuditLogs: (eventId: string) => `/events/${eventId}/audit-logs`,
+  eventAuditLogRollback: (eventId: string, logId: string) =>
+    `/events/${eventId}/audit-logs/${logId}/rollback`,
 } as const

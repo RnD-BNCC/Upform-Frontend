@@ -7,6 +7,7 @@ export {
   getAvailableConditionFieldsForSection,
 } from "./conditionFields";
 export * from "./calculations";
+export * from "./cloneForm";
 export * from "./fieldVisibility";
 export * from "./fileUpload";
 export * from "./fileTypes";

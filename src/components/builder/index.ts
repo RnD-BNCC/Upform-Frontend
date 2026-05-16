@@ -9,6 +9,7 @@ export {
   FieldPropertiesPanel,
   FormCover,
   BuilderGamePanel,
+  SystemLogsPanel,
   BuilderSharePanel,
 } from './layout'
 export {

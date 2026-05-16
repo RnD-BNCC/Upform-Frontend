@@ -7,7 +7,9 @@ import type {
 } from './form'
 
 // Event list response
-export type EventListItem = Omit<FormEvent, 'responses'>
+export type EventListItem = Omit<FormEvent, 'responses' | 'sections'> & {
+  sections?: FormEvent['sections']
+}
 
 export type EventListResponse = {
   data: EventListItem[]
@@ -20,6 +22,7 @@ export type EventListResponse = {
   counts: {
     total: number
     active: number
+    deleted: number
     totalResponses: number
   }
 }
@@ -29,6 +32,7 @@ export type EventListParams = {
   take?: number
   status?: 'draft' | 'active' | 'closed'
   search?: string
+  deleted?: boolean
 }
 
 export type CreateEventPayload = {
@@ -72,6 +76,16 @@ export type UpdateSectionPayload = {
   logicY?: number
 }
 
+export type SaveBuilderSectionPayload = UpdateSectionPayload & {
+  sectionId: string
+}
+
+export type SaveBuilderEventPayload = {
+  deletedSectionIds?: string[]
+  event?: Pick<UpdateEventPayload, 'color' | 'image' | 'name' | 'theme'>
+  sections?: SaveBuilderSectionPayload[]
+}
+
 // Response payloads
 export type SubmitResponsePayload = {
   answers: Record<string, FormAnswerValue>
@@ -83,6 +97,10 @@ export type SubmitResponsePayload = {
   sectionHistory?: number[]
   startedAt?: string
   userAgent?: string
+}
+
+export type EventQuestionBank = Pick<FormEvent, 'id' | 'name'> & {
+  sections: FormEvent['sections']
 }
 
 export type UpdateResponsePayload = {
@@ -233,4 +251,58 @@ export type SaveSubmitFormSettingsPayload = {
   raffleSuffix: string
   raffleStart: number
   rafflePadding: number
+}
+
+export type PermissionAction =
+  | 'responses.view'
+  | 'responses.edit'
+  | 'responses.delete'
+  | 'forms.delete'
+  | 'forms.rollback'
+
+export type PermissionRequest = {
+  id: string
+  requesterId?: string | null
+  requesterEmail: string
+  action: PermissionAction
+  resourceType: string
+  resourceId: string
+  resourceKind?: string | null
+  resourceName?: string | null
+  resourceStatus?: string | null
+  reason?: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  approvedBy?: string | null
+  approvedAt?: string | null
+  rejectedBy?: string | null
+  rejectedAt?: string | null
+  expiresAt?: string | null
+  usedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type PermissionRequestListResponse = {
+  approver: boolean
+  approverEmails: string[]
+  data: PermissionRequest[]
+}
+
+export type CreatePermissionRequestPayload = {
+  action: PermissionAction
+  reason?: string
+  resourceId: string
+  resourceType?: string
+}
+
+export type FormAuditLog = {
+  id: string
+  eventId: string
+  action: string
+  targetType: string
+  targetId?: string | null
+  actorEmail?: string | null
+  beforeSnapshot?: unknown
+  afterSnapshot?: unknown
+  createdAt: string
 }

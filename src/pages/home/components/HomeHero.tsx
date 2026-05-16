@@ -3,16 +3,24 @@ import { gsap } from "gsap";
 import { PageHeroBanner } from "@/components/layout";
 import AnimatedStat from "./AnimatedStat";
 
+export type HomeTab = "forms" | "trash";
+
 type Props = {
+  activeTab: HomeTab;
   totalForms: number;
   activeForms: number;
+  deletedForms: number;
   totalResponses: number;
+  onTabChange: (tab: HomeTab) => void;
 };
 
 export default function HomeHero({
+  activeTab,
   totalForms,
   activeForms,
+  deletedForms,
   totalResponses,
+  onTabChange,
 }: Props) {
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -36,10 +44,15 @@ export default function HomeHero({
     return () => ctx.revert();
   }, []);
 
+  const tabs: Array<{ key: HomeTab; label: string; count: number }> = [
+    { key: "forms", label: "Forms", count: totalForms },
+    { key: "trash", label: "Temporary Delete", count: deletedForms },
+  ];
+
   return (
-    <PageHeroBanner contentClassName="py-8 sm:py-12">
+    <PageHeroBanner contentClassName="pt-8 sm:pt-12">
       <div ref={heroRef} className="relative">
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10">
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10 pb-6 sm:pb-8">
           <div className="hero-text">
             <p className="text-primary-300 text-sm font-bold mb-1">
               Welcome back
@@ -58,8 +71,31 @@ export default function HomeHero({
             <AnimatedStat value={totalResponses} label="Responses" />
           </div>
         </div>
+
+        <div className="flex -mx-4 sm:-mx-8 px-4 sm:px-8">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onTabChange(tab.key)}
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
+                activeTab === tab.key
+                  ? "border-white text-white"
+                  : "border-transparent text-white/50 hover:text-white/80"
+              }`}
+            >
+              {tab.label}
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  activeTab === tab.key ? "bg-white/20 text-white" : "bg-white/10 text-white/50"
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </PageHeroBanner>
   );
 }
-

@@ -13,6 +13,7 @@ import {
   useMutationUpdateResponse,
   useMutationUpdateResponseProgress,
 } from "@/api/responses";
+import { useMutationCreatePermissionRequest } from "@/api/permission-requests";
 import { QUERY_KEYS } from "@/api/queryKeys";
 import { FIELD_TYPE_META } from "@/components/builder/section/fieldTypeMeta";
 import { ConfirmModal } from "@/components/modal";
@@ -23,7 +24,12 @@ import {
   removeLotteryAnswer,
 } from "@/utils/game";
 import type { SubmitFormSettings as ApiSubmitFormSettings } from "@/types/api";
-import type { FormField, FormResponse, FormResponseProgress } from "@/types/form";
+import type {
+  FormField,
+  FormResponse,
+  FormResponseProgress,
+  FormSection,
+} from "@/types/form";
 import type {
   ResultDatabaseView,
   ResultFilterGroup,
@@ -39,6 +45,7 @@ import {
   type AnalyticsDateFilter,
 } from "../analytics/DateRangePopover";
 import { isWithinAnalyticsDateFilter } from "../analytics/dateRangeUtils";
+import { getPermissionRequiredError } from "@/utils/permissionRequests";
 import {
   cleanResultLabel,
   getResponseTimestamp,
@@ -67,6 +74,7 @@ type DatabaseViewProps = {
   onRefresh?: () => void | Promise<void>;
   progressResponses?: FormResponseProgress[];
   responses: FormResponse[];
+  sections?: FormSection[];
   showToast?: ShareToast;
   submitFormSettings?: ApiSubmitFormSettings | null;
   title?: string;
@@ -194,6 +202,7 @@ export default function DatabaseView({
   onRefresh,
   progressResponses = [],
   responses,
+  sections = [],
   showToast,
   submitFormSettings = null,
   title = "My form database",
@@ -243,6 +252,7 @@ export default function DatabaseView({
   });
   const updateResponse = useMutationUpdateResponse(eventId);
   const updateProgress = useMutationUpdateResponseProgress(eventId);
+  const createPermissionRequest = useMutationCreatePermissionRequest();
   const allDatabaseResponses = useMemo(
     () =>
       [
@@ -311,12 +321,46 @@ export default function DatabaseView({
   const visibleFields = orderedFields.filter(
     (field) => !activeView.hiddenFieldIds.includes(field.id),
   );
-  const columns = createFieldColumns(visibleFields);
-  const stickyEmailFieldId =
-    visibleFields.find((field) => field.type === "email")?.id ?? null;
   const lotteryStickyLeft = SELECT_COL_WIDTH + EXPAND_COL_WIDTH + ID_COL_WIDTH;
-  const emailStickyLeft =
-    lotteryStickyLeft + (showLotteryColumn ? LOTTERY_COL_WIDTH : 0);
+  const fieldGroups = useMemo(() => {
+    const visibleIds = new Set(visibleFields.map((field) => field.id));
+    const groupedIds = new Set<string>();
+    const groups = sections
+      .slice()
+      .sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
+      .map((section, index) => {
+        const sectionFieldIds = new Set(
+          section.fields
+            .filter((field) => field.type !== "next_button")
+            .map((field) => field.id),
+        );
+        const fields = visibleFields.filter((field) => sectionFieldIds.has(field.id));
+        fields.forEach((field) => groupedIds.add(field.id));
+
+        return {
+          fields,
+          id: section.id,
+          title: section.title?.trim() || `Page ${index + 1}`,
+        };
+      })
+      .filter((group) => group.fields.length > 0);
+
+    const ungroupedFields = visibleFields.filter(
+      (field) => visibleIds.has(field.id) && !groupedIds.has(field.id),
+    );
+
+    if (ungroupedFields.length > 0) {
+      groups.push({
+        fields: ungroupedFields,
+        id: "ungrouped",
+        title: "Other fields",
+      });
+    }
+
+    return groups.length > 0
+      ? groups
+      : [{ fields: visibleFields, id: "all", title: activeViewName }];
+  }, [activeViewName, sections, visibleFields]);
 
   const displayedResponses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -763,13 +807,24 @@ export default function DatabaseView({
           ? "Record deleted"
           : `${recordsToDelete.length} records deleted`,
       );
-    } catch {
-      showToast?.(
-        recordsToDelete.length === 1
-          ? "Failed to delete record"
-          : "Failed to delete records",
-        "error",
-      );
+    } catch (error) {
+      const permissionError = getPermissionRequiredError(error);
+      if (permissionError) {
+        createPermissionRequest.mutate({
+          action: permissionError.action,
+          reason: "Need to delete respondent data",
+          resourceId: permissionError.resourceId,
+          resourceType: permissionError.resourceType,
+        });
+        showToast?.("Permission request sent", "info");
+      } else {
+        showToast?.(
+          recordsToDelete.length === 1
+            ? "Failed to delete record"
+            : "Failed to delete records",
+          "error",
+        );
+      }
     }
   };
 
@@ -795,15 +850,26 @@ export default function DatabaseView({
     const nextTimer = window.setTimeout(() => {
       const setSaved = () =>
         setSaveStatuses((previous) => ({ ...previous, [responseId]: "saved" }));
-      const setError = () =>
+      const setError = (error?: unknown) => {
         setSaveStatuses((previous) => ({ ...previous, [responseId]: "error" }));
+        const permissionError = getPermissionRequiredError(error);
+        if (permissionError) {
+          createPermissionRequest.mutate({
+            action: permissionError.action,
+            reason: "Need to edit respondent data",
+            resourceId: permissionError.resourceId,
+            resourceType: permissionError.resourceType,
+          });
+          showToast?.("Permission request sent", "info");
+        }
+      };
 
       if (source.status === "in_progress") {
         updateProgress.mutate({
           progressId: responseId,
           payload: { answers: nextAnswers },
         }, {
-          onError: setError,
+          onError: (error) => setError(error),
           onSuccess: setSaved,
         });
       } else {
@@ -811,13 +877,322 @@ export default function DatabaseView({
           responseId,
           payload: { answers: nextAnswers },
         }, {
-          onError: setError,
+          onError: (error) => setError(error),
           onSuccess: setSaved,
         });
       }
       saveTimers.current.delete(timerKey);
     }, 450);
     saveTimers.current.set(timerKey, nextTimer);
+  };
+
+  const renderResponseTable = (
+    group: (typeof fieldGroups)[number],
+    groupIndex: number,
+  ) => {
+    const groupColumns = createFieldColumns(group.fields);
+    const groupStickyEmailFieldId =
+      group.fields.find((field) => field.type === "email")?.id ?? null;
+    const groupEmailStickyLeft =
+      lotteryStickyLeft + (showLotteryColumn ? LOTTERY_COL_WIDTH : 0);
+
+    return (
+      <section
+        key={group.id}
+        className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+      >
+        <div className="flex h-11 items-center justify-between border-b border-gray-200 bg-white px-4">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold text-gray-900">
+              {group.title}
+            </h3>
+            <p className="text-[11px] font-medium text-gray-400">
+              {group.fields.length} field{group.fields.length === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-auto">
+          <table className="min-w-full table-fixed border-separate border-spacing-0 text-sm">
+            <thead>
+              <tr className="h-10">
+                <th
+                  className="sticky top-0 z-50 overflow-hidden border-b border-r border-gray-200 bg-white px-2 text-left"
+                  style={getStickyStyle(0, SELECT_COL_WIDTH)}
+                >
+                  {groupIndex === 0 ? (
+                    <button
+                      type="button"
+                      onClick={toggleAllVisibleRecords}
+                      className="flex h-8 w-8 items-center justify-center rounded text-gray-500 hover:bg-gray-50"
+                      aria-label="Select all visible records"
+                    >
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded border ${
+                          allVisibleChecked
+                            ? "border-gray-900 bg-gray-900 text-white"
+                            : isPartiallyChecked
+                              ? "border-gray-900 bg-gray-900 text-white"
+                              : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        {allVisibleChecked ? (
+                          <CheckIcon size={12} weight="bold" />
+                        ) : isPartiallyChecked ? (
+                          <span className="h-0.5 w-2.5 rounded-full bg-white" />
+                        ) : null}
+                      </span>
+                    </button>
+                  ) : null}
+                </th>
+                <th
+                  className="sticky top-0 z-50 overflow-hidden border-b border-r border-gray-200 bg-white"
+                  style={getStickyStyle(SELECT_COL_WIDTH, EXPAND_COL_WIDTH)}
+                />
+                <th
+                  className="sticky top-0 z-50 overflow-hidden border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700"
+                  style={getStickyStyle(
+                    SELECT_COL_WIDTH + EXPAND_COL_WIDTH,
+                    ID_COL_WIDTH,
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    <HashIcon size={15} className="text-gray-500" />
+                    ID
+                  </span>
+                </th>
+                {showLotteryColumn ? (
+                  <th
+                    className="sticky top-0 z-40 overflow-hidden border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700"
+                    style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <HashIcon size={15} className="text-amber-500" />
+                      Lottery ID
+                    </span>
+                  </th>
+                ) : null}
+                {groupColumns.map((column) => {
+                  const field = group.fields.find((item) => item.id === column.id);
+                  if (!field) return null;
+                  const isStickyEmail = column.id === groupStickyEmailFieldId;
+                  return (
+                    <th
+                      key={column.id}
+                      className={`top-0 border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700 ${
+                        isStickyEmail
+                          ? "sticky z-40 overflow-hidden"
+                          : "sticky z-20"
+                      }`}
+                      style={
+                        isStickyEmail
+                          ? getStickyStyle(groupEmailStickyLeft, EMAIL_COL_WIDTH)
+                          : { minWidth: column.width, width: column.width }
+                      }
+                    >
+                      <FieldHeader field={field} />
+                    </th>
+                  );
+                })}
+                <th
+                  className="sticky top-0 z-20 border-b border-gray-200 bg-white"
+                  style={{ minWidth: 80, width: 80 }}
+                />
+              </tr>
+            </thead>
+            <tbody>
+              {displayedResponses.map((response, index) => {
+                const isDrawerActive = drawerIndex === index;
+                const isRecordChecked = checkedRecordIds.has(response.id);
+                const isRecordActive =
+                  activeRecordId === response.id ||
+                  isRecordChecked ||
+                  isDrawerActive;
+                const stickyCellBackground = isRecordActive
+                  ? "bg-gray-50"
+                  : "bg-white group-hover:bg-gray-50";
+
+                return (
+                  <tr
+                    key={response.id}
+                    className={`group h-10 transition-colors ${
+                      isRecordActive ? "bg-gray-50" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => {
+                      setActiveRecordId(response.id);
+                      setRecordActionMenu(null);
+                    }}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      openRecordActionMenu(
+                        response.id,
+                        event.clientX + 4,
+                        event.clientY + 4,
+                      );
+                    }}
+                  >
+                    <td
+                      className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-2 ${stickyCellBackground}`}
+                      style={getStickyStyle(0, SELECT_COL_WIDTH)}
+                    >
+                      <button
+                        type="button"
+                        data-record-select-control="true"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleRecordChecked(response);
+                        }}
+                        className="relative flex h-8 w-8 items-center justify-center rounded text-xs text-gray-500 hover:bg-white hover:text-gray-900"
+                        aria-label={`Select record ${index + 1}`}
+                        aria-pressed={isRecordChecked}
+                      >
+                        <span
+                          className={`transition-opacity ${
+                            isRecordChecked ? "opacity-0" : "group-hover:opacity-0"
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
+                        <span
+                          className={`absolute flex h-5 w-5 items-center justify-center rounded border transition-opacity ${
+                            isRecordChecked
+                              ? "border-gray-900 bg-gray-900 text-white opacity-100"
+                              : "border-gray-300 bg-white text-white opacity-0 group-hover:opacity-100"
+                          }`}
+                        >
+                          {isRecordChecked ? (
+                            <CheckIcon size={12} weight="bold" />
+                          ) : null}
+                        </span>
+                      </button>
+                    </td>
+                    <td
+                      className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 ${stickyCellBackground}`}
+                      style={getStickyStyle(SELECT_COL_WIDTH, EXPAND_COL_WIDTH)}
+                    >
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDrawerIndex(index);
+                          setActiveRecordId(response.id);
+                        }}
+                        className={`mx-auto flex h-8 w-8 items-center justify-center rounded text-gray-500 transition-opacity hover:bg-white hover:text-gray-900 ${
+                          isRecordActive
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100"
+                        }`}
+                        aria-label="Open response"
+                      >
+                        <ArrowsOutSimpleIcon size={15} />
+                      </button>
+                    </td>
+                    <td
+                      className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-3 text-gray-800 ${stickyCellBackground}`}
+                      style={getStickyStyle(
+                        SELECT_COL_WIDTH + EXPAND_COL_WIDTH,
+                        ID_COL_WIDTH,
+                      )}
+                      title={toStableResponseUuid(response)}
+                    >
+                      <span className="block truncate">
+                        {toStableResponseUuid(response)}
+                      </span>
+                    </td>
+                    {showLotteryColumn ? (
+                      <td
+                        className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-3 font-mono text-xs font-semibold text-amber-800 ${stickyCellBackground}`}
+                        style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
+                        title={lotteryIdByResponseId.get(response.id) ?? ""}
+                      >
+                        <span className="block truncate">
+                          {lotteryIdByResponseId.get(response.id) ?? ""}
+                        </span>
+                      </td>
+                    ) : null}
+
+                    {groupColumns.map((column) => {
+                      const field = group.fields.find((item) => item.id === column.id);
+                      if (!field) return null;
+                      const isStickyEmail = column.id === groupStickyEmailFieldId;
+                      return (
+                        <td
+                          key={column.id}
+                          className={`border-b border-r border-gray-200 bg-inherit px-3 ${
+                            isStickyEmail
+                              ? `sticky z-30 overflow-hidden ${stickyCellBackground}`
+                              : ""
+                          }`}
+                          style={
+                            isStickyEmail
+                              ? getStickyStyle(groupEmailStickyLeft, EMAIL_COL_WIDTH)
+                              : { minWidth: column.width, width: column.width }
+                          }
+                        >
+                          <ResponseCell field={field} response={response} />
+                        </td>
+                      );
+                    })}
+                    <td
+                      className="border-b border-gray-200 bg-inherit"
+                      style={{ minWidth: 80, width: 80 }}
+                    />
+                  </tr>
+                );
+              })}
+
+              {Array.from({
+                length: Math.max(6 - displayedResponses.length, 0),
+              }).map((_, index) => (
+                <tr key={`empty-${group.id}-${index}`} className="h-10">
+                  <td
+                    className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
+                    style={getStickyStyle(0, SELECT_COL_WIDTH)}
+                  />
+                  <td
+                    className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
+                    style={getStickyStyle(SELECT_COL_WIDTH, EXPAND_COL_WIDTH)}
+                  />
+                  <td
+                    className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
+                    style={getStickyStyle(
+                      SELECT_COL_WIDTH + EXPAND_COL_WIDTH,
+                      ID_COL_WIDTH,
+                    )}
+                  />
+                  {showLotteryColumn ? (
+                    <td
+                      className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
+                      style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
+                    />
+                  ) : null}
+                  {groupColumns.map((column) => (
+                    <td
+                      key={column.id}
+                      className="border-b border-r border-gray-200 bg-white"
+                      style={{
+                        minWidth:
+                          column.id === groupStickyEmailFieldId
+                            ? EMAIL_COL_WIDTH
+                            : column.width,
+                        width:
+                          column.id === groupStickyEmailFieldId
+                            ? EMAIL_COL_WIDTH
+                            : column.width,
+                      }}
+                    />
+                  ))}
+                  <td
+                    className="border-b border-gray-200 bg-white"
+                    style={{ minWidth: 80, width: 80 }}
+                  />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
   };
 
   return (
@@ -867,275 +1242,10 @@ export default function DatabaseView({
         />
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-auto bg-white">
-        <table className="min-w-full table-fixed border-separate border-spacing-0 text-sm">
-          <thead>
-            <tr className="h-10">
-              <th
-                className="sticky top-0 z-50 overflow-hidden border-b border-r border-gray-200 bg-white px-2 text-left"
-                style={getStickyStyle(0, SELECT_COL_WIDTH)}
-              >
-                <button
-                  type="button"
-                  onClick={toggleAllVisibleRecords}
-                  className="flex h-8 w-8 items-center justify-center rounded text-gray-500 hover:bg-gray-50"
-                  aria-label="Select all visible records"
-                >
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded border ${
-                      allVisibleChecked
-                        ? "border-gray-900 bg-gray-900 text-white"
-                        : isPartiallyChecked
-                          ? "border-gray-900 bg-gray-900 text-white"
-                        : "border-gray-300 bg-white"
-                    }`}
-                  >
-                    {allVisibleChecked ? (
-                      <CheckIcon size={12} weight="bold" />
-                    ) : isPartiallyChecked ? (
-                      <span className="h-0.5 w-2.5 rounded-full bg-white" />
-                    ) : null}
-                  </span>
-                </button>
-              </th>
-              <th
-                className="sticky top-0 z-50 overflow-hidden border-b border-r border-gray-200 bg-white"
-                style={getStickyStyle(SELECT_COL_WIDTH, EXPAND_COL_WIDTH)}
-              />
-              <th
-                className="sticky top-0 z-50 overflow-hidden border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700"
-                style={getStickyStyle(
-                  SELECT_COL_WIDTH + EXPAND_COL_WIDTH,
-                  ID_COL_WIDTH,
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <HashIcon size={15} className="text-gray-500" />
-                  ID
-                </span>
-              </th>
-              {showLotteryColumn ? (
-                <th
-                  className="sticky top-0 z-40 overflow-hidden border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700"
-                  style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
-                >
-                  <span className="flex items-center gap-2">
-                    <HashIcon size={15} className="text-amber-500" />
-                    Lottery ID
-                  </span>
-                </th>
-              ) : null}
-              {columns.map((column) => {
-                const field = visibleFields.find((item) => item.id === column.id);
-                if (!field) return null;
-                const isStickyEmail = column.id === stickyEmailFieldId;
-                return (
-                  <th
-                    key={column.id}
-                    className={`top-0 border-b border-r border-gray-200 bg-white px-3 text-left font-medium text-gray-700 ${
-                      isStickyEmail
-                        ? "sticky z-40 overflow-hidden"
-                        : "sticky z-20"
-                    }`}
-                    style={
-                      isStickyEmail
-                        ? getStickyStyle(emailStickyLeft, EMAIL_COL_WIDTH)
-                        : { minWidth: column.width, width: column.width }
-                    }
-                  >
-                    <FieldHeader field={field} />
-                  </th>
-                );
-              })}
-              <th
-                className="sticky top-0 z-20 border-b border-gray-200 bg-white"
-                style={{ minWidth: 80, width: 80 }}
-              />
-            </tr>
-          </thead>
-          <tbody>
-            {displayedResponses.map((response, index) => {
-              const isDrawerActive = drawerIndex === index;
-              const isRecordChecked = checkedRecordIds.has(response.id);
-              const isRecordActive =
-                activeRecordId === response.id || isRecordChecked || isDrawerActive;
-              const stickyCellBackground = isRecordActive
-                ? "bg-gray-50"
-                : "bg-white group-hover:bg-gray-50";
-              return (
-                <tr
-                  key={response.id}
-                  className={`group h-10 transition-colors ${
-                    isRecordActive ? "bg-gray-50" : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => {
-                    setActiveRecordId(response.id);
-                    setRecordActionMenu(null);
-                  }}
-                  onContextMenu={(event) => {
-                    event.preventDefault();
-                    openRecordActionMenu(response.id, event.clientX + 4, event.clientY + 4);
-                  }}
-                >
-                  <td
-                    className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-2 ${stickyCellBackground}`}
-                    style={getStickyStyle(0, SELECT_COL_WIDTH)}
-                  >
-                    <button
-                      type="button"
-                      data-record-select-control="true"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleRecordChecked(response);
-                      }}
-                      className="relative flex h-8 w-8 items-center justify-center rounded text-xs text-gray-500 hover:bg-white hover:text-gray-900"
-                      aria-label={`Select record ${index + 1}`}
-                      aria-pressed={isRecordChecked}
-                    >
-                      <span
-                        className={`transition-opacity ${
-                          isRecordChecked ? "opacity-0" : "group-hover:opacity-0"
-                        }`}
-                      >
-                        {index + 1}
-                      </span>
-                      <span
-                        className={`absolute flex h-5 w-5 items-center justify-center rounded border transition-opacity ${
-                          isRecordChecked
-                            ? "border-gray-900 bg-gray-900 text-white opacity-100"
-                            : "border-gray-300 bg-white text-white opacity-0 group-hover:opacity-100"
-                        }`}
-                      >
-                        {isRecordChecked ? (
-                          <CheckIcon size={12} weight="bold" />
-                        ) : null}
-                      </span>
-                    </button>
-                  </td>
-                  <td
-                    className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 ${stickyCellBackground}`}
-                    style={getStickyStyle(SELECT_COL_WIDTH, EXPAND_COL_WIDTH)}
-                  >
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setDrawerIndex(index);
-                        setActiveRecordId(response.id);
-                      }}
-                      className={`mx-auto flex h-8 w-8 items-center justify-center rounded text-gray-500 transition-opacity hover:bg-white hover:text-gray-900 ${
-                        isRecordActive
-                          ? "opacity-100"
-                          : "opacity-0 group-hover:opacity-100"
-                      }`}
-                      aria-label="Open response"
-                    >
-                      <ArrowsOutSimpleIcon size={15} />
-                    </button>
-                  </td>
-                  <td
-                    className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-3 text-gray-800 ${stickyCellBackground}`}
-                    style={getStickyStyle(
-                      SELECT_COL_WIDTH + EXPAND_COL_WIDTH,
-                      ID_COL_WIDTH,
-                    )}
-                    title={toStableResponseUuid(response)}
-                  >
-                    <span className="block truncate">
-                      {toStableResponseUuid(response)}
-                    </span>
-                  </td>
-                  {showLotteryColumn ? (
-                    <td
-                      className={`sticky z-40 overflow-hidden border-b border-r border-gray-200 px-3 font-mono text-xs font-semibold text-amber-800 ${stickyCellBackground}`}
-                      style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
-                      title={lotteryIdByResponseId.get(response.id) ?? ""}
-                    >
-                      <span className="block truncate">
-                        {lotteryIdByResponseId.get(response.id) ?? ""}
-                      </span>
-                    </td>
-                  ) : null}
-
-                  {columns.map((column) => {
-                    const field = visibleFields.find((item) => item.id === column.id);
-                    if (!field) return null;
-                    const isStickyEmail = column.id === stickyEmailFieldId;
-                    return (
-                      <td
-                        key={column.id}
-                        className={`border-b border-r border-gray-200 bg-inherit px-3 ${
-                          isStickyEmail
-                            ? `sticky z-30 overflow-hidden ${stickyCellBackground}`
-                            : ""
-                        }`}
-                        style={
-                          isStickyEmail
-                            ? getStickyStyle(emailStickyLeft, EMAIL_COL_WIDTH)
-                            : { minWidth: column.width, width: column.width }
-                        }
-                      >
-                        <ResponseCell field={field} response={response} />
-                      </td>
-                    );
-                  })}
-                  <td
-                    className="border-b border-gray-200 bg-inherit"
-                    style={{ minWidth: 80, width: 80 }}
-                  />
-                </tr>
-              );
-            })}
-
-            {Array.from({ length: Math.max(6 - displayedResponses.length, 0) }).map(
-              (_, index) => (
-                <tr key={`empty-${index}`} className="h-10">
-                  <td
-                    className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
-                    style={getStickyStyle(0, SELECT_COL_WIDTH)}
-                  />
-                  <td
-                    className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
-                    style={getStickyStyle(SELECT_COL_WIDTH, EXPAND_COL_WIDTH)}
-                  />
-                  <td
-                    className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
-                    style={getStickyStyle(
-                      SELECT_COL_WIDTH + EXPAND_COL_WIDTH,
-                      ID_COL_WIDTH,
-                    )}
-                  />
-                  {showLotteryColumn ? (
-                    <td
-                      className="sticky z-40 overflow-hidden border-b border-r border-gray-200 bg-white"
-                      style={getStickyStyle(lotteryStickyLeft, LOTTERY_COL_WIDTH)}
-                    />
-                  ) : null}
-                  {columns.map((column) => (
-                    <td
-                      key={column.id}
-                      className="border-b border-r border-gray-200 bg-white"
-                      style={{
-                        minWidth:
-                          column.id === stickyEmailFieldId
-                            ? EMAIL_COL_WIDTH
-                            : column.width,
-                        width:
-                          column.id === stickyEmailFieldId
-                            ? EMAIL_COL_WIDTH
-                            : column.width,
-                      }}
-                    />
-                  ))}
-                  <td
-                    className="border-b border-gray-200 bg-white"
-                    style={{ minWidth: 80, width: 80 }}
-                  />
-                </tr>
-              ),
-            )}
-          </tbody>
-        </table>
+      <div className="min-h-0 flex-1 overflow-auto bg-gray-50 p-4">
+        <div className="flex min-w-[640px] flex-col gap-4">
+          {fieldGroups.map((group, index) => renderResponseTable(group, index))}
+        </div>
       </div>
 
       {recordActionMenu && actionMenuResponse ? (

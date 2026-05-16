@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import type { FormEvent } from '@/types/form'
+import type { EventListItem } from '@/types/api'
 import { DotsThree } from '@phosphor-icons/react'
 
 const STATUS_CONFIG = {
@@ -10,9 +10,22 @@ const STATUS_CONFIG = {
 }
 
 type Props = {
-  event: FormEvent
+  event: EventListItem
   index: number
   onContextMenu: (id: string, x: number, y: number) => void
+}
+
+function AuditLine({ label, value }: { label: string; value?: string | null }) {
+  const displayValue = value || 'Unknown'
+
+  return (
+    <div className="flex items-center justify-between gap-3 text-[10px] leading-4">
+      <span className="shrink-0 text-gray-400">{label}</span>
+      <span className="min-w-0 truncate text-right font-semibold text-gray-600" title={displayValue}>
+        {displayValue}
+      </span>
+    </div>
+  )
 }
 
 export default function EventCard({ event, index, onContextMenu }: Props) {
@@ -86,17 +99,23 @@ export default function EventCard({ event, index, onContextMenu }: Props) {
         </div>
       ) : null}
 
-      <div className="px-4 pb-3 pt-1.5 flex items-center justify-between border-t border-gray-100">
-        <div className="flex items-baseline gap-1">
-          <span className="text-xs font-bold text-gray-800">{event.responseCount}</span>
-          <span className="text-[10px] text-gray-400">responses</span>
+      <div className="border-t border-gray-100 px-4 py-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs font-bold text-gray-800">{event.responseCount}</span>
+            <span className="text-[10px] text-gray-400">responses</span>
+          </div>
+          <span className="text-[10px] text-gray-400">
+            {new Date(event.updatedAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
         </div>
-        <span className="text-[10px] text-gray-400">
-          {new Date(event.updatedAt).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })}
-        </span>
+        <div className="space-y-1">
+          <AuditLine label="Created by" value={event.createdBy} />
+          <AuditLine label="Updated by" value={event.updatedBy} />
+        </div>
       </div>
     </motion.div>
   )

@@ -1,6 +1,7 @@
 export const QUERY_KEYS = {
   EVENTS: 'events',
   EVENT_DETAIL: 'event-detail',
+  EVENT_QUESTIONS: 'event-questions',
   SECTIONS: 'sections',
   RESPONSES: 'responses',
   RESPONSE_PROGRESS: 'response-progress',
@@ -14,4 +15,6 @@ export const QUERY_KEYS = {
   EMAIL_BLAST_DETAIL: 'email-blast-detail',
   EMAIL_BLAST_DRAFT: 'email-blast-draft',
   SUBMIT_FORM_SETTINGS: 'submit-form-settings',
+  PERMISSION_REQUESTS: 'permission-requests',
+  EVENT_AUDIT_LOGS: 'event-audit-logs',
 } as const

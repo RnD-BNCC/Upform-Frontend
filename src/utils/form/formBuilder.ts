@@ -1,5 +1,7 @@
 import type { FormField, FormSection, PageLogicConfig } from "@/types/form";
 
+const FIELD_INSERT_ZONE_PREFIX = "field-insert:";
+
 export function buildRows(fields: FormField[]): FormField[][] {
   const rows: FormField[][] = [];
   let index = 0;
@@ -26,6 +28,43 @@ export function buildRows(fields: FormField[]): FormField[][] {
   }
 
   return rows;
+}
+
+export function getFieldInsertZoneId(
+  sectionId: string,
+  index: number,
+  targetId = "gap",
+) {
+  return `${FIELD_INSERT_ZONE_PREFIX}${encodeURIComponent(sectionId)}:${index}:${targetId}`;
+}
+
+export function parseFieldInsertZoneId(id: string) {
+  if (!id.startsWith(FIELD_INSERT_ZONE_PREFIX)) return null;
+
+  const value = id.slice(FIELD_INSERT_ZONE_PREFIX.length);
+  const [encodedSectionId, indexValue] = value.split(":");
+  const index = Number(indexValue);
+
+  if (encodedSectionId && Number.isInteger(index) && index >= 0) {
+    return { sectionId: decodeURIComponent(encodedSectionId), index };
+  }
+
+  const separatorIdx = value.lastIndexOf(":");
+  if (separatorIdx <= 0) return null;
+
+  const sectionId = value.slice(0, separatorIdx);
+  const legacyIndex = Number(value.slice(separatorIdx + 1));
+
+  if (!Number.isInteger(legacyIndex) || legacyIndex < 0) return null;
+
+  return { sectionId, index: legacyIndex };
+}
+
+export function clampFieldInsertIndex(fields: FormField[], index: number) {
+  const nextButtonIdx = fields.findIndex((field) => field.type === "next_button");
+  const maxIndex = nextButtonIdx >= 0 ? nextButtonIdx : fields.length;
+
+  return Math.max(0, Math.min(index, maxIndex));
 }
 
 export function getVerticalInsertIndex(

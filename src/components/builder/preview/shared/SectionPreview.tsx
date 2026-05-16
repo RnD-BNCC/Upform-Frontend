@@ -7,7 +7,10 @@ import {
 } from "@dnd-kit/sortable";
 import QuestionCard from "@/components/builder/section";
 import type { FormField, FormSection } from "@/types/form";
-import { buildRows } from "@/utils/form/formBuilder";
+import {
+  buildRows,
+  getFieldInsertZoneId,
+} from "@/utils/form/formBuilder";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
 import ThemeFormLayout from "./ThemeFormLayout";
 
@@ -33,6 +36,60 @@ function DropIndicator() {
       </div>
       <div className="flex-1 h-0.5 bg-primary-400 rounded-full" />
     </div>
+  );
+}
+
+function DroppableInsertZone({
+  id,
+  active,
+}: {
+  id: string;
+  active: boolean;
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+  const showIndicator = active || isOver;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`relative flex w-full items-center transition-all ${
+        showIndicator ? "h-8" : "h-4 -my-2"
+      }`}
+    >
+      {showIndicator ? <DropIndicator /> : null}
+    </div>
+  );
+}
+
+function DroppableRowHitboxes({
+  afterIndex,
+  beforeIndex,
+  rowId,
+  sectionId,
+}: {
+  afterIndex: number;
+  beforeIndex: number;
+  rowId: string;
+  sectionId: string;
+}) {
+  const { setNodeRef: setBeforeRef } = useDroppable({
+    id: getFieldInsertZoneId(sectionId, beforeIndex, `${rowId}-top`),
+  });
+  const { setNodeRef: setAfterRef } = useDroppable({
+    id: getFieldInsertZoneId(sectionId, afterIndex, `${rowId}-bottom`),
+  });
+
+  return (
+    <>
+      <div
+        ref={setBeforeRef}
+        className="pointer-events-none absolute inset-x-0 top-0 z-30 h-1/2"
+      />
+      <div
+        ref={setAfterRef}
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-1/2"
+      />
+    </>
   );
 }
 
@@ -99,6 +156,8 @@ export default function SectionPreview({
   const rows = buildRows(renderedFields);
   const elements: ReactNode[] = [];
   let cumulativeIndex = 0;
+  const activeInsertIdx = paletteDragType ? paletteInsertIdx : dragInsertIdx;
+  const hasActiveDrag = Boolean(paletteDragType || activeFieldId);
 
   for (const row of rows) {
     const getFieldRenderKey = (field: FormField, fieldIdx: number) =>
@@ -107,15 +166,22 @@ export default function SectionPreview({
       row.map(getFieldRenderKey).join("+") ||
       `${pageType}-row-${cumulativeIndex}`;
 
-    if (
-      (paletteDragType && paletteInsertIdx === cumulativeIndex) ||
-      (activeFieldId && dragInsertIdx === cumulativeIndex)
-    ) {
-      elements.push(<DropIndicator key={`drop-${cumulativeIndex}`} />);
-    }
+    elements.push(
+      <DroppableInsertZone
+        key={`insert-${cumulativeIndex}`}
+        id={getFieldInsertZoneId(section.id, cumulativeIndex, `gap-${cumulativeIndex}`)}
+        active={hasActiveDrag && activeInsertIdx === cumulativeIndex}
+      />,
+    );
 
     elements.push(
-      <div key={rowKey} className="theme-field-row w-full flex gap-2">
+      <div key={rowKey} className="theme-field-row relative w-full flex gap-2">
+        <DroppableRowHitboxes
+          afterIndex={cumulativeIndex + row.length}
+          beforeIndex={cumulativeIndex}
+          rowId={`row-${cumulativeIndex}`}
+          sectionId={section.id}
+        />
         {row.map((field, fieldIdx) => (
           <div
             key={getFieldRenderKey(field, fieldIdx)}
@@ -153,16 +219,17 @@ export default function SectionPreview({
     cumulativeIndex += row.length;
   }
 
-  if (
-    (paletteDragType &&
-      paletteInsertIdx !== null &&
-      paletteInsertIdx >= cumulativeIndex) ||
-    (activeFieldId &&
-      dragInsertIdx !== null &&
-      dragInsertIdx >= cumulativeIndex)
-  ) {
-    elements.push(<DropIndicator key="drop-end" />);
-  }
+  elements.push(
+    <DroppableInsertZone
+      key="insert-end"
+      id={getFieldInsertZoneId(section.id, cumulativeIndex, "gap-end")}
+      active={
+        hasActiveDrag &&
+        activeInsertIdx !== null &&
+        activeInsertIdx >= cumulativeIndex
+      }
+    />,
+  );
 
   const isEmpty =
     pageType === "page"

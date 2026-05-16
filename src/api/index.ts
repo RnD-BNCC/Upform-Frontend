@@ -10,6 +10,7 @@ export {
 } from './email-blasts'
 export * from "./events";
 export * from "./gallery";
+export * from "./permission-requests";
 export * from "./polls";
 export * from "./responses";
 export * from "./sections";

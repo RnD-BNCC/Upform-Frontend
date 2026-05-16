@@ -1,10 +1,14 @@
 export {
   useQueryEvents,
   useQueryEventDetail,
+  useQueryEventQuestions,
   useMutationCreateEvent,
   useMutationUpdateEvent,
+  useMutationSaveBuilderEvent,
   useQueryPublicEvent,
   useMutationDeleteEvent,
-  useMutationConnectSheet,
-  useMutationDisconnectSheet,
+  useMutationDuplicateEvent,
+  useMutationRestoreEvent,
+  useMutationRollbackEventAuditLog,
+  useQueryEventAuditLogs,
 } from './queries'

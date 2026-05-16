@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
+} from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   BuilderHeader,
@@ -15,6 +22,7 @@ import {
   FormPagePreview,
   LogicModal,
   PageTabBar,
+  SystemLogsPanel,
   ThemeImagePositionModal,
   ThemePickerModal,
   ThemePanel,
@@ -40,7 +48,9 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import {
+  cloneSectionForBuilderDuplicate,
   getFormCalculationsFromSections,
+  parseFieldInsertZoneId,
   setFormCalculationsInSections,
 } from "@/utils/form";
 import { ensureGoogleFontsLoaded } from "@/utils/form/googleFonts";
@@ -93,6 +103,27 @@ function EditorLargeScreenNotice({
   );
 }
 
+const builderCollisionDetection: CollisionDetection = (args) => {
+  const withoutActive = (collisions: ReturnType<CollisionDetection>) =>
+    collisions.filter(({ id }) => id !== args.active.id);
+  const pointerCollisions = withoutActive(pointerWithin(args));
+  const pointerInsertCollisions = pointerCollisions.filter(({ id }) =>
+    parseFieldInsertZoneId(String(id)),
+  );
+
+  if (pointerInsertCollisions.length > 0) return pointerInsertCollisions;
+  if (pointerCollisions.length > 0) return pointerCollisions;
+
+  const intersectionCollisions = withoutActive(rectIntersection(args));
+  const insertIntersections = intersectionCollisions.filter(({ id }) =>
+    parseFieldInsertZoneId(String(id)),
+  );
+
+  if (insertIntersections.length > 0) return insertIntersections;
+
+  return withoutActive(closestCenter(args));
+};
+
 export default function EventDetailPage() {
   const {
     activeId,
@@ -119,7 +150,6 @@ export default function EventDetailPage() {
     dragInsertIdx,
     duplicateField,
     eventStatus,
-    existing,
     formTitle,
     handleDragCancel,
     handleDragEnd,
@@ -132,6 +162,7 @@ export default function EventDetailPage() {
     handleStatusChange,
     handleThemeChange,
     id,
+    importFields,
     isAddingPage,
     isChangingStatus,
     isCoverPage,
@@ -358,7 +389,7 @@ export default function EventDetailPage() {
       {activeTab === "questions" ? (
         <DndContext
           sensors={dndSensors}
-          collisionDetection={closestCenter}
+          collisionDetection={builderCollisionDetection}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -446,6 +477,10 @@ export default function EventDetailPage() {
               <FieldCategoryPanel
                 onAddField={(type) => {
                   if (activePage) addField(type, activePage.id);
+                }}
+                currentEventId={id}
+                onImportFields={(fields) => {
+                  if (activePage) importFields(activePage.id, fields);
                 }}
                 onAddImageBlock={(url) => {
                   if (activePage) addField("image_block", activePage.id, url);
@@ -619,14 +654,7 @@ export default function EventDetailPage() {
                 onDuplicatePage={(idx) => {
                   const source = sections[idx];
                   if (!source) return;
-                  const duplicate = {
-                    ...source,
-                    id: crypto.randomUUID(),
-                    fields: source.fields.map((field) => ({
-                      ...field,
-                      id: crypto.randomUUID(),
-                    })),
-                  };
+                  const duplicate = cloneSectionForBuilderDuplicate(source);
                   setSections((prev) => [
                     ...prev.slice(0, idx + 1),
                     duplicate,
@@ -688,6 +716,10 @@ export default function EventDetailPage() {
             showToast={showToast}
           />
         </div>
+      ) : activeTab === "logs" ? (
+        <div className="flex-1 overflow-hidden">
+          <SystemLogsPanel eventId={id ?? ""} showToast={showToast} />
+        </div>
       ) : activeTab === "game" ? (
         <div className="flex-1 overflow-hidden">
           <BuilderGamePanel
@@ -705,7 +737,6 @@ export default function EventDetailPage() {
             eventId={id ?? ""}
             sections={sections}
             showToast={showToast}
-            spreadsheetUrl={existing?.spreadsheetUrl}
           />
         </div>
       )}
@@ -758,14 +789,7 @@ export default function EventDetailPage() {
         onDuplicatePage={(pageId) => {
           const source = sections.find((section) => section.id === pageId);
           if (!source) return;
-          const duplicate = {
-            ...source,
-            id: crypto.randomUUID(),
-            fields: source.fields.map((field) => ({
-              ...field,
-              id: crypto.randomUUID(),
-            })),
-          };
+          const duplicate = cloneSectionForBuilderDuplicate(source);
           const idx = sections.findIndex((section) => section.id === pageId);
           setSections((prev) => [
             ...prev.slice(0, idx + 1),

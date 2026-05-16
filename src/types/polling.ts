@@ -60,8 +60,10 @@ export type PollSlide = {
   options: string[]
   settings: SlideSettings
   locked: boolean
+  stsrc?: 'A' | 'U' | 'D'
   createdAt: string
   updatedAt: string
+  deletedAt?: string | null
 }
 
 export type Poll = {
@@ -71,6 +73,11 @@ export type Poll = {
   status: PollStatus
   currentSlide: number
   slides: PollSlide[]
+  stsrc?: 'A' | 'U' | 'D'
+  createdBy?: string | null
+  updatedBy?: string | null
+  deletedBy?: string | null
+  deletedAt?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -107,6 +114,10 @@ export type PollListResponse = {
     take: number
     total: number
     totalPages: number
+  }
+  counts?: {
+    total: number
+    deleted: number
   }
 }
 

@@ -1,21 +1,27 @@
 import { useState } from "react";
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
-import type { FieldType } from "@/types/form";
+import { FilePlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import type { FieldType, FormField } from "@/types/form";
 import BuilderPaletteItem from "./BuilderPaletteItem";
 import { getFieldPaletteGroups } from "@/components/builder/section/fieldRegistry";
 import { ImagePickerModal } from "@/components/modal";
+import ImportQuestionsModal from "./ImportQuestionsModal";
 
 type Props = {
+  currentEventId?: string;
   onAddField: (type: FieldType) => void;
   onAddImageBlock: (url: string) => void;
+  onImportFields: (fields: FormField[]) => void;
 };
 
 export default function FieldCategoryPanel({
+  currentEventId,
   onAddField,
   onAddImageBlock,
+  onImportFields,
 }: Props) {
   const [search, setSearch] = useState("");
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const categories = getFieldPaletteGroups("builder");
   const normalizedSearch = search.trim().toLowerCase();
@@ -34,7 +40,15 @@ export default function FieldCategoryPanel({
   return (
     <div className="flex h-full w-72 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-50">
       <div className="bg-gray-50 px-3 pb-2 pt-3">
-        <div className="s flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5">
+        <button
+          type="button"
+          onClick={() => setIsImportModalOpen(true)}
+          className="mb-2 flex w-full items-center justify-center gap-2 rounded-md border border-primary-100 bg-white px-3 py-2 text-xs font-semibold text-primary-700 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50"
+        >
+          <FilePlusIcon size={15} weight="duotone" />
+          Import questions
+        </button>
+        <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5">
           <MagnifyingGlassIcon size={14} className="shrink-0 text-gray-400" />
           <input
             type="text"
@@ -89,6 +103,14 @@ export default function FieldCategoryPanel({
         onClose={() => setIsImagePickerOpen(false)}
         onSelect={onAddImageBlock}
       />
+      {isImportModalOpen ? (
+        <ImportQuestionsModal
+          currentEventId={currentEventId}
+          isOpen
+          onClose={() => setIsImportModalOpen(false)}
+          onImport={onImportFields}
+        />
+      ) : null}
     </div>
   );
 }

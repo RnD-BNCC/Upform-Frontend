@@ -5,8 +5,11 @@ import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '../queryKeys'
 import type { FormEvent } from '@/types/form'
 import type {
+  EventQuestionBank,
   EventListResponse,
   EventListParams,
+  FormAuditLog,
+  SaveBuilderEventPayload,
   CreateEventPayload,
   UpdateEventPayload,
 } from '@/types/api'
@@ -50,7 +53,6 @@ export function useMutationCreateEvent(
     onError: options?.onError,
   })
 }
-
 export function useMutationUpdateEvent(
   options?: UseMutationOptions<FormEvent, Error, UpdateEventPayload & { eventId: string }>,
 ) {
@@ -67,7 +69,7 @@ export function useMutationUpdateEvent(
       // shows the correct status without waiting for a background refetch.
       queryClient.setQueryData(
         [QUERY_KEYS.EVENT_DETAIL, variables.eventId],
-        (old: FormEvent | undefined) => old ? { ...old, ...data } : data,
+        (old: FormEvent | undefined) => old ? { ...old, ...data } : old,
       )
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, variables.eventId] })
       options?.onSuccess?.(data, variables, ...rest)
@@ -76,6 +78,29 @@ export function useMutationUpdateEvent(
   })
 }
 
+export function useMutationSaveBuilderEvent(
+  eventId: string,
+  options?: UseMutationOptions<{ ok: boolean }, Error, SaveBuilderEventPayload>,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: SaveBuilderEventPayload) => {
+      const { data } = await apiClient.patch<{ ok: boolean }>(
+        Api.eventBuilder(eventId),
+        payload,
+      )
+      return data
+    },
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SECTIONS, eventId] })
+      options?.onSuccess?.(data, variables, ...rest)
+    },
+    onError: options?.onError,
+  })
+}
 export function useQueryPublicEvent(eventId: string) {
   return useQuery({
     queryKey: [QUERY_KEYS.PUBLIC_EVENT, eventId],
@@ -105,49 +130,86 @@ export function useMutationDeleteEvent(
   })
 }
 
-type SpreadsheetPayload = { spreadsheetId: string; spreadsheetUrl: string }
-
-export function useMutationConnectSheet(
-  options?: UseMutationOptions<SpreadsheetPayload, Error, string>,
+export function useMutationRestoreEvent(
+  options?: UseMutationOptions<FormEvent, Error, string>,
 ) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (eventId: string) => {
-      const { data } = await apiClient.post<SpreadsheetPayload>(Api.eventSpreadsheet(eventId))
+      const { data } = await apiClient.post<FormEvent>(Api.eventRestore(eventId))
       return data
     },
-    onSuccess: (data, eventId, ...rest) => {
-      queryClient.setQueryData(
-        [QUERY_KEYS.EVENT_DETAIL, eventId],
-        (old: FormEvent | undefined) =>
-          old
-            ? { ...old, spreadsheetId: data.spreadsheetId, spreadsheetUrl: data.spreadsheetUrl }
-            : old,
-      )
-      options?.onSuccess?.(data, eventId, ...rest)
+    onSuccess: (data, ...args) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      queryClient.setQueryData([QUERY_KEYS.EVENT_DETAIL, data.id], data)
+      options?.onSuccess?.(data, ...args)
     },
     onError: options?.onError,
   })
 }
 
-export function useMutationDisconnectSheet(
-  options?: UseMutationOptions<void, Error, string>,
+export function useQueryEventQuestions(eventId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EVENT_QUESTIONS, eventId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<EventQuestionBank>(Api.eventQuestions(eventId))
+      return data
+    },
+    enabled: !!eventId,
+  })
+}
+
+export function useMutationDuplicateEvent(
+  options?: UseMutationOptions<FormEvent, Error, string>,
 ) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (eventId: string) => {
-      await apiClient.delete(Api.eventSpreadsheet(eventId))
-    },
-    onSuccess: (_, eventId, ...rest) => {
-      queryClient.setQueryData(
-        [QUERY_KEYS.EVENT_DETAIL, eventId],
-        (old: FormEvent | undefined) =>
-          old ? { ...old, spreadsheetId: null, spreadsheetUrl: null } : old,
+      const { data: duplicatedEvent } = await apiClient.post<FormEvent>(
+        Api.eventDuplicate(eventId),
       )
-      options?.onSuccess?.(_, eventId, ...rest)
+      return duplicatedEvent
+    },
+    onSuccess: (data, ...args) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      queryClient.setQueryData([QUERY_KEYS.EVENT_DETAIL, data.id], data)
+      options?.onSuccess?.(data, ...args)
     },
     onError: options?.onError,
+  })
+}
+
+export function useQueryEventAuditLogs(eventId: string) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.EVENT_AUDIT_LOGS, eventId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<FormAuditLog[]>(
+        Api.eventAuditLogs(eventId),
+      )
+      return data
+    },
+    enabled: !!eventId,
+  })
+}
+
+export function useMutationRollbackEventAuditLog(eventId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (logId: string) => {
+      const { data } = await apiClient.post<FormEvent>(
+        Api.eventAuditLogRollback(eventId, logId),
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENTS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_AUDIT_LOGS, eventId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SECTIONS, eventId] })
+      queryClient.setQueryData([QUERY_KEYS.EVENT_DETAIL, eventId], data)
+    },
   })
 }

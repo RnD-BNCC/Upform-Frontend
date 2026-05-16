@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowSquareOut,
+  CopySimple,
   PencilSimple,
   Trash,
   CheckCircle,
@@ -9,20 +10,21 @@ import {
   ArrowCounterClockwise,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
-import type { FormEvent } from "@/types/form";
+import type { EventListItem } from "@/types/api";
 
 type Props = {
   x: number;
   y: number;
-  event: FormEvent;
+  event: EventListItem;
   onClose: () => void;
   onOpen: () => void;
   onEdit: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
   onToggleStatus: () => void;
 };
 
-const PUBLISH_ACTIONS: Record<FormEvent["status"], { label: string; Icon: Icon }> = {
+const PUBLISH_ACTIONS: Record<EventListItem["status"], { label: string; Icon: Icon }> = {
   active: { label: "Unpublish", Icon: XCircle },
   draft: { label: "Publish", Icon: CheckCircle },
   closed: { label: "Reopen", Icon: ArrowCounterClockwise },
@@ -35,6 +37,7 @@ export default function ContextMenu({
   onClose,
   onOpen,
   onEdit,
+  onDuplicate,
   onDelete,
   onToggleStatus,
 }: Props) {
@@ -42,7 +45,7 @@ export default function ContextMenu({
   const { label: publishLabel, Icon: PublishIcon } = PUBLISH_ACTIONS[event.status];
 
   const adjustedX = Math.min(x, window.innerWidth - 204);
-  const adjustedY = Math.min(y, window.innerHeight - 190);
+  const adjustedY = Math.min(y, window.innerHeight - 220);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -107,6 +110,17 @@ export default function ContextMenu({
             className="shrink-0 text-gray-400 transition-colors group-hover:text-gray-600"
           />
           Edit
+        </button>
+
+        <button
+          onClick={onDuplicate}
+          className="group flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200"
+        >
+          <CopySimple
+            size={12}
+            className="shrink-0 text-gray-400 transition-colors group-hover:text-gray-600"
+          />
+          Duplicate
         </button>
 
         <button
