@@ -257,6 +257,7 @@ export type PermissionAction =
   | 'responses.view'
   | 'responses.edit'
   | 'responses.delete'
+  | 'forms.edit'
   | 'forms.delete'
   | 'forms.rollback'
 
@@ -286,6 +287,12 @@ export type PermissionRequestListResponse = {
   approver: boolean
   approverEmails: string[]
   data: PermissionRequest[]
+}
+
+export type PermissionAccessResponse = {
+  allowed: boolean
+  pending: boolean
+  request?: Pick<PermissionRequest, 'createdAt' | 'id' | 'status'> | null
 }
 
 export type CreatePermissionRequestPayload = {

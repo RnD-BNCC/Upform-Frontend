@@ -17,10 +17,11 @@ import {
   StatusModal,
   type StatusType,
 } from "@/components/modal";
-import { Spinner } from "@/components/ui";
+import { RefreshButton, Spinner } from "@/components/ui";
 import type { PermissionRequest } from "@/types/api";
 
 const ACTION_LABELS: Record<string, string> = {
+  "forms.edit": "Edit form",
   "forms.delete": "Delete form",
   "forms.rollback": "Rollback form",
   "responses.delete": "Delete respondent",
@@ -147,7 +148,7 @@ export default function PermissionsPage() {
       <Navbar />
       <main className="px-6 py-6">
         <div className="mx-auto max-w-5xl">
-        <div className="mb-5">
+        <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-950">
               Permission requests
@@ -156,6 +157,13 @@ export default function PermissionsPage() {
               Review activist requests for sensitive actions.
             </p>
           </div>
+          <RefreshButton
+            ariaLabel="Refresh permission requests"
+            iconSize={15}
+            onRefresh={async () => {
+              await requestsQuery.refetch();
+            }}
+          />
         </div>
 
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">

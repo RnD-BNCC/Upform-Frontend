@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useQueryEventDetail } from '@/api/events'
 
-export const useGetEventDetail = (eventId: string) => {
-  const query = useQueryEventDetail(eventId)
+export const useGetEventDetail = (eventId: string, enabled = true) => {
+  const query = useQueryEventDetail(eventId, enabled)
 
   useEffect(() => {
     if (query.data) {

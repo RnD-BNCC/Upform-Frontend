@@ -174,6 +174,25 @@ export default function HomePage() {
     description: string;
   } | null>(null);
 
+  const requestPermissionFromError = async (error: unknown, reason: string) => {
+    const permissionError = getPermissionRequiredError(error);
+    if (!permissionError) return false;
+
+    await createPermissionRequest.mutateAsync({
+      action: permissionError.action,
+      reason,
+      resourceId: permissionError.resourceId,
+      resourceType: permissionError.resourceType,
+    });
+    setStatusResult({
+      type: "success",
+      title: "Permission Requested",
+      description: "Your request has been sent to the approver.",
+    });
+
+    return true;
+  };
+
   const handleDelete = (id: string) => {
     const event = events.find((e) => e.id === id);
     setCtxMenu(null);
@@ -213,11 +232,26 @@ export default function HomePage() {
       });
     } catch (error) {
       console.error('[handleDuplicate]', error)
-      setStatusResult({
-        type: "error",
-        title: "Duplicate Failed",
-        description: "Something went wrong while duplicating the form.",
-      });
+      try {
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          "Need to edit form",
+        );
+        if (!permissionRequested) {
+          setStatusResult({
+            type: "error",
+            title: "Duplicate Failed",
+            description: "Something went wrong while duplicating the form.",
+          });
+        }
+      } catch (requestError) {
+        console.error("[handleDuplicatePermission]", requestError);
+        setStatusResult({
+          type: "error",
+          title: "Permission Request Failed",
+          description: "Something went wrong while requesting permission.",
+        });
+      }
     } finally {
       setIsActionLoading(false);
     }
@@ -234,11 +268,26 @@ export default function HomePage() {
       });
     } catch (error) {
       console.error("[handleRestore]", error);
-      setStatusResult({
-        type: "error",
-        title: "Restore Failed",
-        description: "Something went wrong while restoring the form.",
-      });
+      try {
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          "Need to edit form",
+        );
+        if (!permissionRequested) {
+          setStatusResult({
+            type: "error",
+            title: "Restore Failed",
+            description: "Something went wrong while restoring the form.",
+          });
+        }
+      } catch (requestError) {
+        console.error("[handleRestorePermission]", requestError);
+        setStatusResult({
+          type: "error",
+          title: "Permission Request Failed",
+          description: "Something went wrong while requesting permission.",
+        });
+      }
     } finally {
       setIsActionLoading(false);
     }
@@ -279,24 +328,24 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error('[handleConfirm]', error)
-      const permissionError = getPermissionRequiredError(error);
-      if (permissionError) {
-        createPermissionRequest.mutate({
-          action: permissionError.action,
-          reason: "Need to delete form",
-          resourceId: permissionError.resourceId,
-          resourceType: permissionError.resourceType,
-        });
-        setStatusResult({
-          type: "success",
-          title: "Permission Requested",
-          description: "Your request has been sent to the approver.",
-        });
-      } else {
+      try {
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          action.type === "delete" ? "Need to delete form" : "Need to edit form",
+        );
+        if (!permissionRequested) {
+          setStatusResult({
+            type: "error",
+            title: "Action Failed",
+            description: "Something went wrong. Please try again.",
+          });
+        }
+      } catch (requestError) {
+        console.error("[handleConfirmPermission]", requestError);
         setStatusResult({
           type: "error",
-          title: "Action Failed",
-          description: "Something went wrong. Please try again.",
+          title: "Permission Request Failed",
+          description: "Something went wrong while requesting permission.",
         });
       }
     } finally {

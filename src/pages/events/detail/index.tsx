@@ -43,6 +43,7 @@ import {
   DesktopIcon,
   FloppyDiskIcon,
   ImageIcon,
+  LockIcon,
   PencilSimpleIcon,
   TrashIcon,
   XIcon,
@@ -149,6 +150,9 @@ export default function EventDetailPage() {
     dndSensors,
     dragInsertIdx,
     duplicateField,
+    editPermissionPending,
+    editPermissionRequested,
+    editPermissionRequired,
     eventStatus,
     formTitle,
     handleDragCancel,
@@ -168,6 +172,7 @@ export default function EventDetailPage() {
     isCoverPage,
     isDirty,
     isLoading,
+    isRequestingEditPermission,
     isLogicOpen,
     isPublishing,
     isRightPanelOpen,
@@ -181,6 +186,7 @@ export default function EventDetailPage() {
     pendingTheme,
     publicFormUrl,
     questionsEndRef,
+    requestEditPermission,
     responses,
     sections,
     selectedField,
@@ -340,6 +346,57 @@ export default function EventDetailPage() {
           <div className="flex flex-col items-center gap-3">
             <Spinner size={32} className="text-primary-500" />
             <p className="text-sm text-gray-400">Loading form...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (editPermissionRequired) {
+    return (
+      <>
+        <EditorLargeScreenNotice
+          onBack={() => navigate("/")}
+          onOpenRespondentForm={id ? () => navigate(`/forms/${id}`) : undefined}
+        />
+        <div className="hidden min-h-screen items-center justify-center bg-gray-50 px-6 lg:flex">
+          <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+              <LockIcon size={24} weight="duotone" />
+            </div>
+            <h1 className="text-base font-bold text-gray-950">
+              Permission required
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+              Your account needs approval before editing this form.
+            </p>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="flex h-9 items-center justify-center rounded-md border border-gray-200 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={
+                  isRequestingEditPermission ||
+                  editPermissionPending ||
+                  editPermissionRequested
+                }
+                onClick={async () => {
+                  await requestEditPermission();
+                }}
+                className="flex h-9 items-center justify-center rounded-md bg-primary-600 px-4 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRequestingEditPermission
+                  ? "Requesting..."
+                  : editPermissionPending || editPermissionRequested
+                    ? "Request sent"
+                    : "Request permission"}
+              </button>
+            </div>
           </div>
         </div>
       </>

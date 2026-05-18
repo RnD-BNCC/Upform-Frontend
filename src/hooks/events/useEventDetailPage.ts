@@ -17,6 +17,10 @@ import {
 } from "@/hooks/events";
 import { useCreateSection } from "@/hooks/sections";
 import { useGetResponses } from "@/hooks/responses";
+import {
+  useMutationCreatePermissionRequest,
+  useQueryPermissionAccess,
+} from "@/api/permission-requests";
 import { useMutationUploadImage } from "@/api/upload";
 import {
   OPEN_LOGIC_MODAL_EVENT,
@@ -45,6 +49,7 @@ import {
   createPageTypeDefaultFields,
 } from "@/components/builder/section/fieldRegistry";
 import type { FieldType, FormField, FormSection } from "@/types/form";
+import { getPermissionRequiredError } from "@/utils/permissionRequests";
 
 type Tab = "questions" | "share" | "game" | "responses" | "logs";
 type LeftPanelMode = "fields" | "theme";
@@ -178,12 +183,41 @@ export function useEventDetailPage() {
   const hasBuilderRouteState =
     !isLocalNewForm && Array.isArray(routeState?.sections);
 
-  const { data: existing, isLoading } = useGetEventDetail(persistedEventId);
-  const { data: responses = [] } = useGetResponses(persistedEventId);
+  const editAccessQuery = useQueryPermissionAccess(
+    {
+      action: "forms.edit",
+      resourceId: persistedEventId,
+      resourceType: "event",
+    },
+    !isLocalNewForm && !!persistedEventId,
+  );
+  const hasEditAccess = isLocalNewForm || editAccessQuery.data?.allowed === true;
+  const isEditAccessLoading =
+    !isLocalNewForm && !!persistedEventId && editAccessQuery.isLoading;
+  const {
+    data: existing,
+    error: eventDetailError,
+    isLoading,
+  } = useGetEventDetail(persistedEventId, hasEditAccess);
+  const editPermissionError = getPermissionRequiredError(eventDetailError);
+  const editPermissionRequired =
+    !isLocalNewForm &&
+    !!persistedEventId &&
+    (!!editPermissionError ||
+      editAccessQuery.isError ||
+      (editAccessQuery.isSuccess && !editAccessQuery.data?.allowed));
+  const editPermissionPending = editAccessQuery.data?.pending === true;
+  const editPermissionKey = persistedEventId
+    ? `forms.edit:event:${persistedEventId}`
+    : "";
+  const { data: responses = [] } = useGetResponses(
+    hasEditAccess && existing ? persistedEventId : "",
+  );
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
   const saveBuilderEvent = useSaveBuilderEvent(persistedEventId);
   const createSection = useCreateSection(persistedEventId);
+  const createPermissionRequest = useMutationCreatePermissionRequest();
   const uploadImage = useMutationUploadImage();
 
   const deletedSectionIdsRef = useRef<string[]>([]);
@@ -198,6 +232,7 @@ export function useEventDetailPage() {
     theme: "light",
     title: "Untitled Form",
   });
+  const permissionRequestKeysRef = useRef(new Set<string>());
   const bgImgRef = useRef<HTMLInputElement>(null);
   const routeIdRef = useRef(id);
 
@@ -238,6 +273,9 @@ export function useEventDetailPage() {
     "unpublish" | "close" | null
   >(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [requestedPermissionKeys, setRequestedPermissionKeys] = useState<
+    Set<string>
+  >(() => new Set());
   const [startButtonText, setStartButtonText] = useState("Start");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
@@ -344,6 +382,134 @@ export function useEventDetailPage() {
     [],
   );
 
+  const markPermissionRequestPending = useCallback((key: string) => {
+    permissionRequestKeysRef.current.add(key);
+    setRequestedPermissionKeys((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  const clearPermissionRequestPending = useCallback((key: string) => {
+    permissionRequestKeysRef.current.delete(key);
+    setRequestedPermissionKeys((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const editPermissionRequested =
+    !!editPermissionKey && requestedPermissionKeys.has(editPermissionKey);
+
+  useEffect(() => {
+    if (!editPermissionKey || !editAccessQuery.isSuccess) return;
+
+    if (editAccessQuery.data?.pending) {
+      markPermissionRequestPending(editPermissionKey);
+      return;
+    }
+
+    clearPermissionRequestPending(editPermissionKey);
+  }, [
+    clearPermissionRequestPending,
+    editAccessQuery.data?.pending,
+    editAccessQuery.isSuccess,
+    editPermissionKey,
+    markPermissionRequestPending,
+  ]);
+
+  const requestPermissionFromError = useCallback(
+    async (error: unknown, reason: string) => {
+      const permissionError = getPermissionRequiredError(error);
+      if (!permissionError) return false;
+
+      const key = `${permissionError.action}:${permissionError.resourceType}:${permissionError.resourceId}`;
+      if (permissionRequestKeysRef.current.has(key)) {
+        return true;
+      }
+
+      markPermissionRequestPending(key);
+
+      try {
+        await createPermissionRequest.mutateAsync({
+          action: permissionError.action,
+          reason,
+          resourceId: permissionError.resourceId,
+          resourceType: permissionError.resourceType,
+        });
+        showToast("Permission request sent", "success");
+      } catch (requestError) {
+        clearPermissionRequestPending(key);
+        console.error("[requestPermissionFromError]:", requestError);
+        showToast("Failed to request permission", "error");
+      }
+
+      return true;
+    },
+    [
+      clearPermissionRequestPending,
+      createPermissionRequest,
+      markPermissionRequestPending,
+      showToast,
+    ],
+  );
+
+  const requestEditPermission = useCallback(
+    async () => {
+      if (!persistedEventId) return false;
+
+      if (editPermissionError) {
+        const requested = await requestPermissionFromError(
+          eventDetailError,
+          "Need to edit form",
+        );
+        void editAccessQuery.refetch();
+        return requested;
+      }
+
+      const key = editPermissionKey;
+      if (permissionRequestKeysRef.current.has(key) || editPermissionPending) {
+        return true;
+      }
+
+      markPermissionRequestPending(key);
+
+      try {
+        await createPermissionRequest.mutateAsync({
+          action: "forms.edit",
+          reason: "Need to edit form",
+          resourceId: persistedEventId,
+          resourceType: "event",
+        });
+        await editAccessQuery.refetch();
+        showToast("Permission request sent", "success");
+        return true;
+      } catch (requestError) {
+        clearPermissionRequestPending(key);
+        console.error("[requestEditPermission]:", requestError);
+        showToast("Failed to request permission", "error");
+        return false;
+      }
+    },
+    [
+      createPermissionRequest,
+      clearPermissionRequestPending,
+      editAccessQuery,
+      editPermissionError,
+      editPermissionKey,
+      editPermissionPending,
+      eventDetailError,
+      markPermissionRequestPending,
+      persistedEventId,
+      requestPermissionFromError,
+      showToast,
+    ],
+  );
+
   useEffect(() => {
     return () => {
       if (toastTimeoutRef.current) {
@@ -421,6 +587,8 @@ export function useEventDetailPage() {
       return;
     }
 
+    if (!hasEditAccess) return;
+
     if (nav?.sections) {
       const normalizedSections = ensureNextButton(
         normalizeBuilderSections(nav.sections),
@@ -486,6 +654,7 @@ export function useEventDetailPage() {
     }
   }, [
     existing,
+    hasEditAccess,
     initialized,
     isLocalNewForm,
     isLoading,
@@ -783,6 +952,11 @@ export function useEventDetailPage() {
         return true;
       } catch (error) {
         console.error("[handleSave]:", error);
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          "Need to edit form",
+        );
+        if (permissionRequested) return false;
         if (showFeedback) {
           showToast("Save failed", "error");
         }
@@ -795,6 +969,7 @@ export function useEventDetailPage() {
       buildSectionsForPageLogic,
       isSaving,
       persistedEventId,
+      requestPermissionFromError,
       saveBuilderEvent,
       setSections,
       showToast,
@@ -826,10 +1001,18 @@ export function useEventDetailPage() {
       setShowShareToast(false);
     } catch (error) {
       console.error("[handlePublish]", error);
+      await requestPermissionFromError(error, "Need to edit form");
     } finally {
       setIsPublishing(false);
     }
-  }, [handleSave, isDirty, isPublishing, persistedEventId, updateEvent]);
+  }, [
+    handleSave,
+    isDirty,
+    isPublishing,
+    persistedEventId,
+    requestPermissionFromError,
+    updateEvent,
+  ]);
 
   const handleStatusChange = useCallback(
     async (action: "unpublish" | "close") => {
@@ -843,11 +1026,12 @@ export function useEventDetailPage() {
         setStatusResult(action);
       } catch (error) {
         console.error("[handleStatusChange]", error);
+        await requestPermissionFromError(error, "Need to edit form");
       } finally {
         setIsChangingStatus(false);
       }
     },
-    [isChangingStatus, persistedEventId, updateEvent],
+    [isChangingStatus, persistedEventId, requestPermissionFromError, updateEvent],
   );
 
   const handleNodeMove = useCallback(
@@ -906,13 +1090,26 @@ export function useEventDetailPage() {
         return result.id;
       } catch (error) {
         console.error("[addPage]", error);
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          "Need to edit form",
+        );
+        if (permissionRequested) return undefined;
         showToast(`Failed to add ${pageLabel}`, "error");
         return undefined;
       } finally {
         setIsAddingPage(false);
       }
     },
-    [createSection, getPageToastLabel, persistedEventId, sections.length, setSections, showToast],
+    [
+      createSection,
+      getPageToastLabel,
+      persistedEventId,
+      requestPermissionFromError,
+      sections.length,
+      setSections,
+      showToast,
+    ],
   );
 
   const handleLogicFlowChange = useCallback(
@@ -1496,6 +1693,9 @@ export function useEventDetailPage() {
     dragInsertIdx,
     duplicateField,
     eventStatus,
+    editPermissionPending,
+    editPermissionRequested,
+    editPermissionRequired,
     existing,
     formTitle,
     handleDragCancel,
@@ -1516,7 +1716,10 @@ export function useEventDetailPage() {
     isChangingStatus,
     isCoverPage,
     isDirty,
-    isLoading: isLoading && !hasBuilderRouteState,
+    isLoading:
+      !editPermissionRequired &&
+      (isEditAccessLoading || (hasEditAccess && isLoading && !hasBuilderRouteState)),
+    isRequestingEditPermission: createPermissionRequest.isPending,
     isLogicOpen,
     isPublishing,
     isRightPanelOpen,
@@ -1531,6 +1734,7 @@ export function useEventDetailPage() {
     pendingTheme,
     publicFormUrl,
     questionsEndRef,
+    requestEditPermission,
     responses,
     sections,
     selectedField,

@@ -76,6 +76,7 @@ export const Api = {
 
   // Permission requests
   permissionRequests: '/permission-requests',
+  permissionRequestAccess: '/permission-requests/access',
   permissionRequestApprove: (id: string) => `/permission-requests/${id}/approve`,
   permissionRequestReject: (id: string) => `/permission-requests/${id}/reject`,
 

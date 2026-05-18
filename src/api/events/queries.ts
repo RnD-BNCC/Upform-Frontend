@@ -24,14 +24,15 @@ export function useQueryEvents(params: EventListParams = {}) {
   })
 }
 
-export function useQueryEventDetail(eventId: string) {
+export function useQueryEventDetail(eventId: string, enabled = true) {
   return useQuery({
     queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId],
     queryFn: async () => {
       const { data } = await apiClient.get<FormEvent>(Api.eventDetail(eventId))
       return data
     },
-    enabled: !!eventId,
+    enabled: enabled && !!eventId,
+    retry: false,
   })
 }
 
@@ -157,6 +158,7 @@ export function useQueryEventQuestions(eventId: string) {
       return data
     },
     enabled: !!eventId,
+    retry: false,
   })
 }
 

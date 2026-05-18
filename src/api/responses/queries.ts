@@ -34,6 +34,7 @@ export function useQueryResponses(eventId: string) {
       return data;
     },
     enabled: !!eventId,
+    retry: false,
   });
 }
 
@@ -66,6 +67,7 @@ export function useQueryAnalyticsEvents(eventId: string) {
       return data;
     },
     enabled: !!eventId,
+    retry: false,
   });
 }
 

@@ -4,9 +4,17 @@ import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '@/api/queryKeys'
 import type {
   CreatePermissionRequestPayload,
+  PermissionAccessResponse,
+  PermissionAction,
   PermissionRequest,
   PermissionRequestListResponse,
 } from '@/types/api'
+
+type PermissionAccessParams = {
+  action: PermissionAction
+  resourceId: string
+  resourceType?: string
+}
 
 export function useQueryPermissionRequests(status?: string) {
   return useQuery({
@@ -18,6 +26,29 @@ export function useQueryPermissionRequests(status?: string) {
       )
       return data
     },
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    retry: false,
+  })
+}
+
+export function useQueryPermissionAccess(
+  params: PermissionAccessParams,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.PERMISSION_REQUESTS, 'access', params],
+    queryFn: async () => {
+      const { data } = await apiClient.get<PermissionAccessResponse>(
+        Api.permissionRequestAccess,
+        { params },
+      )
+      return data
+    },
+    enabled: enabled && !!params.resourceId && !!params.action,
+    refetchInterval: (query) =>
+      query.state.data?.allowed === true ? false : 5000,
+    refetchOnWindowFocus: true,
     retry: false,
   })
 }
