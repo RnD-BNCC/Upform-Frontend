@@ -164,13 +164,13 @@ export default function AccessGrantsPanel({
   };
 
   const handleCreateGrant = async () => {
-    const requesterEmail = email.trim().toLowerCase();
-    const targetResourceId = grantResourceId.trim();
+    const targetEmail = (email.trim() || requesterEmail.trim()).toLowerCase();
+    const targetResourceId = grantResourceId.trim() || resourceId.trim();
 
-    if (!requesterEmail || !targetResourceId) {
+    if (!targetEmail || !targetResourceId) {
       onError(
         "Access not added",
-        "User email and target resource ID are required. Whitelist only decides who may approve access; the grant still needs a target user and form or poll ID.",
+        "Target user email and target resource ID are required. Your whitelist email only lets you approve or manage access.",
       );
       return;
     }
@@ -179,7 +179,7 @@ export default function AccessGrantsPanel({
       await createGrant.mutateAsync({
         action,
         reason: reason.trim() || "Granted manually by admin",
-        requesterEmail,
+        requesterEmail: targetEmail,
         resourceId: targetResourceId,
         resourceType: grantResourceType,
       });
@@ -188,7 +188,7 @@ export default function AccessGrantsPanel({
       setReason("");
       onSuccess(
         "Access Added",
-        `${requesterEmail} can now ${ACTION_LABELS[action].toLowerCase()}.`,
+        `${targetEmail} can now ${ACTION_LABELS[action].toLowerCase()}.`,
       );
     } catch (error) {
       console.error("[handleCreateGrant]", error);
@@ -314,7 +314,7 @@ export default function AccessGrantsPanel({
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="user@upform.id"
+              placeholder={requesterEmail.trim() || "target-user@upform.id"}
               className="mt-1 h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
             />
           </label>
@@ -323,7 +323,7 @@ export default function AccessGrantsPanel({
             <input
               value={grantResourceId}
               onChange={(event) => setGrantResourceId(event.target.value)}
-              placeholder="Form or poll ID"
+              placeholder={resourceId.trim() || "Form or poll ID"}
               className="mt-1 h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
             />
           </label>
