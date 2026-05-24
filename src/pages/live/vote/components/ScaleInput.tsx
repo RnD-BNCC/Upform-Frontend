@@ -1,5 +1,5 @@
 import { useState } from "react";
-import SubmittingSpinner from "./SubmittingSpinner";
+import SubmittingSpinner from "@/pages/live/vote/components/SubmittingSpinner";
 import { SCALE_COLORS } from "@/config/polling";
 
 type Props = {

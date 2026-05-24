@@ -8,17 +8,17 @@ import {
   collectTextResponses,
   countFieldResponses,
 } from '@/utils/form/responseAggregation'
-import PieChartCard from './charts/PieChartCard'
-import BarChartCard from './charts/BarChartCard'
-import TextResponseList from './charts/TextResponseList'
-import FileResponseList from './charts/FileResponseList'
-import { cleanResultLabel, getResponseTimestamp } from './resultsResponseUtils'
-import { exportExcelWorkbook } from './database/excelExportUtils'
+import PieChartCard from '@/components/responses/charts/PieChartCard'
+import BarChartCard from '@/components/responses/charts/BarChartCard'
+import TextResponseList from '@/components/responses/charts/TextResponseList'
+import FileResponseList from '@/components/responses/charts/FileResponseList'
+import { cleanResultLabel, getResponseTimestamp } from '@/components/responses/resultsResponseUtils'
+import { exportExcelWorkbook } from '@/components/responses/database/excelExportUtils'
 import {
   formatAnswerValue,
   isFieldValueEmpty,
   toStableResponseUuid,
-} from './database/resultsDatabaseUtils'
+} from '@/components/responses/database/resultsDatabaseUtils'
 
 interface QuestionSummaryCardProps {
   field: FormField

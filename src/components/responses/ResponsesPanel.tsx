@@ -18,9 +18,9 @@ import { QUERY_KEYS } from "@/api/queryKeys";
 import type { FormField, FormResponse, FormSection } from "@/types/form";
 import type { ResultsSection } from "@/types/results";
 import type { ShareToast } from "@/types/builderShare";
-import AnalyticsTab from "./analytics/AnalyticsTab";
-import DatabaseView from "./database/DatabaseView";
-import SummaryTab from "./SummaryTab";
+import AnalyticsTab from "@/components/responses/analytics/AnalyticsTab";
+import DatabaseView from "@/components/responses/database/DatabaseView";
+import SummaryTab from "@/components/responses/SummaryTab";
 import { getPermissionRequiredError } from "@/utils/permissionRequests";
 
 interface ResponsesPanelProps {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { PageHeroBanner } from "@/components/layout";
-import AnimatedStat from "./AnimatedStat";
+import AnimatedStat from "@/pages/home/components/AnimatedStat";
 
 export type HomeTab = "forms" | "trash";
 

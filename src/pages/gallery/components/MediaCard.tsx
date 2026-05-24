@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Trash, Warning } from "@phosphor-icons/react";
-import type { GalleryMediaItem } from "@/api/gallery";
-import { formatGalleryFileSize } from "../utils";
+import type { GalleryMediaItem } from "@/types/gallery";
+import { formatGalleryFileSize } from "@/pages/gallery/utils";
 
 type Props = {
   item: GalleryMediaItem;

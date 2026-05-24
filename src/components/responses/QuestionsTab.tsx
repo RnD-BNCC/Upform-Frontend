@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
 import type { FormField, FormResponse } from '@/types/form'
-import QuestionSummaryCard from './QuestionSummaryCard'
-import { getResultFields } from './resultsResponseUtils'
+import QuestionSummaryCard from '@/components/responses/QuestionSummaryCard'
+import { getResultFields } from '@/components/responses/resultsResponseUtils'
 
 interface QuestionsTabProps {
   responses: FormResponse[]

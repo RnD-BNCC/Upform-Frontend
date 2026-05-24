@@ -1,2 +1,2 @@
-export * from "./detail";
-export * from "./preview";
+export * from "@/pages/events/detail";
+export * from "@/pages/events/preview";

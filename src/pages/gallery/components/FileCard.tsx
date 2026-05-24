@@ -6,7 +6,7 @@ import {
   FilePdf,
   Trash,
 } from "@phosphor-icons/react";
-import { getGalleryPreviewUrl, isGalleryImageFile } from "../utils";
+import { getGalleryPreviewUrl, isGalleryImageFile } from "@/pages/gallery/utils";
 
 type Props = {
   url: string;

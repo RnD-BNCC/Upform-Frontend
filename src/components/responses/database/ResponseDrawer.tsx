@@ -8,9 +8,9 @@ import {
 } from "@phosphor-icons/react";
 import { Spinner } from "@/components/ui";
 import type { FormField, FormResponse } from "@/types/form";
-import { cleanResultLabel, getResponseTimestamp } from "../resultsResponseUtils";
-import { formatAnswerValue, toStableResponseUuid } from "./resultsDatabaseUtils";
-import ResponseFieldEditor from "./ResponseFieldEditor";
+import { cleanResultLabel, getResponseTimestamp } from "@/components/responses/resultsResponseUtils";
+import { formatAnswerValue, toStableResponseUuid } from "@/components/responses/database/resultsDatabaseUtils";
+import ResponseFieldEditor from "@/components/responses/database/ResponseFieldEditor";
 
 type ResponseDrawerProps = {
   fields: FormField[];

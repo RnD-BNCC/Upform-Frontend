@@ -8,8 +8,8 @@ import { usePopoverClose } from "@/hooks/usePopoverClose";
 import ConditionSelect from "@/components/builder/layout/reference/ConditionSelect";
 import type { FormField } from "@/types/form";
 import type { ResultSortDirection, ResultSortRule } from "@/types/results";
-import { cleanResultLabel } from "../resultsResponseUtils";
-import { createId } from "./resultsDatabaseUtils";
+import { cleanResultLabel } from "@/components/responses/resultsResponseUtils";
+import { createId } from "@/components/responses/database/resultsDatabaseUtils";
 
 type SortPopoverProps = {
   fields: FormField[];

@@ -23,8 +23,8 @@ import {
   useMutationConnectGalleryDrive,
   useMutationUpdateGalleryShare,
   useQueryGalleryShare,
-  type GalleryFileEntry,
 } from "@/api/gallery";
+import type { GalleryFileEntry } from "@/types/gallery";
 import { useMutationUploadImage } from "@/api/upload";
 import {
   ArrowSquareOut,
@@ -50,7 +50,7 @@ import {
   GalleryShareModal,
   ImagePreviewModal,
   MediaCard,
-} from "./components";
+} from "@/pages/gallery/components";
 import {
   filterGalleryEvents,
   filterGalleryFiles,
@@ -63,7 +63,7 @@ import {
   getGallerySearchPlaceholder,
   isGalleryImageFile,
   type GalleryTab,
-} from "./utils";
+} from "@/pages/gallery/utils";
 
 type GalleryContextMenuState =
   | {

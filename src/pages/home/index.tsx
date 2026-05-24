@@ -19,7 +19,7 @@ import type { EventListItem } from "@/types/api";
 import type { FormEvent } from "@/types/form";
 import { ArrowClockwise, MagnifyingGlass, Trash } from "@phosphor-icons/react";
 import { Spinner } from "@/components/ui";
-import { HomeHero, type HomeTab } from "./components";
+import { HomeHero, type HomeTab } from "@/pages/home/components";
 import { getPermissionRequiredError } from "@/utils/permissionRequests";
 
 type Filter = "All" | "Active" | "Draft" | "Closed";

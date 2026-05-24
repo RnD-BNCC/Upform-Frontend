@@ -32,17 +32,17 @@ import {
   DEFAULT_FILTER_GROUP,
   countFilterConditions,
   evaluateFilterGroup,
-} from "../database/resultsDatabaseUtils";
+} from "@/components/responses/database/resultsDatabaseUtils";
 import {
   cleanResultLabel,
   getResponseTimestamp,
   getResultFields,
-} from "../resultsResponseUtils";
-import AnalyticsConditionPopover from "./AnalyticsConditionPopover";
+} from "@/components/responses/resultsResponseUtils";
+import AnalyticsConditionPopover from "@/components/responses/analytics/AnalyticsConditionPopover";
 import DateRangePopover, {
   type AnalyticsDateFilter,
-} from "./DateRangePopover";
-import { isWithinAnalyticsDateFilter } from "./dateRangeUtils";
+} from "@/components/responses/analytics/DateRangePopover";
+import { isWithinAnalyticsDateFilter } from "@/components/responses/analytics/dateRangeUtils";
 
 type AnalyticsTabProps = {
   allFields: FormField[];

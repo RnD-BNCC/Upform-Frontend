@@ -1,10 +1,10 @@
 import type { PollSlide, SlideType } from "@/types/polling";
-import GuessNumberInput from "./GuessNumberInput";
-import MCInput from "./MCInput";
-import PinOnImageInput from "./PinOnImageInput";
-import QAInput from "./QAInput";
-import ScaleInput from "./ScaleInput";
-import WordCloudInput from "./WordCloudInput";
+import GuessNumberInput from "@/pages/live/vote/components/GuessNumberInput";
+import MCInput from "@/pages/live/vote/components/MCInput";
+import PinOnImageInput from "@/pages/live/vote/components/PinOnImageInput";
+import QAInput from "@/pages/live/vote/components/QAInput";
+import ScaleInput from "@/pages/live/vote/components/ScaleInput";
+import WordCloudInput from "@/pages/live/vote/components/WordCloudInput";
 
 type Props = {
   slide: PollSlide;

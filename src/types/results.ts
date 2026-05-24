@@ -1,4 +1,4 @@
-import type { FieldType } from "./form";
+import type { FieldType } from "@/types/form";
 
 export type ResultsSection = "database" | "submissions" | "inProgress" | "summary" | "analytics";
 

@@ -36,22 +36,22 @@ import type {
   ResultSortRule,
 } from "@/types/results";
 import type { ShareToast } from "@/types/builderShare";
-import CreateViewModal from "./CreateViewModal";
-import DatabaseToolbar from "./DatabaseToolbar";
-import RecordActionMenu from "./RecordActionMenu";
-import ResponseDrawer, { type ResponseSaveStatus } from "./ResponseDrawer";
-import { exportExcelWorkbook } from "./excelExportUtils";
+import CreateViewModal from "@/components/responses/database/CreateViewModal";
+import DatabaseToolbar from "@/components/responses/database/DatabaseToolbar";
+import RecordActionMenu from "@/components/responses/database/RecordActionMenu";
+import ResponseDrawer, { type ResponseSaveStatus } from "@/components/responses/database/ResponseDrawer";
+import { exportExcelWorkbook } from "@/components/responses/database/excelExportUtils";
 import {
   type AnalyticsDateFilter,
-} from "../analytics/DateRangePopover";
-import { isWithinAnalyticsDateFilter } from "../analytics/dateRangeUtils";
+} from "@/components/responses/analytics/DateRangePopover";
+import { isWithinAnalyticsDateFilter } from "@/components/responses/analytics/dateRangeUtils";
 import { getPermissionRequiredError } from "@/utils/permissionRequests";
 import {
   cleanResultLabel,
   getResponseTimestamp,
   toDatabaseProgressResponse,
   withSubmittedStatus,
-} from "../resultsResponseUtils";
+} from "@/components/responses/resultsResponseUtils";
 import {
   RESULT_VIEW_STORAGE_PREFIX,
   applySortRules,
@@ -65,7 +65,7 @@ import {
   normalizeViews,
   parseStoredViews,
   toStableResponseUuid,
-} from "./resultsDatabaseUtils";
+} from "@/components/responses/database/resultsDatabaseUtils";
 
 type DatabaseViewProps = {
   allFields: FormField[];

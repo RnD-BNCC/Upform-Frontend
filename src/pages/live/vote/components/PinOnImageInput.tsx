@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { MouseEvent } from "react";
 import { MapPin } from "@phosphor-icons/react";
-import SubmittingSpinner from "./SubmittingSpinner";
+import SubmittingSpinner from "@/pages/live/vote/components/SubmittingSpinner";
 
 type Props = {
   imageUrl?: string;

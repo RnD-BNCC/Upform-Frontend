@@ -23,7 +23,7 @@ import {
   NameEntryScreen,
   ThankYouScreen,
   WaitingScreen,
-} from "./components";
+} from "@/pages/live/vote/components";
 
 export default function LiveVotePage() {
   const { code } = useParams<{ code: string }>();

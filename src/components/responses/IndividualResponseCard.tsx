@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 import type { FormField, FormResponse } from "@/types/form";
-import { FileResponseList } from "./charts";
+import { FileResponseList } from "@/components/responses/charts";
 import {
   cleanResultLabel,
   getResponseTimestamp,
   getResultFields,
-} from "./resultsResponseUtils";
-import { formatAnswerValue } from "./database/resultsDatabaseUtils";
+} from "@/components/responses/resultsResponseUtils";
+import { formatAnswerValue } from "@/components/responses/database/resultsDatabaseUtils";
 
 interface IndividualResponseCardProps {
   response: FormResponse;

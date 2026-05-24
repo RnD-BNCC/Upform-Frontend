@@ -16,8 +16,8 @@ import { ConfirmModal, StatusModal, type StatusType } from "@/components/modal";
 import { useAuth } from "@/hooks";
 import { authClient } from "@/lib";
 import { Breadcrumb, type FolderView } from "@/components/utils";
-import { FileCard, FolderItem } from "../components";
-import { formatGalleryDate, getGalleryPreviewUrl } from "../utils";
+import { FileCard, FolderItem } from "@/pages/gallery/components";
+import { formatGalleryDate, getGalleryPreviewUrl } from "@/pages/gallery/utils";
 
 export default function SharedGalleryPage() {
   const { token = "" } = useParams();

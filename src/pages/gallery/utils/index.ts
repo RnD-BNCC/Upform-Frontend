@@ -3,7 +3,7 @@ import type {
   GalleryFileEntry,
   GalleryMediaItem,
   GalleryResponse,
-} from "@/api/gallery";
+} from "@/types/gallery";
 import type { FolderView } from "@/components/utils";
 import { Api } from "@/constants/api";
 
