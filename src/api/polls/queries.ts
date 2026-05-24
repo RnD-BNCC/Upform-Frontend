@@ -13,6 +13,7 @@ import type {
   UpdateSlidePayload,
   SlideResults,
   LeaderboardEntry,
+  PollAuditLog,
 } from '@/types/polling'
 
 
@@ -28,14 +29,14 @@ export function useQueryPolls(page = 1, take = 9, search?: string, deleted = fal
   })
 }
 
-export function useQueryPollDetail(pollId: string) {
+export function useQueryPollDetail(pollId: string, enabled = true) {
   return useQuery({
     queryKey: [QUERY_KEYS.POLL_DETAIL, pollId],
     queryFn: async () => {
       const { data } = await apiClient.get<Poll>(Api.pollDetail(pollId))
       return data
     },
-    enabled: !!pollId,
+    enabled: enabled && !!pollId,
   })
 }
 
@@ -47,6 +48,36 @@ export function useQueryPollScores(pollId: string) {
       return data
     },
     enabled: !!pollId && pollId !== 'new',
+  })
+}
+
+export function useQueryPollAuditLogs(pollId: string, enabled = true) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.POLL_AUDIT_LOGS, pollId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<PollAuditLog[]>(
+        Api.pollAuditLogs(pollId),
+      )
+      return data
+    },
+    enabled: enabled && !!pollId && pollId !== 'new',
+  })
+}
+
+export function useMutationRollbackPollAuditLog(pollId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (logId: string) => {
+      const { data } = await apiClient.post<Poll>(
+        Api.pollAuditLogRollback(pollId, logId),
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLLS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.POLL_AUDIT_LOGS, pollId] })
+      queryClient.setQueryData([QUERY_KEYS.POLL_DETAIL, pollId], data)
+    },
   })
 }
 

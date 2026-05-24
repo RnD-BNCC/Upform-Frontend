@@ -36,6 +36,9 @@ export const Api = {
     `/polls/${pollId}/slides/${slideId}`,
   pollSlidesReorder: (pollId: string) => `/polls/${pollId}/slides/reorder`,
   pollScores: (pollId: string) => `/polls/${pollId}/scores`,
+  pollAuditLogs: (pollId: string) => `/polls/${pollId}/audit-logs`,
+  pollAuditLogRollback: (pollId: string, logId: string) =>
+    `/polls/${pollId}/audit-logs/${logId}/rollback`,
   pollVotes: (pollId: string) => `/polls/${pollId}/votes`,
 
   // Public polls
@@ -77,6 +80,11 @@ export const Api = {
   // Permission requests
   permissionRequests: '/permission-requests',
   permissionRequestAccess: '/permission-requests/access',
+  permissionGrants: '/permission-requests/grants',
+  permissionGrantReactivate: (id: string) =>
+    `/permission-requests/grants/${id}/reactivate`,
+  permissionGrantRevoke: (id: string) =>
+    `/permission-requests/grants/${id}/revoke`,
   permissionRequestApprove: (id: string) => `/permission-requests/${id}/approve`,
   permissionRequestReject: (id: string) => `/permission-requests/${id}/reject`,
 

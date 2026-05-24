@@ -2,6 +2,8 @@ export {
   useQueryPolls,
   useQueryPollDetail,
   useQueryPollScores,
+  useQueryPollAuditLogs,
+  useMutationRollbackPollAuditLog,
   useQueryPublicPoll,
   useMutationCreatePoll,
   useMutationUpdatePoll,
@@ -14,4 +16,4 @@ export {
   useMutationSubmitVote,
   useQuerySlideResults,
   useMutationUploadImage,
-} from './queries'
+} from '@/api/polls/queries'

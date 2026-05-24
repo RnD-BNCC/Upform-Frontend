@@ -1,6 +1,10 @@
-export { default as SlidePreview } from './SlidePreview'
-export { default as SettingsPanel } from './SettingsPanel'
-export { default as MobileSlideNav } from './MobileSlideNav'
-export { default as SlidesSidebar } from './SlidesSidebar'
-export { default as MobileSettings } from './MobileSettings'
-export { default as PollThemePickerModal } from './PollThemePickerModal'
+export { default as SlidePreview } from "@/pages/polls/edit/components/SlidePreview";
+export { default as SettingsPanel } from "@/pages/polls/edit/components/SettingsPanel";
+export { default as MobileSlideNav } from "@/pages/polls/edit/components/MobileSlideNav";
+export { default as SlidesSidebar } from "@/pages/polls/edit/components/SlidesSidebar";
+export { default as MobileSettings } from "@/pages/polls/edit/components/MobileSettings";
+export { default as PollThemePickerModal } from "@/pages/polls/edit/components/PollThemePickerModal";
+export * from "@/pages/polls/edit/components/editor";
+export * from "@/pages/polls/edit/components/logs";
+export * from "@/pages/polls/edit/components/qna";
+export * from "@/pages/polls/edit/components/results";

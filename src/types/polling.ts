@@ -1,5 +1,7 @@
 export type PollStatus = 'waiting' | 'active' | 'ended'
 
+export type QNAMonitorSort = 'votes' | 'latest' | 'oldest'
+
 export type SlideType =
   | 'word_cloud'
   | 'multiple_choice'
@@ -119,6 +121,18 @@ export type PollListResponse = {
     total: number
     deleted: number
   }
+}
+
+export type PollAuditLog = {
+  id: string
+  pollId: string
+  action: string
+  targetType: string
+  targetId?: string | null
+  actorEmail?: string | null
+  beforeSnapshot?: unknown
+  afterSnapshot?: unknown
+  createdAt: string
 }
 
 export type WordCloudResult = { word: string; count: number }[]

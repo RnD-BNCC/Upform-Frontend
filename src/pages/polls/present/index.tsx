@@ -7,6 +7,7 @@ import {
   useLiveResults,
   useLiveSlide,
 } from "@/hooks/polls";
+import { useResourcePermission } from "@/hooks/permissions";
 import { useMutationUpdatePoll, useQuerySlideResults } from "@/api/polls";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQAQuestions } from "@/api/questions";
@@ -14,6 +15,7 @@ import { useQASocket } from "@/hooks";
 import { apiClient } from "@/config/api-client";
 import { Api } from "@/constants/api";
 import { Leaderboard } from "@/components/polling";
+import { PermissionRequiredPanel } from "@/components/permissions";
 import type {
   SlideSettings,
   ImageLayout,
@@ -36,22 +38,36 @@ import {
   WaitingRoomView,
   SlidePresenter,
   PresentControls,
-} from "./components";
+} from "@/pages/polls/present/components";
 
 export default function PollPresentPage() {
   const { id: pollId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: poll, isLoading, refetch } = useGetPollDetail(pollId ?? "");
+  const presentPermission = useResourcePermission({
+    action: "polls.edit",
+    enabled: !!pollId,
+    reason: "Need to present poll",
+    resourceId: pollId ?? "",
+    resourceType: "poll",
+  });
+  const { data: poll, isLoading, refetch } = useGetPollDetail(
+    pollId ?? "",
+    presentPermission.isAllowed,
+  );
   const updatePoll = useMutationUpdatePoll();
-  const { socketRef, connected } = useSocket(pollId);
+  const { socketRef, connected } = useSocket(
+    presentPermission.isAllowed ? pollId : undefined,
+  );
   const { participantCount, participantList, leaderboardScores } = useLiveSlide(
     socketRef,
     connected,
   );
 
   const [qaQuestions, setQaQuestions] = useState<QAQuestion[]>([]);
-  const { data: initialQuestions } = useQAQuestions(pollId);
+  const { data: initialQuestions } = useQAQuestions(
+    presentPermission.isAllowed ? pollId : undefined,
+  );
   useEffect(() => {
     if (initialQuestions) setQaQuestions(initialQuestions);
   }, [initialQuestions]);
@@ -63,10 +79,26 @@ export default function PollPresentPage() {
     onQuestionsChange: setQaQuestions,
   });
 
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    const handleQAHighlight = ({ voteId }: { voteId: string | null }) => {
+      setQaHighlightedVoteId(voteId);
+      if (voteId) setShowQASidebar(true);
+    };
+
+    socket.on("qa-highlight", handleQAHighlight);
+    return () => {
+      socket.off("qa-highlight", handleQAHighlight);
+    };
+  }, [socketRef, connected]);
+
   const [ready, setReady] = useState(false);
   useEffect(() => {
+    if (!presentPermission.isAllowed) return;
     refetch().finally(() => setReady(true));
-  }, []);
+  }, [presentPermission.isAllowed, refetch]);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showJoinOverlay, setShowJoinOverlay] = useState(false);
@@ -704,6 +736,28 @@ export default function PollPresentPage() {
     slideSettings,
     activeSlide,
   ]);
+
+  if (presentPermission.isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Spinner size={32} className="text-primary-500" />
+      </div>
+    );
+  }
+
+  if (presentPermission.isRequired) {
+    return (
+      <PermissionRequiredPanel
+        description="Your account needs approval before presenting this poll."
+        isRequesting={presentPermission.isRequesting}
+        onBack={() => navigate("/polls")}
+        onRequest={presentPermission.requestPermission}
+        requestDisabled={
+          presentPermission.isPending || presentPermission.isRequested
+        }
+      />
+    );
+  }
 
   if (!ready || isLoading || !poll) {
     return (

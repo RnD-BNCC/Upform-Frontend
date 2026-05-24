@@ -8,6 +8,7 @@ import EventPreviewPage from '@/pages/events/preview'
 import PublicFormPage from '@/pages/forms'
 import PollsPage from '@/pages/polls'
 import PollEditPage from '@/pages/polls/edit'
+import PollQNAMonitorPage from '@/pages/polls/qna-monitor'
 import PollPresentPage from '@/pages/polls/present'
 import PermissionsPage from '@/pages/permissions'
 import LiveJoinPage from '@/pages/live'
@@ -95,6 +96,14 @@ export const publicRoutes: Route[] = [
     title: 'Present',
     path: '/polls/:id/present',
     component: PollPresentPage,
+    isEnabled: true,
+    noLayout: true,
+  },
+  {
+    key: 'poll-qna-monitor',
+    title: 'Q&A Monitor',
+    path: '/polls/:id/qna-monitor',
+    component: PollQNAMonitorPage,
     isEnabled: true,
     noLayout: true,
   },

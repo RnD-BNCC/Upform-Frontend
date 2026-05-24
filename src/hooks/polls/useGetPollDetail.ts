@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useQueryPollDetail } from '@/api/polls'
 
-export const useGetPollDetail = (pollId: string) => {
-  const query = useQueryPollDetail(pollId)
+export const useGetPollDetail = (pollId: string, enabled = true) => {
+  const query = useQueryPollDetail(pollId, enabled)
 
   useEffect(() => {
     if (query.error) {

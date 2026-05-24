@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import BaseModal from './BaseModal'
-import Spinner from './Spinner'
+import BaseModal from '@/components/ui/BaseModal'
+import Spinner from '@/components/ui/Spinner'
 
 type Props = {
   isOpen: boolean

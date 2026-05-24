@@ -4,6 +4,8 @@ import {
   Copy,
   DotsSixVertical,
   FloppyDisk,
+  ChatCircleText,
+  ClockCounterClockwise,
   HouseIcon,
   PencilSimple,
   Plus,
@@ -14,11 +16,12 @@ import {
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
 import { BrandLogo } from '@/components/layout'
 type SlidesSidebarProps = {
-  activePanel: 'edit' | 'results'
+  activePanel: 'edit' | 'logs' | 'qna' | 'results'
   title: string
   pollCode: string
   slides: PollSlide[]
   selectedIndex: number
+  selectedSlideType?: SlideType
   liveQuestion: string | null
   onBack: () => void
   onTitleChange: (title: string) => void
@@ -32,6 +35,8 @@ type SlidesSidebarProps = {
   onPresent: () => void
   onSave: () => void
   onShowEdit: () => void
+  onShowLogs: () => void
+  onShowQnaMonitor: () => void
   onShowResults: () => void
   isAddPending: boolean
   saveStatus: 'error' | 'saved' | 'saving' | 'unsaved'
@@ -155,6 +160,7 @@ export default function SlidesSidebar({
   pollCode,
   slides,
   selectedIndex,
+  selectedSlideType,
   liveQuestion,
   onBack,
   onTitleChange,
@@ -168,6 +174,8 @@ export default function SlidesSidebar({
   onPresent,
   onSave,
   onShowEdit,
+  onShowLogs,
+  onShowQnaMonitor,
   onShowResults,
   isAddPending,
   saveStatus,
@@ -220,6 +228,7 @@ export default function SlidesSidebar({
   const localSelectedIndex = localSlides.findIndex((s) => s.id === activeSlideId)
   const activeSlide = activeId ? localSlides.find((s) => s.id === activeId) : null
   const activeIndex = activeId ? localSlides.findIndex((s) => s.id === activeId) : -1
+  const canOpenQnaMonitor = selectedSlideType === 'qa'
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
@@ -308,7 +317,20 @@ export default function SlidesSidebar({
           <Presentation size={14} weight="bold" />
           Present
         </button>
-        <div className="grid grid-cols-2 gap-1 rounded-sm border border-gray-200 bg-white p-1">
+        {canOpenQnaMonitor ? (
+          <button
+            onClick={onShowQnaMonitor}
+            className={`flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm border px-4 text-xs font-bold transition-colors ${
+              activePanel === 'qna'
+                ? 'border-primary-500 bg-primary-500 text-white shadow-sm'
+                : 'border-primary-100 bg-white text-primary-600 hover:bg-primary-50'
+            }`}
+          >
+            <ChatCircleText size={14} weight="bold" />
+            Q&A Monitor
+          </button>
+        ) : null}
+        <div className="grid grid-cols-3 gap-1 rounded-sm border border-gray-200 bg-white p-1">
           <button
             type="button"
             onClick={onShowEdit}
@@ -332,6 +354,18 @@ export default function SlidesSidebar({
           >
             <Trophy size={13} weight="fill" />
             Results
+          </button>
+          <button
+            type="button"
+            onClick={onShowLogs}
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-[3px] text-xs font-bold transition-colors ${
+              activePanel === 'logs'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}
+          >
+            <ClockCounterClockwise size={13} weight="bold" />
+            Logs
           </button>
         </div>
       </div>

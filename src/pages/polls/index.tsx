@@ -1,635 +1,101 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { Copy } from "@phosphor-icons/react";
+import { AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { ActionToast, Spinner } from "@/components/ui";
-import { Navbar, Footer, PageGridShell, PageHeroBanner } from "@/components/layout";
-import { ConfirmModal, LoadingModal, StatusModal, type StatusType } from "@/components/modal";
+import { Footer, Navbar, PageGridShell, PageHeroBanner } from "@/components/layout";
+import { ConfirmModal, LoadingModal, StatusModal } from "@/components/modal";
+import { ActionToast } from "@/components/ui";
 import { Pagination } from "@/components/utils";
-import { useGetPolls, useDeletePoll, useRestorePoll } from "@/hooks/polls";
-import type { Poll } from "@/types/polling";
 import {
-  ArrowClockwise,
-  Presentation,
-  PencilSimple,
-  Trash,
-  Copy,
-  DotsThree,
-  MagnifyingGlass,
-} from "@phosphor-icons/react";
-
-const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
-  waiting: { label: "Waiting", dot: "bg-yellow-400" },
-  active: { label: "Active", dot: "bg-emerald-400" },
-  ended: { label: "Ended", dot: "bg-gray-400" },
-};
-
-const CARD_COLOR = "#0054a5";
-type PollTab = "polls" | "trash";
-
-function formatDeletedAt(value?: string | null) {
-  if (!value) return "Unknown date";
-
-  return new Date(value).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function AuditLine({ label, value }: { label: string; value?: string | null }) {
-  const displayValue = value || "Unknown";
-
-  return (
-    <div className="flex items-center justify-between gap-3 text-[10px] leading-4">
-      <span className="shrink-0 text-gray-400">{label}</span>
-      <span className="min-w-0 truncate text-right font-semibold text-gray-600" title={displayValue}>
-        {displayValue}
-      </span>
-    </div>
-  );
-}
-
-function PollCard({
-  poll,
-  index,
-  onContextMenu,
-}: {
-  poll: Poll;
-  index: number;
-  onContextMenu: (id: string, x: number, y: number) => void;
-}) {
-  const navigate = useNavigate();
-  const status = STATUS_CONFIG[poll.status] ?? STATUS_CONFIG.waiting;
-  const color = CARD_COLOR;
-
-  const openMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    onContextMenu(poll.id, e.clientX, e.clientY);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.07, ease: "easeOut" }}
-      whileHover={{ y: -4, transition: { duration: 0.15 } }}
-      onClick={() => navigate(`/polls/${poll.id}/edit`)}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        openMenu(e);
-      }}
-      className="cursor-pointer overflow-hidden rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-200 group"
-    >
-      <div
-        className="relative h-32 overflow-hidden"
-        style={{ backgroundColor: color }}
-      >
-        <div className="absolute inset-0 bg-linear-to-br from-white/8 via-transparent to-black/35" />
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
-            backgroundSize: "18px 18px",
-          }}
-        />
-        <div className="absolute -top-14 -right-14 w-48 h-48 rounded-full bg-white/10" />
-        <div className="absolute top-4 -right-4 w-24 h-24 rounded-full bg-black/10" />
-
-        <div className="absolute top-3.5 left-4">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white/95 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">
-            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-            {status.label}
-          </span>
-        </div>
-
-        <button
-          onClick={openMenu}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full sm:opacity-0 sm:group-hover:opacity-100 hover:bg-black/25 transition-all duration-150 flex items-center justify-center z-10"
-          title="More options"
-        >
-          <DotsThree size={18} weight="bold" className="text-white" />
-        </button>
-
-        <div className="absolute inset-x-0 bottom-0 px-4 pt-10 pb-4 bg-linear-to-t from-black/40 to-transparent">
-          <h3 className="text-white font-bold text-sm leading-snug line-clamp-1 drop-shadow-sm">
-            {poll.title || "Untitled Poll"}
-          </h3>
-        </div>
-      </div>
-
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <span className="font-medium">Code:</span>
-          <span className="font-bold text-gray-600 tracking-wider">
-            {poll.code}
-          </span>
-        </div>
-      </div>
-
-      <div className="border-t border-gray-100 px-4 py-3">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-baseline gap-1">
-            <span className="text-xs font-bold text-gray-800">
-              {poll.slides.length}
-            </span>
-            <span className="text-[10px] text-gray-400">
-              slide{poll.slides.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          <span className="text-[10px] text-gray-400">
-            {new Date(poll.updatedAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}
-          </span>
-        </div>
-        <div className="space-y-1">
-          <AuditLine label="Created by" value={poll.createdBy} />
-          <AuditLine label="Updated by" value={poll.updatedBy} />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function DeletedPollCard({
-  poll,
-  index,
-  onRestore,
-}: {
-  poll: Poll;
-  index: number;
-  onRestore: (poll: Poll) => void;
-}) {
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: index * 0.04, ease: "easeOut" }}
-      className="overflow-hidden rounded-sm border border-gray-200 bg-white shadow-sm"
-    >
-      <div className="relative h-32 overflow-hidden bg-gray-900">
-        <div className="absolute inset-0 bg-linear-to-br from-gray-700 via-gray-900 to-black" />
-        <div
-          className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
-            backgroundSize: "18px 18px",
-          }}
-        />
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute left-4 top-3 flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-          <Trash size={12} weight="bold" />
-          Deleted
-        </div>
-        <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-10 bg-linear-to-t from-black/60 to-transparent">
-          <h3 className="line-clamp-1 text-sm font-bold text-white" title={poll.title}>
-            {poll.title || "Untitled Poll"}
-          </h3>
-        </div>
-      </div>
-
-      <div className="space-y-3 px-4 py-3">
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="text-gray-400">Deleted</span>
-          <span className="font-semibold text-gray-700">{formatDeletedAt(poll.deletedAt)}</span>
-        </div>
-        <AuditLine label="Deleted by" value={poll.deletedBy} />
-        <AuditLine label="Created by" value={poll.createdBy} />
-        <AuditLine label="Updated by" value={poll.updatedBy} />
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="text-gray-400">Slides</span>
-          <span className="font-semibold text-gray-700">{poll.slides.length}</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => onRestore(poll)}
-          className="flex h-9 w-full items-center justify-center gap-2 rounded-sm bg-primary-600 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-700"
-        >
-          <ArrowClockwise size={14} weight="bold" />
-          Restore
-        </button>
-      </div>
-    </motion.article>
-  );
-}
-
-function PollContextMenu({
-  x,
-  y,
-  poll,
-  onClose,
-  onEdit,
-  onPresent,
-  onCopyCode,
-  onDelete,
-}: {
-  x: number;
-  y: number;
-  poll: Poll;
-  onClose: () => void;
-  onEdit: () => void;
-  onPresent: () => void;
-  onCopyCode: () => void;
-  onDelete: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const adjustedX = Math.min(x, window.innerWidth - 204);
-  const adjustedY = Math.min(y, window.innerHeight - 240);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [onClose]);
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, scale: 0.95, y: -6 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -6 }}
-      transition={{ duration: 0.08, ease: "easeOut" }}
-      className="fixed z-[100] bg-white rounded-sm shadow-[0_8px_32px_rgba(0,0,0,0.13),0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100/80 w-40 select-none overflow-hidden"
-      style={{ left: adjustedX, top: adjustedY }}
-    >
-      <div className="px-3 pt-2.5 pb-2">
-        <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">
-          Poll
-        </p>
-        <p
-          className="text-[11px] font-semibold text-gray-800 truncate"
-          title={poll.title}
-        >
-          {poll.title || "Untitled Poll"}
-        </p>
-      </div>
-
-      <div className="h-px bg-gray-100" />
-
-      <div className="py-1 space-y-0.5">
-        <button
-          onClick={() => {
-            onClose();
-            onEdit();
-          }}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left"
-        >
-          <PencilSimple
-            size={12}
-            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
-          />
-          Edit
-        </button>
-        <button
-          onClick={() => {
-            onClose();
-            onPresent();
-          }}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left"
-        >
-          <Presentation
-            size={12}
-            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
-          />
-          Present
-        </button>
-        <button
-          onClick={() => {
-            onClose();
-            onCopyCode();
-          }}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transition-colors text-left"
-        >
-          <Copy
-            size={12}
-            className="shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors"
-          />
-          Copy Code
-        </button>
-      </div>
-
-      <div className="h-px bg-gray-100" />
-
-      <div className="py-1">
-        <button
-          onClick={() => {
-            onClose();
-            onDelete();
-          }}
-          className="group w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700 hover:font-bold active:bg-red-100 transition-colors text-left"
-        >
-          <Trash
-            size={12}
-            className="shrink-0 transition-transform group-hover:scale-110 group-active:scale-95"
-          />
-          Delete
-        </button>
-      </div>
-    </motion.div>
-  );
-}
+  PollContextMenu,
+  PollGrid,
+  PollsEmptyState,
+  PollsHero,
+  PollsLoadingState,
+  PollsToolbar,
+} from "@/pages/polls/components/list";
+import { usePollsPage } from "@/pages/polls/hooks";
 
 export default function PollsPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<PollTab>("polls");
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [ctxMenu, setCtxMenu] = useState<{
-    id: string;
-    x: number;
-    y: number;
-  } | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  const handleTabChange = useCallback((tab: PollTab) => {
-    setActiveTab(tab);
-    setPage(1);
-    setCtxMenu(null);
-  }, []);
-
-  const { data: result, isLoading } = useGetPolls(
+  const {
+    activeTab,
+    confirmDelete,
+    counts,
+    ctxMenu,
+    ctxPoll,
+    debouncedSearch,
+    handleConfirmDelete,
+    handleRestore,
+    handleTabChange,
+    isActionLoading,
+    isLoading,
+    isTrashTab,
+    meta,
     page,
-    debouncedSearch || undefined,
-    activeTab === "trash",
-  );
-  const deletePoll = useDeletePoll();
-  const restorePoll = useRestorePoll();
-
-  const polls = result?.data ?? [];
-  const meta = result?.meta;
-  const counts = result?.counts;
-  const isTrashTab = activeTab === "trash";
-
-  const ctxPoll = ctxMenu
-    ? (polls.find((p) => p.id === ctxMenu.id) ?? null)
-    : null;
-
-  const [confirmDelete, setConfirmDelete] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
-  const [statusResult, setStatusResult] = useState<{
-    type: StatusType;
-    title: string;
-    description: string;
-  } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  }, []);
-
-  const handleConfirmDelete = async () => {
-    if (!confirmDelete) return;
-    const { id, title } = confirmDelete;
-    setConfirmDelete(null);
-    setIsActionLoading(true);
-    try {
-      await deletePoll.mutateAsync(id);
-      setStatusResult({
-        type: "success",
-        title: "Poll Deleted",
-        description: `"${title}" has been moved to Temporary Delete.`,
-      });
-    } catch (error) {
-      console.error("handleConfirmDelete:", error);
-      setStatusResult({
-        type: "error",
-        title: "Delete Failed",
-        description: "Something went wrong. Please try again.",
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  const handleRestore = async (poll: Poll) => {
-    setIsActionLoading(true);
-    try {
-      await restorePoll.mutateAsync(poll.id);
-      setStatusResult({
-        type: "success",
-        title: "Poll Restored",
-        description: `"${poll.title || "Untitled Poll"}" is back in My Polls.`,
-      });
-    } catch (error) {
-      console.error("handleRestore:", error);
-      setStatusResult({
-        type: "error",
-        title: "Restore Failed",
-        description: "Something went wrong. Please try again.",
-      });
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  const tabs: Array<{ key: PollTab; label: string; count: number }> = [
-    { key: "polls", label: "Polls", count: counts?.total ?? 0 },
-    { key: "trash", label: "Temporary Delete", count: counts?.deleted ?? 0 },
-  ];
+    polls,
+    search,
+    setConfirmDelete,
+    setCtxMenu,
+    setPage,
+    setSearch,
+    setStatusResult,
+    showToast,
+    statusResult,
+    toast,
+  } = usePollsPage();
 
   return (
     <PageGridShell>
       <Navbar />
 
       <PageHeroBanner contentClassName="pt-8 sm:pt-12">
-        <div className="relative">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-10 pb-6 sm:pb-8">
-            <div>
-              <p className="text-primary-300 text-sm font-bold mb-1">
-                Live Polling
-              </p>
-              <h1 className="text-[1.75rem] sm:text-[2rem] font-bold text-white leading-tight">
-                My Polls
-              </h1>
-              <p className="text-white text-sm mt-1.5">
-                Create interactive live polls for your audience.
-              </p>
-            </div>
-            <div className="flex items-stretch bg-white/10 border border-white/15 rounded-xl backdrop-blur-sm divide-x divide-white/10 shrink-0 w-full sm:w-auto">
-              <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
-                <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
-                  {counts?.total ?? 0}
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
-                  Total Polls
-                </span>
-              </div>
-              <div className="flex flex-col items-center justify-center flex-1 sm:flex-none sm:px-8 py-4 sm:py-5 gap-1 sm:gap-1.5">
-                <span className="text-2xl sm:text-[2.25rem] font-black text-white leading-none tracking-tight tabular-nums">
-                  {counts?.deleted ?? 0}
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-white/50 font-semibold tracking-widest uppercase">
-                  Deleted
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex -mx-4 sm:-mx-8 px-4 sm:px-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
-                  activeTab === tab.key
-                    ? "border-white text-white"
-                    : "border-transparent text-white/50 hover:text-white/80"
-                }`}
-              >
-                {tab.label}
-                <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                    activeTab === tab.key ? "bg-white/20 text-white" : "bg-white/10 text-white/50"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <PollsHero
+          activeTab={activeTab}
+          deletedCount={counts?.deleted ?? 0}
+          onTabChange={handleTabChange}
+          totalCount={counts?.total ?? 0}
+        />
       </PageHeroBanner>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-base font-bold text-gray-900">
-                {isTrashTab ? "Temporary Delete" : "All Polls"}
-              </h2>
-              <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-semibold">
-                {meta?.total ?? 0}
-              </span>
-            </div>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {isTrashTab
-                ? "Deleted polls are hidden from Live Polls and public access"
-                : "Manage and track your polls"}
-            </p>
-          </div>
-
-          <div className="relative flex-1 sm:flex-none">
-            <MagnifyingGlass
-              size={14}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-            />
-            <input
-              type="text"
-              placeholder={isTrashTab ? "Search deleted polls..." : "Search polls..."}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-52 pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 bg-white transition-all placeholder-gray-400 shadow-sm"
-            />
-          </div>
-        </div>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8 sm:py-8">
+        <PollsToolbar
+          isTrashTab={isTrashTab}
+          onSearchChange={setSearch}
+          search={search}
+          total={meta?.total ?? 0}
+        />
 
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center gap-3 py-16 sm:py-24"
-            >
-              <Spinner size={32} className="text-primary-500" />
-              <p className="text-sm text-gray-400">Loading polls...</p>
-            </motion.div>
+            <PollsLoadingState />
           ) : polls.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              className="flex flex-col items-center justify-center gap-4 py-16 sm:py-24"
-            >
-              <Presentation size={48} className="text-gray-300" />
-              <div className="text-center">
-                <p className="text-sm font-bold text-gray-500">
-                  {isTrashTab
-                    ? "No deleted polls"
-                    : debouncedSearch
-                      ? "No polls found"
-                      : "No polls yet"}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {debouncedSearch
-                    ? `No results for "${debouncedSearch}". Try a different keyword.`
-                    : isTrashTab
-                      ? "Polls you delete will show up here."
-                    : "Create your first live poll to engage your audience."}
-                </p>
-              </div>
-            </motion.div>
+            <PollsEmptyState
+              debouncedSearch={debouncedSearch}
+              isTrashTab={isTrashTab}
+            />
           ) : (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                {polls.map((poll, i) =>
-                  isTrashTab ? (
-                    <DeletedPollCard
-                      key={poll.id}
-                      poll={poll}
-                      index={i}
-                      onRestore={handleRestore}
-                    />
-                  ) : (
-                    <PollCard
-                      key={poll.id}
-                      poll={poll}
-                      index={i}
-                      onContextMenu={(id, x, y) => setCtxMenu({ id, x, y })}
-                    />
-                  ),
-                )}
-              </div>
-
-              {meta && (
-                <Pagination
-                  page={page}
-                  totalPages={meta.totalPages}
-                  onPageChange={setPage}
-                />
-              )}
-            </motion.div>
+            <PollGrid
+              isTrashTab={isTrashTab}
+              onContextMenu={(id, x, y) => setCtxMenu({ id, x, y })}
+              onRestore={handleRestore}
+              polls={polls}
+            />
           )}
         </AnimatePresence>
+
+        {!isLoading && polls.length > 0 && meta ? (
+          <Pagination
+            page={page}
+            totalPages={meta.totalPages}
+            onPageChange={setPage}
+          />
+        ) : null}
       </main>
 
       <Footer />
 
       <AnimatePresence>
-        {!isTrashTab && ctxMenu && ctxPoll && (
+        {!isTrashTab && ctxMenu && ctxPoll ? (
           <PollContextMenu
             key={ctxMenu.id}
             x={ctxMenu.x}
@@ -637,9 +103,10 @@ export default function PollsPage() {
             poll={ctxPoll}
             onClose={() => setCtxMenu(null)}
             onEdit={() => navigate(`/polls/${ctxPoll.id}/edit`)}
+            onMonitorQNA={() => navigate(`/polls/${ctxPoll.id}/qna-monitor`)}
             onPresent={() => navigate(`/polls/${ctxPoll.id}/present`)}
             onCopyCode={() => {
-              navigator.clipboard.writeText(ctxPoll.code);
+              void navigator.clipboard.writeText(ctxPoll.code);
               showToast("Code copied");
             }}
             onDelete={() => {
@@ -650,7 +117,7 @@ export default function PollsPage() {
               });
             }}
           />
-        )}
+        ) : null}
       </AnimatePresence>
 
       <ConfirmModal
