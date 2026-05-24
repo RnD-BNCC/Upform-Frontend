@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, XIcon } from "@phosphor-icons/react";
+import { useQueryEvents } from "@/api/events";
 import {
   useMutationCreatePermissionGrant,
   useMutationReactivatePermissionGrant,
   useMutationRevokePermissionGrant,
   useQueryPermissionGrants,
 } from "@/api/permission-requests";
+import { useQueryPolls } from "@/api/polls";
 import ConditionSelect, {
   type ConditionSelectOption,
 } from "@/components/builder/layout/reference/ConditionSelect";
-import { Toggle } from "@/components/ui";
+import { BaseModal, Toggle } from "@/components/ui";
 import { Pagination } from "@/components/utils";
 import { Spinner } from "@/components/ui";
 import type { PermissionAction, PermissionRequest } from "@/types/api";
@@ -61,15 +63,13 @@ const PAGE_SIZE_OPTIONS: ConditionSelectOption[] = [
   { value: "50", label: "50 / page" },
 ];
 
+const DEFAULT_ACTION_BY_RESOURCE = {
+  event: "forms.edit",
+  poll: "polls.edit",
+} as const satisfies Record<"event" | "poll", PermissionAction>;
+
 function getActionsForResource(resourceType: string) {
   return resourceType === "poll" ? POLL_ACTIONS : FORM_ACTIONS;
-}
-
-function getActionOptions(resourceType: string): ConditionSelectOption[] {
-  return getActionsForResource(resourceType).map((action) => ({
-    value: action,
-    label: ACTION_LABELS[action] ?? action,
-  }));
 }
 
 function groupAccessGrants(grants: PermissionRequest[]): AccessGrantGroup[] {
@@ -128,12 +128,15 @@ export default function AccessGrantsPanel({
   const [status, setStatus] = useState<"approved" | "all" | "rejected">("all");
   const [page, setPage] = useState(1);
   const [take, setTake] = useState(10);
-  const [email, setEmail] = useState("");
-  const [grantResourceId, setGrantResourceId] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addTargetId, setAddTargetId] = useState("");
   const [grantResourceType, setGrantResourceType] = useState<"event" | "poll">(
     "event",
   );
-  const [action, setAction] = useState<PermissionAction>("forms.edit");
+  const [selectedActions, setSelectedActions] = useState<Set<PermissionAction>>(
+    () => new Set([DEFAULT_ACTION_BY_RESOURCE.event]),
+  );
   const [reason, setReason] = useState("");
 
   const grantsQuery = useQueryPermissionGrants({
@@ -147,48 +150,92 @@ export default function AccessGrantsPanel({
   const createGrant = useMutationCreatePermissionGrant();
   const reactivateGrant = useMutationReactivatePermissionGrant();
   const revokeGrant = useMutationRevokePermissionGrant();
+  const eventTargetsQuery = useQueryEvents({
+    page: 1,
+    take: 50,
+    deleted: false,
+  });
+  const pollTargetsQuery = useQueryPolls(1, 50, undefined, false);
   const meta = grantsQuery.data?.meta;
   const grants = useMemo(
     () => grantsQuery.data?.data ?? [],
     [grantsQuery.data?.data],
   );
+  const targetOptions = useMemo<ConditionSelectOption[]>(() => {
+    if (grantResourceType === "poll") {
+      return (pollTargetsQuery.data?.data ?? []).map((poll) => ({
+        value: poll.id,
+        label: poll.title?.trim() || "Untitled poll",
+        subtitle: poll.id,
+        searchText: `${poll.title ?? ""} ${poll.id} ${poll.code}`,
+      }));
+    }
+
+    return (eventTargetsQuery.data?.data ?? []).map((event) => ({
+      value: event.id,
+      label: event.name?.trim() || "Untitled form",
+      subtitle: event.id,
+      searchText: `${event.name ?? ""} ${event.id}`,
+    }));
+  }, [eventTargetsQuery.data?.data, grantResourceType, pollTargetsQuery.data?.data]);
   const grantGroups = useMemo(() => groupAccessGrants(grants), [grants]);
   const isActionLoading =
     createGrant.isPending || reactivateGrant.isPending || revokeGrant.isPending;
+  const isTargetLoading =
+    grantResourceType === "poll"
+      ? pollTargetsQuery.isLoading
+      : eventTargetsQuery.isLoading;
 
   const resetPage = () => setPage(1);
 
   const handleGrantResourceTypeChange = (nextType: "event" | "poll") => {
     setGrantResourceType(nextType);
-    setAction(nextType === "poll" ? "polls.edit" : "forms.edit");
+    setAddTargetId("");
+    setSelectedActions(new Set([DEFAULT_ACTION_BY_RESOURCE[nextType]]));
   };
 
   const handleCreateGrant = async () => {
-    const targetEmail = (email.trim() || requesterEmail.trim()).toLowerCase();
-    const targetResourceId = grantResourceId.trim() || resourceId.trim();
+    const targetEmail = addEmail.trim().toLowerCase();
+    const targetResourceId = addTargetId.trim();
 
     if (!targetEmail || !targetResourceId) {
       onError(
         "Access not added",
-        "Target user email and target resource ID are required. Your whitelist email only lets you approve or manage access.",
+        "Target user email and form or poll title are required.",
+      );
+      return;
+    }
+
+    if (selectedActions.size === 0) {
+      onError(
+        "Access not added",
+        "Choose at least one permission to activate.",
       );
       return;
     }
 
     try {
-      await createGrant.mutateAsync({
-        action,
-        reason: reason.trim() || "Granted manually by admin",
-        requesterEmail: targetEmail,
-        resourceId: targetResourceId,
-        resourceType: grantResourceType,
-      });
-      setEmail("");
-      setGrantResourceId("");
+      await Promise.all(
+        Array.from(selectedActions).map((permissionAction) =>
+          createGrant.mutateAsync({
+            action: permissionAction,
+            reason: reason.trim() || "Granted manually by admin",
+            requesterEmail: targetEmail,
+            resourceId: targetResourceId,
+            resourceType: grantResourceType,
+          }),
+        ),
+      );
+      setAddEmail("");
+      setAddTargetId("");
       setReason("");
+      setSelectedActions(new Set([DEFAULT_ACTION_BY_RESOURCE[grantResourceType]]));
+      setAddOpen(false);
       onSuccess(
         "Access Added",
-        `${targetEmail} can now ${ACTION_LABELS[action].toLowerCase()}.`,
+        `${targetEmail} now has ${selectedActions.size} active permission${
+          selectedActions.size === 1 ? "" : "s"
+        }.`,
       );
     } catch (error) {
       console.error("[handleCreateGrant]", error);
@@ -239,10 +286,22 @@ export default function AccessGrantsPanel({
     }
   };
 
+  const toggleSelectedAction = (permissionAction: PermissionAction) => {
+    setSelectedActions((current) => {
+      const next = new Set(current);
+      if (next.has(permissionAction)) {
+        next.delete(permissionAction);
+      } else {
+        next.add(permissionAction);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-[180px_1fr_1fr_140px_130px]">
+        <div className="grid gap-3 md:grid-cols-[180px_1fr_1fr_140px_130px_auto]">
           <label className="text-xs font-semibold text-gray-500">
             Resource
             <ConditionSelect
@@ -306,63 +365,10 @@ export default function AccessGrantsPanel({
               triggerClassName="mt-1 h-9 rounded-md border-gray-200"
             />
           </label>
-        </div>
-
-        <div className="mt-4 grid gap-3 border-t border-gray-100 pt-4 md:grid-cols-[1fr_1fr_140px_180px_1fr_auto]">
-          <label className="text-xs font-semibold text-gray-500">
-            User Email
-            <input
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder={requesterEmail.trim() || "target-user@upform.id"}
-              className="mt-1 h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
-            />
-          </label>
-          <label className="text-xs font-semibold text-gray-500">
-            Target Resource ID
-            <input
-              value={grantResourceId}
-              onChange={(event) => setGrantResourceId(event.target.value)}
-              placeholder={resourceId.trim() || "Form or poll ID"}
-              className="mt-1 h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
-            />
-          </label>
-          <label className="text-xs font-semibold text-gray-500">
-            Resource
-            <ConditionSelect
-              value={grantResourceType}
-              placeholder="Resource"
-              options={GRANT_RESOURCE_TYPE_OPTIONS}
-              onChange={(value) =>
-                handleGrantResourceTypeChange(value as "event" | "poll")
-              }
-              triggerClassName="mt-1 h-9 rounded-md border-gray-200"
-            />
-          </label>
-          <label className="text-xs font-semibold text-gray-500">
-            Access
-            <ConditionSelect
-              value={action}
-              placeholder="Access"
-              options={getActionOptions(grantResourceType)}
-              onChange={(value) => setAction(value as PermissionAction)}
-              triggerClassName="mt-1 h-9 rounded-md border-gray-200"
-            />
-          </label>
-          <label className="text-xs font-semibold text-gray-500">
-            Reason
-            <input
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="Optional"
-              className="mt-1 h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
-            />
-          </label>
           <button
             type="button"
-            disabled={isActionLoading}
-            onClick={handleCreateGrant}
-            className="mt-5 inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary-600 px-4 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => setAddOpen(true)}
+            className="mt-5 inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary-600 px-4 text-sm font-bold text-white hover:bg-primary-700"
           >
             <PlusIcon size={15} weight="bold" />
             Add
@@ -475,6 +481,140 @@ export default function AccessGrantsPanel({
           onPageChange={setPage}
         />
       ) : null}
+
+      <BaseModal
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        zIndex="z-[10000]"
+        className="w-full max-w-2xl rounded-lg"
+      >
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-950">Add access</h2>
+            <p className="mt-1 text-xs text-gray-400">
+              Pick a target user, target form or poll, then activate permissions.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAddOpen(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          >
+            <XIcon size={17} weight="bold" />
+          </button>
+        </div>
+
+        <div className="space-y-4 px-5 py-4">
+          <label className="block text-xs font-semibold text-gray-500">
+            Target user email
+            <input
+              value={addEmail}
+              onChange={(event) => setAddEmail(event.target.value)}
+              placeholder="target-user@upform.id"
+              className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
+            />
+          </label>
+
+          <div className="grid gap-3 md:grid-cols-[160px_1fr]">
+            <label className="text-xs font-semibold text-gray-500">
+              Resource
+              <ConditionSelect
+                value={grantResourceType}
+                placeholder="Resource"
+                options={GRANT_RESOURCE_TYPE_OPTIONS}
+                onChange={(value) =>
+                  handleGrantResourceTypeChange(value as "event" | "poll")
+                }
+                triggerClassName="mt-1 h-10 rounded-md border-gray-200"
+              />
+            </label>
+
+            <label className="text-xs font-semibold text-gray-500">
+              Title
+              <ConditionSelect
+                value={addTargetId}
+                placeholder={isTargetLoading ? "Loading targets..." : "Choose title"}
+                options={targetOptions}
+                searchable
+                searchPlaceholder={
+                  grantResourceType === "poll"
+                    ? "Search poll title..."
+                    : "Search form title..."
+                }
+                emptyLabel={
+                  grantResourceType === "poll"
+                    ? "No polls found"
+                    : "No forms found"
+                }
+                menuWidth={420}
+                onChange={setAddTargetId}
+                triggerClassName="mt-1 h-10 rounded-md border-gray-200"
+              />
+            </label>
+          </div>
+
+          <label className="block text-xs font-semibold text-gray-500">
+            Reason
+            <input
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Optional"
+              className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
+            />
+          </label>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-500">Permissions</p>
+            <div className="mt-2 grid gap-2 md:grid-cols-2">
+              {getActionsForResource(grantResourceType).map((permissionAction) => {
+                const checked = selectedActions.has(permissionAction);
+                return (
+                  <div
+                    key={permissionAction}
+                    className={`flex min-h-12 items-center justify-between gap-3 rounded-md border px-3 py-2 ${
+                      checked
+                        ? "border-emerald-100 bg-emerald-50/60"
+                        : "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-gray-800">
+                        {ACTION_LABELS[permissionAction] ?? permissionAction}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-gray-400">
+                        {checked ? "Active" : "Off"}
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={checked}
+                      onChange={() => toggleSelectedAction(permissionAction)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4">
+          <button
+            type="button"
+            onClick={() => setAddOpen(false)}
+            className="h-9 rounded-md border border-gray-200 px-4 text-sm font-bold text-gray-600 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={isActionLoading}
+            onClick={handleCreateGrant}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary-600 px-4 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <PlusIcon size={15} weight="bold" />
+            Add access
+          </button>
+        </div>
+      </BaseModal>
     </div>
   );
 }
