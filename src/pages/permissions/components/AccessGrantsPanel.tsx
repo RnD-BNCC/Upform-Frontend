@@ -8,6 +8,7 @@ import {
   useQueryPermissionGrants,
 } from "@/api/permission-requests";
 import { useQueryPolls } from "@/api/polls";
+import { useQueryUsers } from "@/api/users";
 import ConditionSelect, {
   type ConditionSelectOption,
 } from "@/components/builder/layout/reference/ConditionSelect";
@@ -156,6 +157,12 @@ export default function AccessGrantsPanel({
     deleted: false,
   });
   const pollTargetsQuery = useQueryPolls(1, 50, undefined, false);
+  const usersQuery = useQueryUsers(
+    {
+      take: 50,
+    },
+    addOpen,
+  );
   const meta = grantsQuery.data?.meta;
   const grants = useMemo(
     () => grantsQuery.data?.data ?? [],
@@ -178,6 +185,16 @@ export default function AccessGrantsPanel({
       searchText: `${event.name ?? ""} ${event.id}`,
     }));
   }, [eventTargetsQuery.data?.data, grantResourceType, pollTargetsQuery.data?.data]);
+  const userOptions = useMemo<ConditionSelectOption[]>(
+    () =>
+      (usersQuery.data?.data ?? []).map((targetUser) => ({
+        value: targetUser.email,
+        label: targetUser.name?.trim() || targetUser.email,
+        subtitle: targetUser.email,
+        searchText: `${targetUser.name ?? ""} ${targetUser.email} ${targetUser.role}`,
+      })),
+    [usersQuery.data?.data],
+  );
   const grantGroups = useMemo(() => groupAccessGrants(grants), [grants]);
   const isActionLoading =
     createGrant.isPending || reactivateGrant.isPending || revokeGrant.isPending;
@@ -507,11 +524,18 @@ export default function AccessGrantsPanel({
         <div className="space-y-4 px-5 py-4">
           <label className="block text-xs font-semibold text-gray-500">
             Target user email
-            <input
+            <ConditionSelect
               value={addEmail}
-              onChange={(event) => setAddEmail(event.target.value)}
-              placeholder="target-user@upform.id"
-              className="mt-1 h-10 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-primary-400"
+              placeholder={
+                usersQuery.isLoading ? "Loading users..." : "Choose user"
+              }
+              options={userOptions}
+              searchable
+              searchPlaceholder="Search user email or name..."
+              emptyLabel="No users found"
+              menuWidth={420}
+              onChange={setAddEmail}
+              triggerClassName="mt-1 h-10 rounded-md border-gray-200"
             />
           </label>
 

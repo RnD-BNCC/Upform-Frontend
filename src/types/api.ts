@@ -335,6 +335,18 @@ export type PermissionGrantParams = {
   take?: number
 }
 
+export type UserSearchItem = {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  role: string
+}
+
+export type UserSearchResponse = {
+  data: UserSearchItem[]
+}
+
 export type FormAuditLog = {
   id: string
   eventId: string

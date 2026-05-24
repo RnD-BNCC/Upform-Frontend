@@ -15,4 +15,5 @@ export * from "@/api/polls";
 export * from "@/api/responses";
 export * from "@/api/sections";
 export * from "@/api/upload";
+export * from "@/api/users";
 

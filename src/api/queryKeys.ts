@@ -18,5 +18,6 @@ export const QUERY_KEYS = {
   SUBMIT_FORM_SETTINGS: 'submit-form-settings',
   PERMISSION_REQUESTS: 'permission-requests',
   PERMISSION_GRANTS: 'permission-grants',
+  USERS: 'users',
   EVENT_AUDIT_LOGS: 'event-audit-logs',
 } as const

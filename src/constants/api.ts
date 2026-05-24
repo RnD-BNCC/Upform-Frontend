@@ -88,6 +88,9 @@ export const Api = {
   permissionRequestApprove: (id: string) => `/permission-requests/${id}/approve`,
   permissionRequestReject: (id: string) => `/permission-requests/${id}/reject`,
 
+  // Users
+  usersSearch: '/users/search',
+
   // Form audit logs
   eventAuditLogs: (eventId: string) => `/events/${eventId}/audit-logs`,
   eventAuditLogRollback: (eventId: string, logId: string) =>
