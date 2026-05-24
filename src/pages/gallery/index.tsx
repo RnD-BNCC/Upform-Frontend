@@ -24,6 +24,7 @@ import {
   useMutationUpdateGalleryShare,
   useQueryGalleryShare,
 } from "@/api/gallery";
+import { useMutationCreatePermissionRequest } from "@/api/permission-requests";
 import type { GalleryFileEntry } from "@/types/gallery";
 import { useMutationUploadImage } from "@/api/upload";
 import {
@@ -64,6 +65,7 @@ import {
   isGalleryImageFile,
   type GalleryTab,
 } from "@/pages/gallery/utils";
+import { getPermissionRequiredError } from "@/utils/permissionRequests";
 
 type GalleryContextMenuState =
   | {
@@ -107,6 +109,7 @@ export default function GalleryPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   const toastTimeoutRef = useRef<number | null>(null);
+  const permissionRequestKeysRef = useRef(new Set<string>());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -123,6 +126,7 @@ export default function GalleryPage() {
     shareTarget?.eventId ?? "",
   );
   const deleteMutation = useMutationDeleteFile();
+  const createPermissionRequest = useMutationCreatePermissionRequest();
   const uploadMutation = useMutationUploadImage();
 
   const showToast = useCallback((message: string) => {
@@ -206,6 +210,33 @@ export default function GalleryPage() {
     setMediaPage(1);
   }, []);
 
+  const requestPermissionFromError = useCallback(
+    async (error: unknown, reason: string) => {
+      const permissionError = getPermissionRequiredError(error);
+      if (!permissionError) return false;
+
+      const key = `${permissionError.action}:${permissionError.resourceType}:${permissionError.resourceId}`;
+      if (permissionRequestKeysRef.current.has(key)) return true;
+
+      permissionRequestKeysRef.current.add(key);
+
+      try {
+        await createPermissionRequest.mutateAsync({
+          action: permissionError.action,
+          reason,
+          resourceId: permissionError.resourceId,
+          resourceType: permissionError.resourceType,
+        });
+        return true;
+      } catch (requestError) {
+        permissionRequestKeysRef.current.delete(key);
+        console.error("[Gallery permission request]:", requestError);
+        return false;
+      }
+    },
+    [createPermissionRequest],
+  );
+
   const handleDeleteConfirm = useCallback(() => {
     if (!deleteTarget) return;
 
@@ -213,10 +244,23 @@ export default function GalleryPage() {
     setDeleteTarget(null);
     deleteMutation.mutate(target.url, {
       onSuccess: () => setStatus({ type: "success", message: "File deleted." }),
-      onError: () =>
-        setStatus({ type: "error", message: "Failed to delete file." }),
+      onError: async (error) => {
+        const requested = await requestPermissionFromError(
+          error,
+          "Need permission to delete gallery file.",
+        );
+        if (requested) {
+          setStatus({
+            type: "success",
+            message: "Permission request sent.",
+          });
+          return;
+        }
+
+        setStatus({ type: "error", message: "Failed to delete file." });
+      },
     });
-  }, [deleteMutation, deleteTarget]);
+  }, [deleteMutation, deleteTarget, requestPermissionFromError]);
 
   const handleUpload = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -264,7 +308,16 @@ export default function GalleryPage() {
         onSuccess: () => {
           setStatus({ type: "success", message: "Gallery sharing updated." });
         },
-        onError: () => {
+        onError: async (error) => {
+          const requested = await requestPermissionFromError(
+            error,
+            "Need permission to manage gallery sharing.",
+          );
+          if (requested) {
+            setStatus({ type: "success", message: "Permission request sent." });
+            return;
+          }
+
           setStatus({
             type: "error",
             message: "Failed to update gallery sharing.",
@@ -272,7 +325,7 @@ export default function GalleryPage() {
         },
       });
     },
-    [updateShareMutation],
+    [requestPermissionFromError, updateShareMutation],
   );
 
   const handleConnectDrive = useCallback(() => {
@@ -280,14 +333,23 @@ export default function GalleryPage() {
       onSuccess: () => {
         setStatus({ type: "success", message: "Google Drive files synced." });
       },
-      onError: () => {
+      onError: async (error) => {
+        const requested = await requestPermissionFromError(
+          error,
+          "Need permission to manage gallery drive sync.",
+        );
+        if (requested) {
+          setStatus({ type: "success", message: "Permission request sent." });
+          return;
+        }
+
         setStatus({
           type: "error",
           message: "Failed to connect Google Drive. Re-login with Drive access.",
         });
       },
     });
-  }, [connectDriveMutation]);
+  }, [connectDriveMutation, requestPermissionFromError]);
 
   return (
     <PageGridShell>

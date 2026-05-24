@@ -40,15 +40,23 @@ const POLL_ACTIONS: PermissionAction[] = [
   "polls.rollback",
 ];
 
+const GALLERY_ACTIONS: PermissionAction[] = [
+  "gallery.view",
+  "gallery.manage",
+  "gallery.delete",
+];
+
 const RESOURCE_TYPE_OPTIONS: ConditionSelectOption[] = [
   { value: "all", label: "All resources" },
   { value: "event", label: "Form" },
   { value: "poll", label: "Poll" },
+  { value: "gallery", label: "Gallery" },
 ];
 
 const GRANT_RESOURCE_TYPE_OPTIONS: ConditionSelectOption[] = [
   { value: "event", label: "Form" },
   { value: "poll", label: "Poll" },
+  { value: "gallery", label: "Gallery" },
 ];
 
 const STATUS_OPTIONS: ConditionSelectOption[] = [
@@ -65,10 +73,14 @@ const PAGE_SIZE_OPTIONS: ConditionSelectOption[] = [
 
 const DEFAULT_ACTION_BY_RESOURCE = {
   event: "forms.edit",
+  gallery: "gallery.view",
   poll: "polls.edit",
-} as const satisfies Record<"event" | "poll", PermissionAction>;
+} as const satisfies Record<GrantResourceType, PermissionAction>;
+
+type GrantResourceType = "event" | "gallery" | "poll";
 
 function getActionsForResource(resourceType: string) {
+  if (resourceType === "gallery") return GALLERY_ACTIONS;
   return resourceType === "poll" ? POLL_ACTIONS : FORM_ACTIONS;
 }
 
@@ -120,7 +132,9 @@ export default function AccessGrantsPanel({
   onError,
   onSuccess,
 }: AccessGrantsPanelProps) {
-  const [resourceType, setResourceType] = useState<"all" | "event" | "poll">(
+  const [resourceType, setResourceType] = useState<
+    "all" | GrantResourceType
+  >(
     "event",
   );
   const [resourceId, setResourceId] = useState("");
@@ -131,7 +145,7 @@ export default function AccessGrantsPanel({
   const [addOpen, setAddOpen] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addTargetId, setAddTargetId] = useState("");
-  const [grantResourceType, setGrantResourceType] = useState<"event" | "poll">(
+  const [grantResourceType, setGrantResourceType] = useState<GrantResourceType>(
     "event",
   );
   const [selectedActions, setSelectedActions] = useState<Set<PermissionAction>>(
@@ -173,7 +187,9 @@ export default function AccessGrantsPanel({
 
     return (eventTargetsQuery.data?.data ?? []).map((event) => ({
       value: event.id,
-      label: event.name?.trim() || "Untitled form",
+      label:
+        event.name?.trim() ||
+        (grantResourceType === "gallery" ? "Untitled gallery" : "Untitled form"),
       subtitle: event.id,
       searchText: `${event.name ?? ""} ${event.id}`,
     }));
@@ -188,7 +204,7 @@ export default function AccessGrantsPanel({
 
   const resetPage = () => setPage(1);
 
-  const handleGrantResourceTypeChange = (nextType: "event" | "poll") => {
+  const handleGrantResourceTypeChange = (nextType: GrantResourceType) => {
     setGrantResourceType(nextType);
     setAddTargetId("");
     setSelectedActions(new Set([DEFAULT_ACTION_BY_RESOURCE[nextType]]));
@@ -309,7 +325,7 @@ export default function AccessGrantsPanel({
               placeholder="Resource"
               options={RESOURCE_TYPE_OPTIONS}
               onChange={(value) => {
-                setResourceType(value as "all" | "event" | "poll");
+                setResourceType(value as "all" | GrantResourceType);
                 resetPage();
               }}
               triggerClassName="mt-1 h-9 rounded-md border-gray-200"
@@ -523,7 +539,7 @@ export default function AccessGrantsPanel({
                 placeholder="Resource"
                 options={GRANT_RESOURCE_TYPE_OPTIONS}
                 onChange={(value) =>
-                  handleGrantResourceTypeChange(value as "event" | "poll")
+                  handleGrantResourceTypeChange(value as GrantResourceType)
                 }
                 triggerClassName="mt-1 h-10 rounded-md border-gray-200"
               />
@@ -539,12 +555,16 @@ export default function AccessGrantsPanel({
                 searchPlaceholder={
                   grantResourceType === "poll"
                     ? "Search poll title..."
-                    : "Search form title..."
+                    : grantResourceType === "gallery"
+                      ? "Search gallery form title..."
+                      : "Search form title..."
                 }
                 emptyLabel={
                   grantResourceType === "poll"
                     ? "No polls found"
-                    : "No forms found"
+                    : grantResourceType === "gallery"
+                      ? "No galleries found"
+                      : "No forms found"
                 }
                 menuWidth={420}
                 onChange={setAddTargetId}

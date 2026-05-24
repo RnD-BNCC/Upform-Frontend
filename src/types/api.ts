@@ -263,6 +263,9 @@ export type PermissionAction =
   | 'polls.edit'
   | 'polls.delete'
   | 'polls.rollback'
+  | 'gallery.view'
+  | 'gallery.manage'
+  | 'gallery.delete'
 
 export type PermissionRequest = {
   id: string
