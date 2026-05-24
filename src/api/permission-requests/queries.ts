@@ -4,17 +4,14 @@ import { Api } from '@/constants/api'
 import { QUERY_KEYS } from '@/api/queryKeys'
 import type {
   CreatePermissionRequestPayload,
+  CreatePermissionGrantPayload,
+  PermissionAccessParams,
+  PermissionGrantParams,
+  PermissionGrantListResponse,
   PermissionAccessResponse,
-  PermissionAction,
   PermissionRequest,
   PermissionRequestListResponse,
 } from '@/types/api'
-
-type PermissionAccessParams = {
-  action: PermissionAction
-  resourceId: string
-  resourceType?: string
-}
 
 export function useQueryPermissionRequests(status?: string) {
   return useQuery({
@@ -53,6 +50,21 @@ export function useQueryPermissionAccess(
   })
 }
 
+export function useQueryPermissionGrants(params: PermissionGrantParams = {}) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.PERMISSION_GRANTS, params],
+    queryFn: async () => {
+      const { data } = await apiClient.get<PermissionGrantListResponse>(
+        Api.permissionGrants,
+        { params },
+      )
+      return data
+    },
+    refetchOnWindowFocus: true,
+    retry: false,
+  })
+}
+
 export function useMutationCreatePermissionRequest() {
   const queryClient = useQueryClient()
 
@@ -65,6 +77,58 @@ export function useMutationCreatePermissionRequest() {
       return data
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_REQUESTS] })
+    },
+  })
+}
+
+export function useMutationCreatePermissionGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: CreatePermissionGrantPayload) => {
+      const { data } = await apiClient.post<PermissionRequest>(
+        Api.permissionGrants,
+        payload,
+      )
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_GRANTS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_REQUESTS] })
+    },
+  })
+}
+
+export function useMutationReactivatePermissionGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post<PermissionRequest>(
+        Api.permissionGrantReactivate(id),
+      )
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_GRANTS] })
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_REQUESTS] })
+    },
+  })
+}
+
+export function useMutationRevokePermissionGrant() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post<PermissionRequest>(
+        Api.permissionGrantRevoke(id),
+      )
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_GRANTS] })
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.PERMISSION_REQUESTS] })
     },
   })

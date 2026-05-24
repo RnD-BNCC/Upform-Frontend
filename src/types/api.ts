@@ -4,7 +4,7 @@ import type {
   FormEvent,
   FormField,
   RespondentDeviceType,
-} from './form'
+} from '@/types/form'
 
 // Event list response
 export type EventListItem = Omit<FormEvent, 'responses' | 'sections'> & {
@@ -260,6 +260,9 @@ export type PermissionAction =
   | 'forms.edit'
   | 'forms.delete'
   | 'forms.rollback'
+  | 'polls.edit'
+  | 'polls.delete'
+  | 'polls.rollback'
 
 export type PermissionRequest = {
   id: string
@@ -289,6 +292,17 @@ export type PermissionRequestListResponse = {
   data: PermissionRequest[]
 }
 
+export type PermissionListMeta = {
+  page: number
+  take: number
+  total: number
+  totalPages: number
+}
+
+export type PermissionGrantListResponse = PermissionRequestListResponse & {
+  meta: PermissionListMeta
+}
+
 export type PermissionAccessResponse = {
   allowed: boolean
   pending: boolean
@@ -300,6 +314,25 @@ export type CreatePermissionRequestPayload = {
   reason?: string
   resourceId: string
   resourceType?: string
+}
+
+export type CreatePermissionGrantPayload = CreatePermissionRequestPayload & {
+  requesterEmail: string
+}
+
+export type PermissionAccessParams = {
+  action: PermissionAction
+  resourceId: string
+  resourceType?: string
+}
+
+export type PermissionGrantParams = {
+  page?: number
+  requesterEmail?: string
+  resourceId?: string
+  resourceType?: string
+  status?: string
+  take?: number
 }
 
 export type FormAuditLog = {

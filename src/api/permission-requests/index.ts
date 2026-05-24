@@ -1,7 +1,11 @@
 export {
   useMutationApprovePermissionRequest,
+  useMutationCreatePermissionGrant,
   useMutationCreatePermissionRequest,
+  useMutationReactivatePermissionGrant,
   useMutationRejectPermissionRequest,
+  useMutationRevokePermissionGrant,
+  useQueryPermissionGrants,
   useQueryPermissionAccess,
   useQueryPermissionRequests,
-} from './queries'
+} from '@/api/permission-requests/queries'
