@@ -4,4 +4,4 @@ export {
   useMutationUpdateSection,
   useMutationReorderSections,
   useMutationDeleteSection,
-} from './queries'
+} from '@/api/sections/queries'

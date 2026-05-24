@@ -11,4 +11,4 @@ export {
   useMutationRestoreEvent,
   useMutationRollbackEventAuditLog,
   useQueryEventAuditLogs,
-} from './queries'
+} from '@/api/events/queries'

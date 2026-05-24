@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationOptions } from "@tanstack/react-query";
 import { apiClient, publicApiClient } from "@/config/api-client";
 import { Api } from "@/constants/api";
-import { QUERY_KEYS } from "../queryKeys";
+import { QUERY_KEYS } from "@/api/queryKeys";
 import type {
   FormAnalyticsEvent,
   FormResponse,

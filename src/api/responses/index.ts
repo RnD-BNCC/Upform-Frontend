@@ -11,4 +11,4 @@ export {
   useMutationUpdateResponseProgress,
   useMutationDeleteResponseProgress,
   useMutationDeleteResponse,
-} from './queries'
+} from '@/api/responses/queries'

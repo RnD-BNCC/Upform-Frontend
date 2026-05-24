@@ -5,7 +5,7 @@ import { Plus, List, X, SignOut } from "@phosphor-icons/react";
 import { useQueryPermissionRequests } from "@/api/permission-requests";
 import { useAuth } from "@/hooks";
 import { authClient } from "@/lib";
-import BrandLogo from "./BrandLogo";
+import BrandLogo from "@/components/layout/BrandLogo";
 
 const NAV_ITEMS = [
   { label: "My Forms", path: "/" },
