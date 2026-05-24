@@ -1,6 +1,6 @@
 import type { MouseEventHandler, RefObject } from "react";
 import type { FormField, FormSection } from "@/types/form";
-import SectionPreview from "../shared/SectionPreview";
+import SectionPreview from "@/components/builder/preview/shared/SectionPreview";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
 
 type Props = {

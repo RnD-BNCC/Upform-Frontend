@@ -1,5 +1,5 @@
-export { default as ConditionSelect } from "./ConditionSelect";
-export * from "./FieldConditionEditor";
-export * from "./fieldConditionUtils";
-export { default as ReferencePickerPopover } from "./ReferencePickerPopover";
-export { default as ReferenceTextEditor } from "./ReferenceTextEditor";
+export { default as ConditionSelect } from "@/components/builder/layout/reference/ConditionSelect";
+export * from "@/components/builder/layout/reference/FieldConditionEditor";
+export * from "@/components/builder/layout/reference/fieldConditionUtils";
+export { default as ReferencePickerPopover } from "@/components/builder/layout/reference/ReferencePickerPopover";
+export { default as ReferenceTextEditor } from "@/components/builder/layout/reference/ReferenceTextEditor";

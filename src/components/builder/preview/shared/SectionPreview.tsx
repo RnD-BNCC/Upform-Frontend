@@ -12,7 +12,7 @@ import {
   getFieldInsertZoneId,
 } from "@/utils/form/formBuilder";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
-import ThemeFormLayout from "./ThemeFormLayout";
+import ThemeFormLayout from "@/components/builder/preview/shared/ThemeFormLayout";
 
 function DroppableSideZone({ id }: { id: string }) {
   const { isOver, setNodeRef } = useDroppable({ id });

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { CodeIcon, XIcon } from "@phosphor-icons/react";
 import ConditionSelect from "@/components/builder/layout/reference/ConditionSelect";
-import ShareToggle from "../components/ShareToggle";
+import ShareToggle from "@/components/builder/layout/share/components/ShareToggle";
 import type { ConditionSelectOption } from "@/components/builder/layout/reference/ConditionSelect";
 import type {
   EmbedButtonSize,

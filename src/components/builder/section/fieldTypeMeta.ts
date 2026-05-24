@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { FieldType } from "@/types/form";
-import { getSimilarTypesMap, getFieldTypeMetaMap } from "./fieldRegistry";
+import { getSimilarTypesMap, getFieldTypeMetaMap } from "@/components/builder/section/fieldRegistry";
 
 export type FieldTypeMeta = {
   Icon: ComponentType<{ className?: string; size?: number }>;

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { TrashSimpleIcon } from "@phosphor-icons/react";
 import type { FormSection } from "@/types/form";
-import RichInput from "../utils/RichInput";
+import RichInput from "@/components/builder/utils/RichInput";
 
 type SectionCardProps = {
   section: FormSection;

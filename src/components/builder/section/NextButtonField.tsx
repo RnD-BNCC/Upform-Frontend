@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { ArrowsClockwiseIcon, DotsNineIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
-import { FieldPluginToggleRow } from "./FieldSettingControls";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginToggleRow } from "@/components/builder/section/FieldSettingControls";
 import type { FormField } from "@/types/form";
 import {
   ActionButtonAlignmentSelector,
   ActionButtonColorField,
   FieldSettingLabel,
-} from "./ActionButtonFieldShared";
+} from "@/components/builder/section/ActionButtonFieldShared";
 
 type NextButtonFieldCardProps = {
   dragListeners: React.HTMLAttributes<HTMLDivElement>;

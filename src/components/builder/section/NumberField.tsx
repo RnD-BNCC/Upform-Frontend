@@ -1,6 +1,6 @@
 import { HashIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
 
 type Props = {
   defaultValue?: string;

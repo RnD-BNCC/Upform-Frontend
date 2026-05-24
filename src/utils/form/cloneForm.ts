@@ -4,7 +4,7 @@ import type {
   FormField,
   FormSection,
 } from "@/types/form";
-import { REFERENCE_TOKEN_SELECTOR } from "./referenceTokens";
+import { REFERENCE_TOKEN_SELECTOR } from "@/utils/form/referenceTokens";
 
 type FieldIdMap = Map<string, string>;
 type RowIdMap = Map<string, string>;

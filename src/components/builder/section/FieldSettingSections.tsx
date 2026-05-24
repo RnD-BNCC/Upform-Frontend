@@ -16,8 +16,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { DotsSixVerticalIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useSortable } from "@dnd-kit/sortable";
 import type { FormField } from "@/types/form";
-import { FieldPluginLabel } from "./FieldSettingControls";
-import DropdownField from "./DropdownField";
+import { FieldPluginLabel } from "@/components/builder/section/FieldSettingControls";
+import DropdownField from "@/components/builder/section/DropdownField";
 
 const VALIDATION_PATTERNS: { value: string; label: string }[] = [
   { value: "none", label: "None" },

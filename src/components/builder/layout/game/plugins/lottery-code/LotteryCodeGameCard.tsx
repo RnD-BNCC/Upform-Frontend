@@ -14,7 +14,7 @@ import {
   getLotteryRequirements,
 } from "@/utils/game";
 import type { GamePanelProps } from "@/types/builderGame";
-import LotteryPresenter from "./components/LotteryPresenter";
+import LotteryPresenter from "@/components/builder/layout/game/plugins/lottery-code/components/LotteryPresenter";
 
 export default function LotteryCodeGameCard({
   eventId,

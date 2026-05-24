@@ -7,16 +7,16 @@ import {
 } from "@phosphor-icons/react";
 import type { FormSection } from "@/types/form";
 import { getAvailableConditionFieldsForSection } from "@/utils/form";
-import BranchConditionPopover from "./BranchConditionPopover";
+import BranchConditionPopover from "@/components/builder/modals/BranchConditionPopover";
 import {
   ConnectPreview,
   ConnectionLines,
   DropTypePicker,
   NodeCard,
   NodeContextMenu,
-} from "./LogicModalPageLogicPrimitives";
-import type { PageType } from "./logicModalPageLogic.shared";
-import { NODE_W, getLogicNodeKey } from "./logicModalPageLogic.shared";
+} from "@/components/builder/modals/LogicModalPageLogicPrimitives";
+import type { PageType } from "@/components/builder/modals/logicModalPageLogic.shared";
+import { NODE_W, getLogicNodeKey } from "@/components/builder/modals/logicModalPageLogic.shared";
 import type { LogicModalPageLogicController } from "@/hooks/builder/useLogicModalPageLogic";
 
 type Props = {

@@ -4,11 +4,11 @@ import type { ThemeConfig } from "@/utils/form/themeConfig";
 import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
-} from "../constants";
+} from "@/components/builder/layout/share/email-composer/constants";
 import {
   getImageWrapperClassName,
   sanitizeRichTextHtml,
-} from "../utils";
+} from "@/components/builder/layout/share/email-composer/utils";
 
 type EmailBlocksPreviewProps = {
   blocks: EmailBlock[];

@@ -1,14 +1,14 @@
 import type { HTMLAttributes } from "react";
 import { motion } from "framer-motion";
 import { ArrowsClockwiseIcon, DotsNineIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import type { FormField } from "@/types/form";
 import {
   ActionButtonAlignmentSelector,
   ActionButtonColorField,
   FieldSettingLabel,
   getActionButtonAlignClass,
-} from "./ActionButtonFieldShared";
+} from "@/components/builder/section/ActionButtonFieldShared";
 
 type FillAgainButtonFieldCardProps = {
   dragListeners: HTMLAttributes<HTMLDivElement>;

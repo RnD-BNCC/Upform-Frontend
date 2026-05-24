@@ -4,7 +4,7 @@ import { stripRichTextColorStyles } from "@/utils/form/richTextColor";
 import CoverPageLayout, {
   getReadableCoverTextColor,
   type CoverPageThemeConfig,
-} from "./CoverPageLayout";
+} from "@/components/builder/preview/cover/CoverPageLayout";
 
 type Props = {
   coverBgImage: string | null;

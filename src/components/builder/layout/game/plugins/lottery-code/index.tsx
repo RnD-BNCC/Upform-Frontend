@@ -1,5 +1,5 @@
-import { createGamePlugin } from "../../gameDefinitionHelpers";
-import LotteryCodeGameCard from "./LotteryCodeGameCard";
+import { createGamePlugin } from "@/components/builder/layout/game/gameDefinitionHelpers";
+import LotteryCodeGameCard from "@/components/builder/layout/game/plugins/lottery-code/LotteryCodeGameCard";
 
 export const lotteryCodeGamePlugin = createGamePlugin({
   meta: {

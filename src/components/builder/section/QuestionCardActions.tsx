@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import type { FieldType } from "@/types/form";
 import HelpTooltip from "@/components/builder/layout/shared/HelpTooltip";
-import { FIELD_TYPE_META, SIMILAR_TYPES } from "./fieldTypeMeta";
+import { FIELD_TYPE_META, SIMILAR_TYPES } from "@/components/builder/section/fieldTypeMeta";
 
 type DragHandleProps = {
   dragProps?: React.HTMLAttributes<HTMLDivElement>;

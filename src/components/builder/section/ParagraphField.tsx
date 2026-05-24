@@ -6,12 +6,12 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import { TextAlignLeftIcon } from "@phosphor-icons/react";
-import RichInput from "../utils/RichInput";
+import RichInput from "@/components/builder/utils/RichInput";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
 import type { FormField } from "@/types/form";
 

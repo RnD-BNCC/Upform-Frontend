@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ImageIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { ImagePickerModal } from "@/components/modal";
-import HelpTooltip from "../shared/HelpTooltip";
+import HelpTooltip from "@/components/builder/layout/shared/HelpTooltip";
 
 type Props = {
   startText: string;

@@ -1,7 +1,7 @@
 import type { FormCalculation, FormField, FormSection } from "@/types/form";
-import { getIndexedOptionValues, getOtherOptionValue } from "./optionSelection";
-import { serializePhoneAnswer, sanitizePhoneNumber } from "./phoneAnswer";
-import { resolveReferenceText } from "./referenceTokens";
+import { getIndexedOptionValues, getOtherOptionValue } from "@/utils/form/optionSelection";
+import { serializePhoneAnswer, sanitizePhoneNumber } from "@/utils/form/phoneAnswer";
+import { resolveReferenceText } from "@/utils/form/referenceTokens";
 
 type RuntimeDefaultContext = {
   answers?: Record<string, string | string[]>;

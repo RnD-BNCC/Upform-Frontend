@@ -17,8 +17,8 @@ import {
   lightenHex,
   type LotteryParticipant,
 } from "@/utils/game";
-import PresenterToolbarButton from "./PresenterToolbarButton";
-import { drawCanvasBall } from "../utils/drawCanvasBall";
+import PresenterToolbarButton from "@/components/builder/layout/game/plugins/lottery-code/components/PresenterToolbarButton";
+import { drawCanvasBall } from "@/components/builder/layout/game/plugins/lottery-code/utils/drawCanvasBall";
 
 type DrawPhase = "idle" | "shaking" | "settling";
 

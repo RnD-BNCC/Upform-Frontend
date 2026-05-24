@@ -3,19 +3,19 @@ import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { FormField, FormSection } from "@/types/form";
-import RichInput from "../utils/RichInput";
-import HiddenFieldCard from "./HiddenFieldCard";
+import RichInput from "@/components/builder/utils/RichInput";
+import HiddenFieldCard from "@/components/builder/section/HiddenFieldCard";
 import {
   QuestionCardDragHandle,
   QuestionCardFloatingActions,
-} from "./QuestionCardActions";
+} from "@/components/builder/section/QuestionCardActions";
 import {
   getAvailableReferenceFieldGroupsForField,
   getAvailableReferenceFieldsForField,
   resolveReferenceHtml,
   resolveReferenceText,
 } from "@/utils/form/referenceTokens";
-import { getFieldPlugin } from "./fieldRegistry";
+import { getFieldPlugin } from "@/components/builder/section/fieldRegistry";
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: "$",

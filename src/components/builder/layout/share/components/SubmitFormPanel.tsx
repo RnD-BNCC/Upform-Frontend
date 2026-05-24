@@ -35,14 +35,14 @@ import {
   SortableBlock,
   SpacerSettingsPanel,
   TextSettingsPanel,
-} from "../email-composer/components";
+} from "@/components/builder/layout/share/email-composer/components";
 import {
   DEFAULT_EMAIL_IMAGE_URL,
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
   EMAIL_STYLE_OPTIONS,
-} from "../email-composer/constants";
-import { generateHtml, uid } from "../email-composer/utils";
+} from "@/components/builder/layout/share/email-composer/constants";
+import { generateHtml, uid } from "@/components/builder/layout/share/email-composer/utils";
 import {
   THEMES,
   resolveTheme,

@@ -14,11 +14,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { SortAscendingIcon } from "@phosphor-icons/react";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import {
   FieldPluginOptionsEditor,
   FieldPluginRequiredValidationField,
-} from "./FieldSettingSections";
+} from "@/components/builder/section/FieldSettingSections";
 
 const DEFAULT_RANKING_OPTIONS = ["Option 1", "Option 2"];
 

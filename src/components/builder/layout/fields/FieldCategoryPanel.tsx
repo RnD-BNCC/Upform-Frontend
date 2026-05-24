@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { FilePlusIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import type { FieldType, FormField } from "@/types/form";
-import BuilderPaletteItem from "./BuilderPaletteItem";
+import BuilderPaletteItem from "@/components/builder/layout/fields/BuilderPaletteItem";
 import { getFieldPaletteGroups } from "@/components/builder/section/fieldRegistry";
 import { ImagePickerModal } from "@/components/modal";
-import ImportQuestionsModal from "./ImportQuestionsModal";
+import ImportQuestionsModal from "@/components/builder/layout/fields/ImportQuestionsModal";
 
 type Props = {
   currentEventId?: string;

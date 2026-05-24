@@ -1,15 +1,15 @@
 import type { HTMLAttributes } from "react";
 import { motion } from "framer-motion";
 import { DotsNineIcon, LinkIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
-import { FieldPluginToggleRow } from "./FieldSettingControls";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginToggleRow } from "@/components/builder/section/FieldSettingControls";
 import type { FormField } from "@/types/form";
 import {
   ActionButtonAlignmentSelector,
   ActionButtonColorField,
   FieldSettingLabel,
   getActionButtonAlignClass,
-} from "./ActionButtonFieldShared";
+} from "@/components/builder/section/ActionButtonFieldShared";
 
 type UrlButtonFieldCardProps = {
   dragListeners: HTMLAttributes<HTMLDivElement>;

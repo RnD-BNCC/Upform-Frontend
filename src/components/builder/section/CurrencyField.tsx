@@ -2,10 +2,10 @@ import { CurrencyDollarIcon } from "@phosphor-icons/react";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
-import { FieldPluginLabel } from "./FieldSettingControls";
-import DropdownField from "./DropdownField";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
+import { FieldPluginLabel } from "@/components/builder/section/FieldSettingControls";
+import DropdownField from "@/components/builder/section/DropdownField";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   AUD: "A$",
