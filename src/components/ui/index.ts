@@ -6,3 +6,4 @@ export { default as RefreshButton } from "@/components/ui/RefreshButton";
 export { default as RenameModal } from "@/components/ui/RenameModal";
 export { default as Spinner } from "@/components/ui/Spinner";
 export { default as Toggle } from "@/components/ui/Toggle";
+export { default as UserSearchSelect } from "@/components/ui/UserSearchSelect";
