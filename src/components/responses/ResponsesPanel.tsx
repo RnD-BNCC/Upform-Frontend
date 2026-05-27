@@ -5,6 +5,7 @@ import {
   ClockIcon,
   DatabaseIcon,
   FileTextIcon,
+  ShareNetworkIcon,
 } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,6 +15,10 @@ import {
 } from "@/api/responses";
 import { useMutationCreatePermissionRequest } from "@/api/permission-requests";
 import { useQuerySubmitFormSettings } from "@/api/email-blasts";
+import {
+  useMutationUpdateResultShare,
+  useQueryResultShare,
+} from "@/api/results-share";
 import { QUERY_KEYS } from "@/api/queryKeys";
 import type { FormField, FormResponse, FormSection } from "@/types/form";
 import type { ResultsSection } from "@/types/results";
@@ -21,12 +26,15 @@ import type { ShareToast } from "@/types/builderShare";
 import AnalyticsTab from "@/components/responses/analytics/AnalyticsTab";
 import DatabaseView from "@/components/responses/database/DatabaseView";
 import SummaryTab from "@/components/responses/SummaryTab";
+import ResultShareModal from "@/components/responses/ResultShareModal";
 import { getPermissionRequiredError } from "@/utils/permissionRequests";
+import type { ResultShareVisibility } from "@/types/resultsShare";
 
 interface ResponsesPanelProps {
   responses: FormResponse[];
   allFields: FormField[];
   eventId: string;
+  formTitle?: string;
   sections: FormSection[];
   showToast?: ShareToast;
 }
@@ -47,16 +55,20 @@ export default function ResponsesPanel({
   responses,
   allFields,
   eventId,
+  formTitle,
   sections,
   showToast,
 }: ResponsesPanelProps) {
   const [activeSection, setActiveSection] =
     useState<ResultsSection>("database");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const responsesQuery = useQueryResponses(eventId);
   const progressQuery = useQueryResponseProgress(eventId);
   const analyticsEventsQuery = useQueryAnalyticsEvents(eventId);
   const submitSettingsQuery = useQuerySubmitFormSettings(eventId, !!eventId);
+  const resultShareQuery = useQueryResultShare(eventId, shareModalOpen);
+  const updateResultShare = useMutationUpdateResultShare(eventId);
   const createPermissionRequest = useMutationCreatePermissionRequest();
   const currentResponses = responsesQuery.data ?? responses;
   const progressResponses = progressQuery.data ?? [];
@@ -74,6 +86,32 @@ export default function ResponsesPanel({
         queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId],
       }),
     ]).then(() => undefined);
+  };
+
+  const copyResultShareUrl = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    showToast?.("Results link copied", "success");
+  };
+
+  const saveResultShareVisibility = (
+    visibility: ResultShareVisibility,
+    publicRole: "viewer" | "editor",
+    members: Array<{ email: string; role: "viewer" | "editor" }>,
+  ) => {
+    updateResultShare.mutate(
+      { members, publicRole, visibility },
+      {
+        onSuccess: (share) => {
+          showToast?.(
+            share.visibility === "public"
+              ? "Results link is public"
+              : "Results link is private",
+            "success",
+          );
+        },
+        onError: () => showToast?.("Failed to update results share", "error"),
+      },
+    );
   };
 
   const renderContent = () => {
@@ -165,6 +203,8 @@ export default function ResponsesPanel({
         <AnalyticsTab
           allFields={allFields}
           analyticsEvents={analyticsEvents}
+          eventId={eventId}
+          formTitle={formTitle}
           onRefresh={refreshResults}
           sections={sections}
         />
@@ -190,6 +230,14 @@ export default function ResponsesPanel({
   return (
     <div className="flex h-full min-w-0 bg-white">
       <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-gray-50 px-2 py-2">
+        <button
+          type="button"
+          onClick={() => setShareModalOpen(true)}
+          className="mb-2 flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary-600 px-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700"
+        >
+          <ShareNetworkIcon size={15} weight="bold" />
+          Share results
+        </button>
         <nav className="space-y-1">
           {RESULT_SECTIONS.map(({ icon: Icon, key, label }) => {
             const isActive = activeSection === key;
@@ -233,6 +281,17 @@ export default function ResponsesPanel({
       </aside>
 
       <main className="min-w-0 flex-1 overflow-hidden">{renderContent()}</main>
+
+      <ResultShareModal
+        formTitle={formTitle}
+        isLoading={resultShareQuery.isLoading}
+        isOpen={shareModalOpen}
+        isSaving={updateResultShare.isPending}
+        onClose={() => setShareModalOpen(false)}
+        onCopy={(url) => void copyResultShareUrl(url)}
+        onSave={saveResultShareVisibility}
+        share={resultShareQuery.data}
+      />
     </div>
   );
 }

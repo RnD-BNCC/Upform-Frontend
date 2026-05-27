@@ -335,6 +335,7 @@ export interface FormEvent {
   color: string
   theme?: string
   image?: string | null
+  visibility?: 'private' | 'public'
   sections: FormSection[]
   responses?: FormResponse[]
 }

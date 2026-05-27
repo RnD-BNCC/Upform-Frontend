@@ -792,6 +792,7 @@ export default function EventDetailPage() {
             responses={responses}
             allFields={sections.flatMap((section) => section.fields)}
             eventId={id ?? ""}
+            formTitle={formTitle}
             sections={sections}
             showToast={showToast}
           />
@@ -881,7 +882,8 @@ export default function EventDetailPage() {
         required
         onClose={() => {}}
         isLoading={isUpdatingMeta || createEvent.isPending}
-        onCreate={async (name) => {
+        showVisibilitySelect={id === "new"}
+        onCreate={async (name, visibility) => {
           if (!id) return;
           setIsUpdatingMeta(true);
           try {
@@ -889,6 +891,7 @@ export default function EventDetailPage() {
               const event = await createEvent.mutateAsync({
                 name,
                 theme: pendingTheme,
+                visibility: visibility ?? "private",
               });
               const nextSections = event.sections?.length
                 ? event.sections

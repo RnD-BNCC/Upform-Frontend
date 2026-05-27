@@ -18,6 +18,10 @@ export const Api = {
   responseProgressDetail: (eventId: string, progressId: string) =>
     `/events/${eventId}/response-progress/${progressId}`,
   eventAnalytics: (eventId: string) => `/events/${eventId}/analytics`,
+  eventAnalyticsReport: (eventId: string) =>
+    `/events/${eventId}/analytics/report.pdf`,
+  resultShare: (eventId: string) => `/results/events/${eventId}/share`,
+  sharedResults: (token: string) => `/results/share/${token}`,
   publicEventDetail: (id: string) => `/public/events/${id}`,
   publicResponses: (eventId: string) => `/public/events/${eventId}/responses`,
   publicEventAnalytics: (eventId: string) =>

@@ -75,6 +75,7 @@ export type Poll = {
   status: PollStatus
   currentSlide: number
   slides: PollSlide[]
+  visibility?: 'private' | 'public'
   stsrc?: 'A' | 'U' | 'D'
   createdBy?: string | null
   updatedBy?: string | null
@@ -86,12 +87,14 @@ export type Poll = {
 
 export type CreatePollPayload = {
   title?: string
+  visibility?: 'private' | 'public'
 }
 
 export type UpdatePollPayload = {
   title?: string
   status?: PollStatus
   currentSlide?: number
+  visibility?: 'private' | 'public'
 }
 
 export type CreateSlidePayload = {

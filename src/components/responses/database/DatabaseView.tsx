@@ -73,6 +73,7 @@ type DatabaseViewProps = {
   mode?: "database" | "submissions" | "inProgress";
   onRefresh?: () => void | Promise<void>;
   progressResponses?: FormResponseProgress[];
+  readOnly?: boolean;
   responses: FormResponse[];
   sections?: FormSection[];
   showToast?: ShareToast;
@@ -201,6 +202,7 @@ export default function DatabaseView({
   mode = "database",
   onRefresh,
   progressResponses = [],
+  readOnly = false,
   responses,
   sections = [],
   showToast,
@@ -657,6 +659,7 @@ export default function DatabaseView({
     left: number,
     top: number,
   ) => {
+    if (readOnly) return;
     const position = getClampedMenuPosition(left, top);
     const deleteCount =
       checkedRecordIds.size > 1 && checkedRecordIds.has(responseId)
@@ -669,6 +672,7 @@ export default function DatabaseView({
   const toggleRecordChecked = (
     response: FormResponse,
   ) => {
+    if (readOnly) return;
     setCheckedRecordIds((previous) => {
       const next = new Set(previous);
       if (next.has(response.id)) {
@@ -683,6 +687,7 @@ export default function DatabaseView({
   };
 
   const toggleAllVisibleRecords = () => {
+    if (readOnly) return;
     setCheckedRecordIds((previous) => {
       if (allVisibleChecked) {
         return new Set();
@@ -722,6 +727,7 @@ export default function DatabaseView({
   };
 
   const duplicateRecord = (response: FormResponse) => {
+    if (readOnly) return;
     showToast?.("Duplicating record...", "info", 0);
     duplicateResponse.mutate({
       answers: removeLotteryAnswer(response.answers),
@@ -738,6 +744,7 @@ export default function DatabaseView({
   };
 
   const requestDeleteRecords = (response: FormResponse) => {
+    if (readOnly) return;
     const ids =
       recordActionMenu?.deleteCount && recordActionMenu.deleteCount > 1
         ? Array.from(checkedRecordIds)
@@ -747,6 +754,7 @@ export default function DatabaseView({
   };
 
   const confirmDeleteRecords = async () => {
+    if (readOnly) return;
     const recordsToDelete = deleteConfirmIds
       .map((responseId) => responseById.get(responseId))
       .filter(Boolean) as FormResponse[];
@@ -833,6 +841,7 @@ export default function DatabaseView({
     fieldId: string,
     value: string | string[],
   ) => {
+    if (readOnly) return;
     const source = displayedResponses.find((response) => response.id === responseId);
     if (!source) return;
 
@@ -1248,7 +1257,7 @@ export default function DatabaseView({
         </div>
       </div>
 
-      {recordActionMenu && actionMenuResponse ? (
+      {!readOnly && recordActionMenu && actionMenuResponse ? (
         <RecordActionMenu
           isBusy={
             duplicateResponse.isPending ||
@@ -1266,7 +1275,7 @@ export default function DatabaseView({
       ) : null}
 
       <ConfirmModal
-        isOpen={deleteConfirmIds.length > 0}
+        isOpen={!readOnly && deleteConfirmIds.length > 0}
         title={
           deleteConfirmIds.length === 1
             ? "Delete record?"
@@ -1295,6 +1304,7 @@ export default function DatabaseView({
           fields={visibleFields}
           index={drawerIndex ?? 0}
           lotteryId={lotteryIdByResponseId.get(selectedResponse.id)}
+          readOnly={readOnly}
           response={selectedResponse}
           saveStatus={saveStatuses[selectedResponse.id] ?? "saved"}
           total={displayedResponses.length}

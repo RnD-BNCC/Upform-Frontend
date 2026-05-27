@@ -513,10 +513,13 @@ export default function PollEditPage() {
     setWelcomeRename(true);
   };
 
-  const handleCreatePollFromDraft = async (name: string) => {
+  const handleCreatePollFromDraft = async (
+    name: string,
+    visibility: "private" | "public" = "private",
+  ) => {
     setIsCreatingPoll(true);
     try {
-      const createdPoll = await createPoll.mutateAsync({ title: name });
+      const createdPoll = await createPoll.mutateAsync({ title: name, visibility });
       const themedPoll = await applyInitialThemeToPersistedPoll(
         createdPoll,
         pendingTheme,
@@ -642,6 +645,7 @@ export default function PollEditPage() {
           onCreate={handleCreatePollFromDraft}
           isLoading={isCreatingPoll || createPoll.isPending}
           defaultName="My poll"
+          showVisibilitySelect
           title="Rename your poll"
         />
 

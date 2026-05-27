@@ -6,6 +6,8 @@ import type {
   RespondentDeviceType,
 } from '@/types/form'
 
+export type ResourceVisibility = 'private' | 'public'
+
 // Event list response
 export type EventListItem = Omit<FormEvent, 'responses' | 'sections'> & {
   sections?: FormEvent['sections']
@@ -39,6 +41,7 @@ export type CreateEventPayload = {
   name?: string
   color?: string
   theme?: string
+  visibility?: ResourceVisibility
 }
 
 export type UpdateEventPayload = {
@@ -47,6 +50,7 @@ export type UpdateEventPayload = {
   color?: string
   image?: string | null
   theme?: string
+  visibility?: ResourceVisibility
 }
 
 export type UpdateSectionWithPageTypePayload = {
@@ -82,7 +86,7 @@ export type SaveBuilderSectionPayload = UpdateSectionPayload & {
 
 export type SaveBuilderEventPayload = {
   deletedSectionIds?: string[]
-  event?: Pick<UpdateEventPayload, 'color' | 'image' | 'name' | 'theme'>
+  event?: Pick<UpdateEventPayload, 'color' | 'image' | 'name' | 'theme' | 'visibility'>
   sections?: SaveBuilderSectionPayload[]
 }
 

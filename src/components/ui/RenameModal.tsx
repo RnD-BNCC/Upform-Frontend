@@ -1,15 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { GlobeHemisphereWest, LockIcon } from '@phosphor-icons/react'
 import BaseModal from '@/components/ui/BaseModal'
 import Spinner from '@/components/ui/Spinner'
+import type { ResourceVisibility } from '@/types/api'
 
 type Props = {
   isOpen: boolean
   onClose?: () => void
-  onCreate: (name: string) => Promise<void>
+  onCreate: (name: string, visibility?: ResourceVisibility) => Promise<void>
   isLoading?: boolean
   required?: boolean
   defaultName?: string
+  defaultVisibility?: ResourceVisibility
+  showVisibilitySelect?: boolean
   title?: string
 }
 
@@ -20,28 +24,33 @@ export default function RenameModal({
   isLoading,
   required,
   defaultName = 'My form',
+  defaultVisibility = 'private',
+  showVisibilitySelect,
   title = 'Rename',
 }: Props) {
   const [name, setName] = useState(defaultName)
+  const [visibility, setVisibility] =
+    useState<ResourceVisibility>(defaultVisibility)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
     const timer = window.setTimeout(() => {
       setName(defaultName)
+      setVisibility(defaultVisibility)
       inputRef.current?.select()
     }, 100)
     return () => window.clearTimeout(timer)
-  }, [isOpen, defaultName])
+  }, [isOpen, defaultName, defaultVisibility])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || isLoading) return
-    await onCreate(name.trim())
+    await onCreate(name.trim(), showVisibilitySelect ? visibility : undefined)
   }
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} required={required} className="w-full max-w-sm mx-4">
+    <BaseModal isOpen={isOpen} onClose={onClose} required={required} className="w-full max-w-md mx-4">
       <div className="px-6 pt-6 pb-4">
         <h2 className="text-base font-bold text-gray-900 mb-4">{title}</h2>
         <form onSubmit={handleSubmit}>
@@ -54,6 +63,32 @@ export default function RenameModal({
             maxLength={80}
             autoComplete="off"
           />
+          {showVisibilitySelect ? (
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-semibold text-gray-500">Access</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(['private', 'public'] as const).map((option) => {
+                  const active = visibility === option
+                  const Icon = option === 'private' ? LockIcon : GlobeHemisphereWest
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setVisibility(option)}
+                      className={`flex h-10 items-center justify-center gap-2 rounded-sm border px-3 text-sm font-semibold capitalize transition-colors ${
+                        active
+                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          : 'border-gray-200 text-gray-500 hover:border-primary-200 hover:bg-primary-50'
+                      }`}
+                    >
+                      <Icon size={16} weight={active ? 'fill' : 'bold'} />
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
         </form>
       </div>
       <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100">
