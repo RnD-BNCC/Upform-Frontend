@@ -6,7 +6,9 @@ import {
   FloppyDisk,
   ChatCircleText,
   ClockCounterClockwise,
+  GlobeHemisphereWest,
   HouseIcon,
+  Lock,
   PencilSimple,
   Plus,
   Presentation,
@@ -15,10 +17,12 @@ import {
 } from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
 import { BrandLogo } from '@/components/layout'
+import type { ResourceVisibility } from '@/types/api'
 type SlidesSidebarProps = {
   activePanel: 'edit' | 'logs' | 'qna' | 'results'
   title: string
   pollCode: string
+  pollVisibility?: ResourceVisibility
   slides: PollSlide[]
   selectedIndex: number
   selectedSlideType?: SlideType
@@ -33,6 +37,7 @@ type SlidesSidebarProps = {
   saveReorderRef: RefObject<(() => void) | null>
   onCopyCode: () => void
   onPresent: () => void
+  onVisibilityChange?: (visibility: ResourceVisibility) => void
   onSave: () => void
   onShowEdit: () => void
   onShowLogs: () => void
@@ -158,6 +163,7 @@ export default function SlidesSidebar({
   activePanel,
   title,
   pollCode,
+  pollVisibility = 'private',
   slides,
   selectedIndex,
   selectedSlideType,
@@ -172,6 +178,7 @@ export default function SlidesSidebar({
   saveReorderRef,
   onCopyCode,
   onPresent,
+  onVisibilityChange,
   onSave,
   onShowEdit,
   onShowLogs,
@@ -310,6 +317,29 @@ export default function SlidesSidebar({
             <Copy size={13} weight="bold" />
           </button>
         </div>
+        {onVisibilityChange ? (
+          <div className="mt-2 grid grid-cols-2 gap-1 rounded-sm border border-gray-200 bg-white p-1">
+            {(['private', 'public'] as const).map((visibility) => {
+              const active = pollVisibility === visibility
+              const Icon = visibility === 'private' ? Lock : GlobeHemisphereWest
+              return (
+                <button
+                  key={visibility}
+                  type="button"
+                  onClick={() => onVisibilityChange(visibility)}
+                  className={`flex h-7 items-center justify-center gap-1 rounded-[3px] text-[11px] font-bold capitalize transition-colors ${
+                    active
+                      ? 'bg-primary-500 text-white shadow-sm'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon size={12} weight={active ? 'fill' : 'bold'} />
+                  {visibility}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
         <button
           onClick={onPresent}
           className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-emerald-500 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-600"

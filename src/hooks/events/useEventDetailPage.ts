@@ -49,6 +49,7 @@ import {
   createPageTypeDefaultFields,
 } from "@/components/builder/section/fieldRegistry";
 import type { FieldType, FormField, FormSection } from "@/types/form";
+import type { ResourceVisibility } from "@/types/api";
 import { getPermissionRequiredError } from "@/utils/permissionRequests";
 
 type Tab = "questions" | "share" | "game" | "responses" | "logs";
@@ -68,6 +69,7 @@ type SavedBuilderState = {
   sections: FormSection[];
   theme: string;
   title: string;
+  visibility: ResourceVisibility;
 };
 
 function serializeBuilderState(state: SavedBuilderState) {
@@ -231,6 +233,7 @@ export function useEventDetailPage() {
     sections: [],
     theme: "light",
     title: "Untitled Form",
+    visibility: "private",
   });
   const permissionRequestKeysRef = useRef(new Set<string>());
   const bgImgRef = useRef<HTMLInputElement>(null);
@@ -240,6 +243,8 @@ export function useEventDetailPage() {
   const [bannerColor, setBannerColor] = useState("#0054a5");
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState<string>("light");
+  const [resourceVisibility, setResourceVisibility] =
+    useState<ResourceVisibility>("private");
   const [activePageIdx, setActivePageIdx] = useState(0);
   const [leftPanelMode, setLeftPanelMode] =
     useState<LeftPanelMode>("fields");
@@ -312,8 +317,9 @@ export function useEventDetailPage() {
       image: bannerImage,
       theme: activeTheme,
       sections,
+      visibility: resourceVisibility,
     };
-  }, [activeTheme, bannerColor, bannerImage, formTitle, sections]);
+  }, [activeTheme, bannerColor, bannerImage, formTitle, resourceVisibility, sections]);
 
   const setSections = useCallback(
     (
@@ -569,6 +575,7 @@ export function useEventDetailPage() {
       setBannerColor(color);
       setBannerImage(null);
       setActiveTheme(theme);
+      setResourceVisibility("private");
       setEventStatus("draft");
       setHistory({ stack: [initialSections], index: 0 });
       syncCoverStateFromSections(initialSections);
@@ -578,6 +585,7 @@ export function useEventDetailPage() {
         image: null,
         theme,
         sections: initialSections,
+        visibility: "private",
       });
       setInitialized(true);
       setWelcomeThemePicker(true);
@@ -599,6 +607,7 @@ export function useEventDetailPage() {
       setBannerImage(nav.bannerImage ?? null);
       syncCoverStateFromSections(normalizedSections);
       if (nav.theme) setActiveTheme(nav.theme);
+      setResourceVisibility(existing?.visibility ?? "private");
       setHistory({ stack: [normalizedSections], index: 0 });
       if (existing) {
         setEventStatus(existing.status);
@@ -611,6 +620,7 @@ export function useEventDetailPage() {
         image: nav.bannerImage ?? null,
         theme: nav.theme ?? "light",
         sections: normalizedSections,
+        visibility: existing?.visibility ?? "private",
       });
       setInitialized(true);
       window.history.replaceState({}, "");
@@ -631,10 +641,12 @@ export function useEventDetailPage() {
 
       const image = existing.image ?? null;
       const theme = existing.theme || "light";
+      const visibility = existing.visibility ?? "private";
       setFormTitle(title);
       setBannerColor(color);
       setBannerImage(image);
       setActiveTheme(theme);
+      setResourceVisibility(visibility);
       setHistory({ stack: [nextSections], index: 0 });
       setEventStatus(existing.status);
       syncCoverStateFromSections(nextSections);
@@ -647,6 +659,7 @@ export function useEventDetailPage() {
         image,
         theme,
         sections: nextSections,
+        visibility,
       });
       setInitialized(true);
     } else {
@@ -683,9 +696,10 @@ export function useEventDetailPage() {
         image: bannerImage,
         theme: activeTheme,
         sections,
+        visibility: resourceVisibility,
       }) !== savedStateRef.current
     );
-  }, [activeTheme, bannerColor, bannerImage, formTitle, sections]);
+  }, [activeTheme, bannerColor, bannerImage, formTitle, resourceVisibility, sections]);
 
   const uploadImageWithToast = useCallback(
     async (
@@ -837,6 +851,8 @@ export function useEventDetailPage() {
           savedState.color !== latestState.color ||
           savedState.image !== resolvedBannerImage ||
           savedState.theme !== resolvedThemeValue;
+        const visibilityChanged =
+          !savedState || savedState.visibility !== latestState.visibility;
 
         const resolvedSections = await Promise.all(
           sectionsToPersist.map(async (section) => {
@@ -898,15 +914,27 @@ export function useEventDetailPage() {
         );
         const deletedSectionIds = [...new Set(deletedSectionIdsRef.current)];
 
-        if (eventChanged || changedSectionPayloads.length > 0 || deletedSectionIds.length > 0) {
+        if (
+          eventChanged ||
+          visibilityChanged ||
+          changedSectionPayloads.length > 0 ||
+          deletedSectionIds.length > 0
+        ) {
           await saveBuilderEvent.mutateAsync({
-            ...(eventChanged
+            ...(eventChanged || visibilityChanged
               ? {
                   event: {
-                    name: latestState.title,
-                    color: latestState.color,
-                    image: resolvedBannerImage,
-                    theme: resolvedThemeValue,
+                    ...(eventChanged
+                      ? {
+                          name: latestState.title,
+                          color: latestState.color,
+                          image: resolvedBannerImage,
+                          theme: resolvedThemeValue,
+                        }
+                      : {}),
+                    ...(visibilityChanged
+                      ? { visibility: latestState.visibility }
+                      : {}),
                   },
                 }
               : {}),
@@ -927,6 +955,7 @@ export function useEventDetailPage() {
           image: resolvedBannerImage,
           theme: resolvedThemeValue,
           sections: resolvedSections,
+          visibility: latestState.visibility,
         };
         savedStateRef.current = serializeBuilderState(resolvedSavedState);
 
@@ -1735,6 +1764,7 @@ export function useEventDetailPage() {
     publicFormUrl,
     questionsEndRef,
     requestEditPermission,
+    resourceVisibility,
     responses,
     sections,
     selectedField,
@@ -1759,6 +1789,7 @@ export function useEventDetailPage() {
     setLeftPanelMode,
     setLogicInitialTab,
     setPendingTheme,
+    setResourceVisibility,
     setSections,
     setSelectedId,
     setShowBgImageModal,

@@ -15,9 +15,11 @@ import { ConfirmModal, LoadingModal, StatusModal } from "@/components/modal";
 import type { StatusType } from "@/components/modal";
 import { PermissionRequiredPanel } from "@/components/permissions";
 import { ActionToast, RenameModal, Spinner } from "@/components/ui";
+import { useAuth } from "@/hooks";
 import { useCreatePoll, useGetPollDetail } from "@/hooks/polls";
 import { useResourcePermission } from "@/hooks/permissions";
 import type { Poll, PollSlide } from "@/types/polling";
+import type { ResourceVisibility } from "@/types/api";
 import type { ThemePreset } from "@/config/polling";
 import {
   PollEditorLargeScreenNotice,
@@ -45,6 +47,7 @@ export default function PollEditPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { data: session } = useAuth();
   const routeState = location.state as PollEditorRouteState | null;
   const isLocalNewPoll = pollId === "new";
   const persistedPollId = isLocalNewPoll ? "" : (pollId ?? "");
@@ -76,6 +79,9 @@ export default function PollEditPage() {
     hasEditAccess,
   );
   const poll = localPoll ?? fetchedPoll ?? routePoll;
+  const canManageAccess =
+    ((session?.user as { role?: string } | undefined)?.role ?? "admin") !==
+    "activist";
   const createPoll = useCreatePoll();
   const updatePoll = useMutationUpdatePoll();
   const createSlide = useMutationCreateSlide(persistedPollId);
@@ -453,6 +459,24 @@ export default function PollEditPage() {
   const handlePresent = () => {
     if (persistedPollId) navigate(`/polls/${persistedPollId}/present`);
   };
+  const handleVisibilityChange = async (visibility: ResourceVisibility) => {
+    if (!persistedPollId || poll.visibility === visibility) return;
+    setSaveStatus("saving");
+    try {
+      const updatedPoll = await updatePoll.mutateAsync({
+        pollId: persistedPollId,
+        visibility,
+      });
+      setLocalPoll((current) =>
+        current ? { ...current, visibility: updatedPoll.visibility } : current,
+      );
+      setSaveStatus("saved");
+      showToast("Access updated");
+    } catch (error) {
+      void requestPermissionFromError(error, "Need to edit poll");
+      setSaveStatus("error");
+    }
+  };
   const handleSelectSlide = (index: number) => {
     setSelectedIndex(index);
     setActivePanel("edit");
@@ -557,6 +581,7 @@ export default function PollEditPage() {
           activePanel={activePanel}
           title={title}
           pollCode={poll.code}
+          pollVisibility={poll.visibility ?? "private"}
           slides={slides}
           selectedIndex={selectedIndex}
           selectedSlideType={selectedSlideType}
@@ -571,6 +596,9 @@ export default function PollEditPage() {
           saveReorderRef={saveReorderRef}
           onCopyCode={copyCode}
           onPresent={handlePresent}
+          onVisibilityChange={
+            canManageAccess ? (visibility) => void handleVisibilityChange(visibility) : undefined
+          }
           onSave={handleSave}
           onShowEdit={() => setActivePanel("edit")}
           onShowLogs={() => setActivePanel("logs")}
@@ -645,7 +673,7 @@ export default function PollEditPage() {
           onCreate={handleCreatePollFromDraft}
           isLoading={isCreatingPoll || createPoll.isPending}
           defaultName="My poll"
-          showVisibilitySelect
+          showVisibilitySelect={canManageAccess}
           title="Rename your poll"
         />
 

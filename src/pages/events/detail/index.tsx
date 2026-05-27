@@ -37,6 +37,7 @@ import {
 import { RenameModal, Spinner } from "@/components/ui";
 import ResponsesPanel from "@/components/responses/ResponsesPanel";
 import ShareToast from "@/components/toast/ShareToast";
+import { useAuth } from "@/hooks";
 import { useEventDetailPage } from "@/hooks/events";
 import type { SubmitSettingsEditorState } from "@/types/builderShare";
 import {
@@ -187,6 +188,7 @@ export default function EventDetailPage() {
     publicFormUrl,
     questionsEndRef,
     requestEditPermission,
+    resourceVisibility,
     responses,
     sections,
     selectedField,
@@ -208,6 +210,7 @@ export default function EventDetailPage() {
     setLeftPanelMode,
     setLogicInitialTab,
     setPendingTheme,
+    setResourceVisibility,
     setSections,
     setSelectedId,
     setShowBgImageModal,
@@ -232,6 +235,10 @@ export default function EventDetailPage() {
     welcomeThemePicker,
   } = useEventDetailPage();
   const [isCoverBgPickerOpen, setIsCoverBgPickerOpen] = useState(false);
+  const { data: session } = useAuth();
+  const canManageAccess =
+    ((session?.user as { role?: string } | undefined)?.role ?? "admin") !==
+    "activist";
   const [isThemeImagePositionOpen, setIsThemeImagePositionOpen] =
     useState(false);
   const [submitSettingsState, setSubmitSettingsState] =
@@ -437,6 +444,9 @@ export default function EventDetailPage() {
         isSaving={isAnySaving}
         isDirty={hasUnsavedChanges}
         eventStatus={eventStatus}
+        resourceVisibility={resourceVisibility}
+        showAccessControl={canManageAccess && id !== "new"}
+        onResourceVisibilityChange={setResourceVisibility}
         onPublish={() => setConfirmAction("publish")}
         isPublishing={isPublishing}
         onUnpublish={() => setConfirmAction("unpublish")}
@@ -882,7 +892,7 @@ export default function EventDetailPage() {
         required
         onClose={() => {}}
         isLoading={isUpdatingMeta || createEvent.isPending}
-        showVisibilitySelect={id === "new"}
+        showVisibilitySelect={id === "new" && canManageAccess}
         onCreate={async (name, visibility) => {
           if (!id) return;
           setIsUpdatingMeta(true);
