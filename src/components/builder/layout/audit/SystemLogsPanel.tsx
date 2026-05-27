@@ -19,6 +19,7 @@ import {
   StatusModal,
   type StatusType,
 } from "@/components/modal";
+import { FieldPreviewCard } from "@/components/builder/preview/shared/FieldPreviewCard";
 import { RefreshButton, Spinner } from "@/components/ui";
 import { getFieldPlugin } from "@/components/builder/section/fieldRegistry";
 import { stripHtmlToText } from "@/utils/form/referenceTokens";
@@ -100,6 +101,9 @@ type FieldRecord = {
 };
 
 type LogChange = {
+  afterField?: FormField;
+  beforeField?: FormField;
+  changedKeys?: Array<keyof FormField>;
   detail: string;
   field?: FormField;
   id: string;
@@ -162,7 +166,7 @@ function getSnapshot(value: unknown): SnapshotEvent | null {
 
 function getFieldLabel(field?: FormField) {
   if (!field) return "Untitled question";
-  return stripHtmlToText(field.label || "") || "Untitled question";
+  return stripHtmlToText(field.label || "") || getFieldTypeLabel(field);
 }
 
 function getFieldTypeLabel(field: FormField) {
@@ -215,6 +219,21 @@ function formatChangedKeys(keys: Array<keyof FormField>) {
     .join(", ");
 }
 
+function formatFieldValueForPreview(field: FormField | undefined, key: keyof FormField) {
+  if (!field) return "empty";
+  const value = field[key];
+  if (value === undefined || value === null || value === "") return "empty";
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (Array.isArray(value)) {
+    return value.map((item) => stripHtmlToText(String(item))).join(", ") || "empty";
+  }
+  if (typeof value === "object") {
+    const count = Object.keys(value).length;
+    return count === 0 ? "empty" : `${count} configured item${count === 1 ? "" : "s"}`;
+  }
+  return stripHtmlToText(String(value)) || "empty";
+}
+
 function buildLogChanges(log: FormAuditLog): LogChange[] {
   const before = getSnapshot(log.beforeSnapshot);
   const after = getSnapshot(log.afterSnapshot);
@@ -263,6 +282,7 @@ function buildLogChanges(log: FormAuditLog): LogChange[] {
     const beforeRecord = beforeFields.get(fieldId);
     if (!beforeRecord) {
       changes.push({
+        afterField: afterRecord.field,
         detail: `${getFieldTypeLabel(afterRecord.field)} on ${afterRecord.sectionTitle}`,
         field: afterRecord.field,
         id: `${log.id}-added-${fieldId}`,
@@ -279,6 +299,9 @@ function buildLogChanges(log: FormAuditLog): LogChange[] {
 
     if (changedKeys.length > 0) {
       changes.push({
+        afterField: afterRecord.field,
+        beforeField: beforeRecord.field,
+        changedKeys,
         detail: `Changed ${formatChangedKeys(changedKeys)}.`,
         field: afterRecord.field,
         id: `${log.id}-updated-${fieldId}`,
@@ -289,6 +312,8 @@ function buildLogChanges(log: FormAuditLog): LogChange[] {
 
     if (moved) {
       changes.push({
+        afterField: afterRecord.field,
+        beforeField: beforeRecord.field,
         detail:
           beforeRecord.sectionTitle === afterRecord.sectionTitle
             ? `Moved within ${afterRecord.sectionTitle}.`
@@ -304,6 +329,7 @@ function buildLogChanges(log: FormAuditLog): LogChange[] {
   for (const [fieldId, beforeRecord] of beforeFields) {
     if (afterFields.has(fieldId)) continue;
     changes.push({
+      beforeField: beforeRecord.field,
       detail: `${getFieldTypeLabel(beforeRecord.field)} from ${beforeRecord.sectionTitle}`,
       field: beforeRecord.field,
       id: `${log.id}-deleted-${fieldId}`,
@@ -395,8 +421,6 @@ function LogCard({
   rollbackPending: boolean;
 }) {
   const changes = useMemo(() => buildLogChanges(log), [log]);
-  const visibleChanges = changes.slice(0, 6);
-  const hiddenCount = Math.max(changes.length - visibleChanges.length, 0);
   const canRollback =
     log.targetType === "event" &&
     log.action !== "form.rollback" &&
@@ -446,8 +470,8 @@ function LogCard({
       </div>
 
       <div className="divide-y divide-gray-100">
-        {visibleChanges.map((change) => (
-          <div key={change.id} className="flex gap-3 px-4 py-3">
+        {changes.map((change) => (
+          <div key={change.id} className="group flex gap-3 px-4 py-3">
             <FieldTypeIcon field={change.field} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -465,15 +489,45 @@ function LogCard({
               <p className="mt-1 text-xs leading-relaxed text-gray-500">
                 {change.detail}
               </p>
+              {change.beforeField || change.afterField ? (
+                <div className="mt-3 hidden rounded-lg border border-gray-200 bg-gray-50 p-3 group-hover:block">
+                  <div
+                    className={`grid gap-3 ${
+                      change.beforeField && change.afterField ? "lg:grid-cols-2" : ""
+                    }`}
+                  >
+                    {change.beforeField ? (
+                      <FieldPreviewCard field={change.beforeField} label="Before" />
+                    ) : null}
+                    {change.afterField ? (
+                      <FieldPreviewCard field={change.afterField} label="After" />
+                    ) : null}
+                  </div>
+                  {change.changedKeys?.length ? (
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {change.changedKeys.slice(0, 4).map((key) => (
+                        <div
+                          key={String(key)}
+                          className="rounded-md border border-gray-200 bg-white px-3 py-2"
+                        >
+                          <p className="text-[10px] font-black uppercase tracking-wide text-gray-400">
+                            {String(key).replace(/([A-Z])/g, " $1")}
+                          </p>
+                          <p className="mt-1 truncate text-xs font-semibold text-gray-500">
+                            {formatFieldValueForPreview(change.beforeField, key)}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs font-bold text-gray-900">
+                            {formatFieldValueForPreview(change.afterField, key)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         ))}
-
-        {hiddenCount > 0 ? (
-          <div className="px-4 py-3 text-xs font-semibold text-gray-400">
-            +{hiddenCount} more change{hiddenCount === 1 ? "" : "s"}
-          </div>
-        ) : null}
       </div>
     </article>
   );
