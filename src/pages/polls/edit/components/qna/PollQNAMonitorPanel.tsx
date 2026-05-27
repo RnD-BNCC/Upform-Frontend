@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import {
   ArrowClockwise,
@@ -6,6 +7,7 @@ import {
   CaretDown,
   Check,
   Eye,
+  LockIcon,
   ThumbsUp,
 } from "@phosphor-icons/react";
 import { useQAQuestions } from "@/api/questions";
@@ -21,6 +23,8 @@ import type {
   QNAMonitorSort,
   QAResult,
 } from "@/types/polling";
+
+type QAItem = QAResult[number];
 
 function toQuestionKey(text: string, participantName?: string) {
   return `${text.trim().toLowerCase()}::${participantName?.trim().toLowerCase() ?? ""}`;
@@ -155,6 +159,7 @@ export default function PollQNAMonitorPanel({
   pollId,
   selectedSlideId,
 }: PollQNAMonitorPanelProps) {
+  const queryClient = useQueryClient();
   const { socketRef, connected } = useSocket(pollId);
   const liveSlide = useLiveSlide(socketRef, connected);
   const [highlightedVoteId, setHighlightedVoteId] = useState<string | null>(null);
@@ -188,6 +193,12 @@ export default function PollQNAMonitorPanel({
     return Array.from(questions.values());
   }, [initialQuestions, realtimeQuestions]);
 
+  const { results: liveResults, setResults: setLiveResults } = useLiveResults(
+    socketRef,
+    qaSlide?.id,
+    connected,
+  );
+
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -218,23 +229,46 @@ export default function PollQNAMonitorPanel({
     const handleReset = () => {
       setRealtimeQuestions([]);
       setHighlightedVoteId(null);
+      setOptimisticAnswered(new Set());
+      setOptimisticRestored(new Set());
+      queryClient.setQueryData(["qa-questions", pollId], []);
+      if (qaSlide?.id) {
+        queryClient.setQueryData(["slide-results", pollId, qaSlide.id], []);
+        setLiveResults([]);
+      }
+    };
+    const handleAnswerUpdated = (data: {
+      isAnswered: boolean;
+      slideId: string;
+      voteId: string;
+    }) => {
+      if (qaSlide?.id && data.slideId !== qaSlide.id) return;
+      setOptimisticAnswered((prev) => {
+        const next = new Set(prev);
+        next.delete(data.voteId);
+        if (data.isAnswered) next.add(data.voteId);
+        return next;
+      });
+      setOptimisticRestored((prev) => {
+        const next = new Set(prev);
+        next.delete(data.voteId);
+        if (!data.isAnswered) next.add(data.voteId);
+        return next;
+      });
     };
 
     socket.on("question:new", handleQuestionNew);
     socket.on("question:like_updated", handleLikeUpdated);
+    socket.on("qa-answer-updated", handleAnswerUpdated);
     socket.on("reset-scores", handleReset);
     return () => {
       socket.off("question:new", handleQuestionNew);
       socket.off("question:like_updated", handleLikeUpdated);
+      socket.off("qa-answer-updated", handleAnswerUpdated);
       socket.off("reset-scores", handleReset);
     };
-  }, [socketRef, connected]);
+  }, [socketRef, connected, pollId, qaSlide?.id, queryClient, setLiveResults]);
 
-  const { results: liveResults } = useLiveResults(
-    socketRef,
-    qaSlide?.id,
-    connected,
-  );
   const {
     data: fetchedResults,
     isFetching: isResultsFetching,
@@ -280,9 +314,15 @@ export default function PollQNAMonitorPanel({
     return stillExists ? highlightedVoteId : null;
   }, [highlightedVoteId, qaResults]);
 
-  const handleHighlight = (voteId: string | null) => {
+  const handleHighlight = (question: QAItem | null) => {
+    const voteId = question?.voteId ?? null;
     setHighlightedVoteId(voteId);
-    socketRef.current?.emit("qa-highlight", { pollId, voteId });
+    socketRef.current?.emit("qa-highlight", {
+      pollId,
+      question,
+      slideId: qaSlide?.id,
+      voteId,
+    });
   };
 
   const handleToggleAnswered = async (voteId: string) => {
@@ -414,7 +454,7 @@ export default function PollQNAMonitorPanel({
                         >
                           <button
                             type="button"
-                            onClick={() => handleHighlight(question.voteId ?? null)}
+                            onClick={() => handleHighlight(question)}
                             className="min-w-0 text-left"
                           >
                             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -450,7 +490,7 @@ export default function PollQNAMonitorPanel({
                             <button
                               type="button"
                               onClick={() =>
-                                handleHighlight(question.voteId ?? null)
+                                handleHighlight(question)
                               }
                               className={`inline-flex h-9 items-center gap-1 rounded-md px-3 text-xs font-bold ${
                                 isHighlighted
@@ -458,8 +498,12 @@ export default function PollQNAMonitorPanel({
                                   : "border border-primary-100 text-primary-600 hover:bg-primary-50"
                               }`}
                             >
-                              <Eye size={13} weight="bold" />
-                              Push
+                              {isHighlighted ? (
+                                <LockIcon size={13} weight="fill" />
+                              ) : (
+                                <Eye size={13} weight="bold" />
+                              )}
+                              {isHighlighted ? "Locked" : "Push"}
                             </button>
                             {question.voteId ? (
                               <button
@@ -488,7 +532,7 @@ export default function PollQNAMonitorPanel({
               <aside className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <p className="text-sm font-bold text-gray-900">Presenter cue</p>
                 <p className="mt-1 text-xs text-gray-400">
-                  This is the question currently pushed to presenter.
+                  Pushed questions stay locked until cleared or replaced.
                 </p>
 
                 <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-4">

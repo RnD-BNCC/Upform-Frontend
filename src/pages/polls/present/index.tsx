@@ -79,21 +79,6 @@ export default function PollPresentPage() {
     onQuestionsChange: setQaQuestions,
   });
 
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
-
-    const handleQAHighlight = ({ voteId }: { voteId: string | null }) => {
-      setQaHighlightedVoteId(voteId);
-      if (voteId) setShowQASidebar(true);
-    };
-
-    socket.on("qa-highlight", handleQAHighlight);
-    return () => {
-      socket.off("qa-highlight", handleQAHighlight);
-    };
-  }, [socketRef, connected]);
-
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!presentPermission.isAllowed) return;
@@ -120,6 +105,9 @@ export default function PollPresentPage() {
   const [qaHighlightedVoteId, setQaHighlightedVoteId] = useState<string | null>(
     null,
   );
+  const [qaPushedQuestion, setQaPushedQuestion] = useState<
+    QAResult[number] | null
+  >(null);
   const [optimisticAnswered, setOptimisticAnswered] = useState<Set<string>>(
     new Set(),
   );
@@ -153,6 +141,39 @@ export default function PollPresentPage() {
   const slideSettings = (activeSlide?.settings as SlideSettings) ?? {};
   const isQASlide = activeSlide?.type === "qa";
 
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    const handleQAHighlight = ({
+      question,
+      slideId,
+      voteId,
+    }: {
+      question?: QAResult[number] | null;
+      slideId?: string;
+      voteId: string | null;
+    }) => {
+      setQaHighlightedVoteId(voteId);
+      setQaPushedQuestion(question ?? null);
+
+      if (slideId) {
+        const slideIndex = slides.findIndex((slide) => slide.id === slideId);
+        if (slideIndex >= 0) {
+          setCurrentSlide(slideIndex);
+          setStatusOverride("active");
+        }
+      }
+
+      if (voteId) setShowQASidebar(true);
+    };
+
+    socket.on("qa-highlight", handleQAHighlight);
+    return () => {
+      socket.off("qa-highlight", handleQAHighlight);
+    };
+  }, [socketRef, connected, slides]);
+
   const { results: liveResults, setResults: setLiveResults } = useLiveResults(
     socketRef,
     activeSlide?.id,
@@ -167,26 +188,74 @@ export default function PollPresentPage() {
   const qaResultsRaw =
     isQASlide && displayResults ? (displayResults as QAResult) : null;
   const qaResults = useMemo(() => {
+    const withPushedQuestion = (items: QAResult): QAResult => {
+      if (!qaPushedQuestion?.voteId) return items;
+      const exists = items.some((item) => item.voteId === qaPushedQuestion.voteId);
+      if (!exists) return [qaPushedQuestion, ...items];
+      return items.map((item) =>
+        item.voteId === qaPushedQuestion.voteId
+          ? { ...qaPushedQuestion, ...item }
+          : item,
+      );
+    };
+
     if (!isQASlide) return null;
     if (qaResultsRaw && qaResultsRaw.length > 0) {
       const likeMap = new Map(qaQuestions.map((q) => [q.text, q.likeCount]));
-      return qaResultsRaw.map((r) => ({
+      return withPushedQuestion(qaResultsRaw.map((r) => ({
         ...r,
         likeCount: likeMap.get(r.text) ?? 0,
-      }));
+      })));
     }
     if (qaQuestions.length > 0) {
-      return qaQuestions.map((q) => ({
+      return withPushedQuestion(qaQuestions.map((q) => ({
         text: q.text,
         participantName: q.authorName,
         createdAt: q.createdAt,
         likeCount: q.likeCount,
         isAnswered: false,
         voteId: q.pollVoteId ?? q.id,
-      })) as QAResult;
+      })) as QAResult);
     }
-    return null;
-  }, [isQASlide, qaResultsRaw, qaQuestions]);
+    return qaPushedQuestion ? [qaPushedQuestion] : null;
+  }, [isQASlide, qaPushedQuestion, qaResultsRaw, qaQuestions]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    const handleAnswerUpdated = (data: {
+      isAnswered: boolean;
+      results: SlideResults;
+      slideId: string;
+      voteId: string;
+    }) => {
+      if (activeSlide?.id && data.slideId === activeSlide.id) {
+        setLiveResults(data.results);
+      }
+
+      setQaPushedQuestion((current) =>
+        current?.voteId === data.voteId
+          ? { ...current, isAnswered: data.isAnswered }
+          : current,
+      );
+      setOptimisticAnswered((prev) => {
+        const next = new Set(prev);
+        next.delete(data.voteId);
+        return next;
+      });
+      setOptimisticRestored((prev) => {
+        const next = new Set(prev);
+        next.delete(data.voteId);
+        return next;
+      });
+    };
+
+    socket.on("qa-answer-updated", handleAnswerUpdated);
+    return () => {
+      socket.off("qa-answer-updated", handleAnswerUpdated);
+    };
+  }, [activeSlide?.id, socketRef, connected, setLiveResults]);
 
   const mergedQaResults = useMemo(() => {
     if (
@@ -254,19 +323,12 @@ export default function PollPresentPage() {
   };
 
   useEffect(() => {
-    if (!isQASlide) setShowQASidebar(false);
-    setQaHighlightedVoteId(null);
-  }, [activeSlide?.id, isQASlide]);
-
-  useEffect(() => {
-    if (!qaHighlightedVoteId) return;
-    const stillUnAnswered = unansweredQA.find(
-      (q) => q.voteId === qaHighlightedVoteId,
-    );
-    if (!stillUnAnswered && unansweredQA.length > 0) {
-      setQaHighlightedVoteId(unansweredQA[0].voteId ?? null);
+    if (!isQASlide) {
+      setShowQASidebar(false);
+      setQaHighlightedVoteId(null);
+      setQaPushedQuestion(null);
     }
-  }, [unansweredQA]);
+  }, [activeSlide?.id, isQASlide]);
 
   const handleMarkQAAnswered = useCallback(
     async (voteId: string) => {
@@ -492,6 +554,9 @@ export default function PollPresentPage() {
     setRevealPhase(false);
     setStatusOverride("waiting");
     setQaQuestions([]);
+    setQaHighlightedVoteId(null);
+    setQaPushedQuestion(null);
+    queryClient.setQueryData(["qa-questions", pollId], []);
     setOptimisticAnswered(new Set());
     setOptimisticRestored(new Set());
   }, [pollId, restarting, updatePoll, socketRef, setLiveResults, queryClient]);
