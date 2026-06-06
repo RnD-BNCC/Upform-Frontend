@@ -8,6 +8,7 @@ import { useQAQuestions } from "@/api/questions";
 import { Leaderboard, QAModal } from "@/components/polling";
 import { TimerRing } from "@/components/icons";
 import { useQASocket, useSocket, useLiveSlide } from "@/hooks";
+import { joinParticipant } from "@/lib";
 import {
   getParticipantId,
   getParticipantName,
@@ -144,7 +145,7 @@ export default function LiveVotePage() {
 
   useEffect(() => {
     if (poll && participantNameState && nameConfirmed && socketRef.current) {
-      socketRef.current.emit("join-participant", {
+      joinParticipant(socketRef.current, {
         pollId: poll.id,
         participantId: getParticipantId(),
         name: participantNameState,
@@ -160,7 +161,7 @@ export default function LiveVotePage() {
       setNameConfirmed(true);
 
       if (poll && socketRef.current) {
-        socketRef.current.emit("join-participant", {
+        joinParticipant(socketRef.current, {
           pollId: poll.id,
           participantId: getParticipantId(),
           name,

@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react'
 import type { RefObject } from 'react'
 import type { Socket } from 'socket.io-client'
+import { submitQuestion as emitQuestionSubmit, toggleQuestionLike } from '@/lib'
 import type { QAQuestion } from '@/types/polling'
 
 interface UseQASocketOptions {
@@ -59,14 +60,14 @@ export function useQASocket({
       socket.off('question:like_updated', handleLikeUpdated)
       socket.off('reset-scores', handleResetScores)
     }
-  }, [socketRef.current, pollId])
+  }, [socketRef, pollId, onQuestionsChange])
 
   const submitQuestion = useCallback(
     (text: string, authorName: string, authorId: string) => {
       if (!socketRef.current || !pollId) return
-      socketRef.current.emit('question:submit', { pollId, text, authorName, authorId })
+      emitQuestionSubmit(socketRef.current, { pollId, text, authorName, authorId })
     },
-    [pollId],
+    [pollId, socketRef],
   )
 
   const toggleLike = useCallback(
@@ -80,14 +81,14 @@ export function useQASocket({
 
       pendingLikeTimeouts.current.set(questionId, timeoutId)
 
-      socketRef.current.emit('question:like', {
+      toggleQuestionLike(socketRef.current, {
         pollId,
         questionId,
         userId: myUserId,
         like: !currentlyLiked,
       })
     },
-    [pollId, myUserId],
+    [pollId, myUserId, socketRef],
   )
 
   return { submitQuestion, toggleLike }

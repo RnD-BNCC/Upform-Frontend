@@ -15,6 +15,7 @@ import { useQuerySlideResults } from "@/api/polls";
 import PageMenuDropdown from "@/components/builder/layout/form/PageMenuDropdown";
 import { publicApiClient } from "@/config/api-client";
 import { Api } from "@/constants/api";
+import { highlightQAQuestion } from "@/lib";
 import { useLiveResults, useLiveSlide, useSocket } from "@/hooks/polls";
 import type {
   Poll,
@@ -317,7 +318,7 @@ export default function PollQNAMonitorPanel({
   const handleHighlight = (question: QAItem | null) => {
     const voteId = question?.voteId ?? null;
     setHighlightedVoteId(voteId);
-    socketRef.current?.emit("qa-highlight", {
+    highlightQAQuestion(socketRef.current, {
       pollId,
       question,
       slideId: qaSlide?.id,

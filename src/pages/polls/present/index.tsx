@@ -13,6 +13,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useQAQuestions } from "@/api/questions";
 import { useQASocket } from "@/hooks";
 import { apiClient } from "@/config/api-client";
+import {
+  broadcastCountdown,
+  broadcastPollState,
+  broadcastRevealAnswer,
+  hidePollLeaderboard,
+  resetPollScores,
+  showPollLeaderboard,
+  startPollTimer,
+  stopPollTimer,
+} from "@/lib";
 import { Api } from "@/constants/api";
 import { Leaderboard } from "@/components/polling";
 import { PermissionRequiredPanel } from "@/components/permissions";
@@ -399,26 +409,26 @@ export default function PollPresentPage() {
       }
       setTimerActive(false);
       setTimerRemaining(null);
-      socketRef.current?.emit("timer-stop", { pollId });
+      stopPollTimer(socketRef.current, pollId);
       setCurrentSlide(index);
       setShowSlideGrid(false);
 
       if (isLeaderboard) {
         updatePoll.mutate({ pollId, currentSlide: index });
-        socketRef.current?.emit("broadcast-poll-state", {
+        broadcastPollState(socketRef.current, {
           pollId,
           currentSlide: index,
         });
-        socketRef.current?.emit("broadcast-leaderboard", { pollId });
+        showPollLeaderboard(socketRef.current, pollId);
       } else {
         setStatusOverride("waiting");
         updatePoll.mutate({ pollId, currentSlide: index, status: "waiting" });
-        socketRef.current?.emit("broadcast-poll-state", {
+        broadcastPollState(socketRef.current, {
           pollId,
           currentSlide: index,
           status: "waiting",
         });
-        socketRef.current?.emit("hide-leaderboard", { pollId });
+        hidePollLeaderboard(socketRef.current, pollId);
       }
     },
     [pollId, slides.length, updatePoll, socketRef],
@@ -426,18 +436,14 @@ export default function PollPresentPage() {
 
   useEffect(() => {
     if (countdown === null) return;
-    if (pollId)
-      socketRef.current?.emit("broadcast-countdown", {
-        pollId,
-        count: countdown,
-      });
+    if (pollId) broadcastCountdown(socketRef.current, pollId, countdown);
     if (countdown === 0) {
       const timer = setTimeout(() => {
         setCountdown(null);
         setStatusOverride("active");
         if (pollId) {
           updatePoll.mutate({ pollId, status: "active" });
-          socketRef.current?.emit("broadcast-poll-state", {
+          broadcastPollState(socketRef.current, {
             pollId,
             status: "active",
           });
@@ -446,12 +452,7 @@ export default function PollPresentPage() {
           (slides[currentSlide]?.settings as SlideSettings) ?? {};
         if (settings.timer && settings.timer > 0) {
           const startedAt = Date.now();
-          if (pollId)
-            socketRef.current?.emit("timer-start", {
-              pollId,
-              duration: settings.timer,
-              startedAt,
-            });
+          if (pollId) startPollTimer(socketRef.current, pollId, settings.timer, startedAt);
           setTimerRemaining(settings.timer);
           setTimerActive(true);
           timerIntervalRef.current = setInterval(() => {
@@ -479,19 +480,14 @@ export default function PollPresentPage() {
     }
     setTimerActive(false);
     setTimerRemaining(null);
-    if (pollId) socketRef.current?.emit("timer-stop", { pollId });
+    if (pollId) stopPollTimer(socketRef.current, pollId);
   }, [pollId, socketRef]);
 
   const startTimer = useCallback(
     (seconds: number) => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       const startedAt = Date.now();
-      if (pollId)
-        socketRef.current?.emit("timer-start", {
-          pollId,
-          duration: seconds,
-          startedAt,
-        });
+      if (pollId) startPollTimer(socketRef.current, pollId, seconds, startedAt);
       setTimerRemaining(seconds);
       setTimerActive(true);
       timerIntervalRef.current = setInterval(() => {
@@ -518,7 +514,7 @@ export default function PollPresentPage() {
       (activeSlide?.type === "pin_on_image" && slideSettings.correctArea)
     ) {
       setRevealPhase(true);
-      socketRef.current?.emit("broadcast-reveal-answer", { pollId });
+      if (pollId) broadcastRevealAnswer(socketRef.current, pollId);
     } else if (activeSlide?.type !== "scales" && activeSlide?.type !== "qa") {
       if (isLastQuestionSlide) goToSlide(slides.length);
       else goToSlide(currentSlide + 1);
@@ -541,12 +537,12 @@ export default function PollPresentPage() {
       { pollId, status: "waiting", currentSlide: 0 },
       { onSettled: () => setRestarting(false) },
     );
-    socketRef.current?.emit("broadcast-poll-state", {
+    broadcastPollState(socketRef.current, {
       pollId,
       status: "waiting",
       currentSlide: 0,
     });
-    socketRef.current?.emit("reset-scores", { pollId });
+    resetPollScores(socketRef.current, pollId);
     setLiveResults(null);
     queryClient.invalidateQueries({ queryKey: ["slide-results"] });
     setCurrentSlide(0);
@@ -563,7 +559,7 @@ export default function PollPresentPage() {
 
   const handleEnd = useCallback(() => {
     if (!pollId) return;
-    socketRef.current?.emit("broadcast-poll-state", {
+    broadcastPollState(socketRef.current, {
       pollId,
       status: "ended",
     });
@@ -608,7 +604,7 @@ export default function PollPresentPage() {
     ) {
       stopTimer();
       setRevealPhase(true);
-      socketRef.current?.emit("broadcast-reveal-answer", { pollId });
+      if (pollId) broadcastRevealAnswer(socketRef.current, pollId);
     } else if (isLastQuestionSlide) {
       goToSlide(slides.length);
     } else {
@@ -668,7 +664,7 @@ export default function PollPresentPage() {
           ) {
             stopTimer();
             setRevealPhase(true);
-            socketRef.current?.emit("broadcast-reveal-answer", { pollId });
+            if (pollId) broadcastRevealAnswer(socketRef.current, pollId);
             break;
           }
           if (!isWaitingRoom && isLastQuestionSlide) goToSlide(slides.length);
