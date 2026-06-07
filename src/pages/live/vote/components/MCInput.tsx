@@ -1,5 +1,5 @@
 import { useState } from "react";
-import SubmittingSpinner from "./SubmittingSpinner";
+import SubmittingSpinner from "@/pages/live/vote/components/SubmittingSpinner";
 
 type Props = {
   options: string[];

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import SubmittingSpinner from "./SubmittingSpinner";
+import SubmittingSpinner from "@/pages/live/vote/components/SubmittingSpinner";
 
 type Props = {
   onSubmit: (value: unknown) => void;

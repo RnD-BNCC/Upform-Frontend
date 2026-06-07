@@ -6,7 +6,7 @@ import PageMenuDropdown from "@/components/builder/layout/form/PageMenuDropdown"
 import {
   BLOCK_ICON_CLASS_BY_TYPE,
   BLOCK_OPTIONS,
-} from "../constants";
+} from "@/components/builder/layout/share/email-composer/constants";
 import type { EmailBlock } from "@/types/builderShare";
 
 const BLOCK_MENU_OPTIONS: PageMenuDropdownOption[] = BLOCK_OPTIONS.map(

@@ -3,9 +3,9 @@
   MonitorIcon,
   PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
-import EmailActivityPanel from "../email-activity/EmailActivityPanel";
-import BrowserIllustration from "../embed/BrowserIllustration";
-import SubmitFormPanel from "./SubmitFormPanel";
+import EmailActivityPanel from "@/components/builder/layout/share/email-activity/EmailActivityPanel";
+import BrowserIllustration from "@/components/builder/layout/share/embed/BrowserIllustration";
+import SubmitFormPanel from "@/components/builder/layout/share/components/SubmitFormPanel";
 import type { FormSection } from "@/types/form";
 import type {
   EmbedType,

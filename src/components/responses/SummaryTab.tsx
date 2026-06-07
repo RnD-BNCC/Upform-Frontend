@@ -1,6 +1,6 @@
 import type { FormField, FormResponse } from '@/types/form'
-import QuestionSummaryCard from './QuestionSummaryCard'
-import { getResultFields } from './resultsResponseUtils'
+import QuestionSummaryCard from '@/components/responses/QuestionSummaryCard'
+import { getResultFields } from '@/components/responses/resultsResponseUtils'
 
 interface SummaryTabProps {
   responses: FormResponse[]

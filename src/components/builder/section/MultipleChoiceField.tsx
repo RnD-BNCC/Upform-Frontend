@@ -1,14 +1,14 @@
 import { RadioButtonIcon } from "@phosphor-icons/react";
 import ReferenceTextEditor from "@/components/builder/layout/reference/ReferenceTextEditor";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import {
   FieldPluginOptionsEditor,
   FieldPluginSelectionValidationFields,
-} from "./FieldSettingSections";
+} from "@/components/builder/section/FieldSettingSections";
 import {
   FieldPluginToggleRow,
   normalizeFieldSettingValue,
-} from "./FieldSettingControls";
+} from "@/components/builder/section/FieldSettingControls";
 import { getOtherOptionText, getOtherOptionValue } from "@/utils/form/optionSelection";
 
 type Props = {

@@ -1,7 +1,7 @@
 import { MapPinIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
-import { FieldPluginLabel } from "./FieldSettingControls";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
+import { FieldPluginLabel } from "@/components/builder/section/FieldSettingControls";
 
 type Props = {
   cityPlaceholder?: string;

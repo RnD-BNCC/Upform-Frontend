@@ -35,8 +35,8 @@ import {
   type DateReferenceOption,
   type ReferencePickerTabId,
 } from "@/utils/form/referenceTokens";
-import { closeConditionSelectMenus } from "./ConditionSelect";
-import { useReferenceCalculations } from "./ReferenceCalculationContext";
+import { closeConditionSelectMenus } from "@/components/builder/layout/reference/ConditionSelect";
+import { useReferenceCalculations } from "@/components/builder/layout/reference/ReferenceCalculationContext";
 
 type Props = {
   allowDateUtilities?: boolean;

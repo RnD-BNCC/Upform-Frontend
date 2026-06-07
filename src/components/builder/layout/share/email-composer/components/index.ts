@@ -1,12 +1,12 @@
-﻿export { AddBlockDropdown, BlockInsertControl } from "./BlockControls";
+﻿export { AddBlockDropdown, BlockInsertControl } from "@/components/builder/layout/share/email-composer/components/BlockControls";
 export {
   ImageSettingsPanel,
   SpacerSettingsPanel,
   TextSettingsPanel,
-} from "./BlockSettingsPanels";
-export { EmailStepIndicator, LeaveWithoutSendingModal } from "./ComposerChrome";
-export { default as EmailBlocksPreview } from "./EmailBlocksPreview";
-export { default as FieldSourceOption } from "./FieldSourceOption";
-export { default as GeneralSettingsPanel } from "./GeneralSettingsPanel";
-export { default as ManualRecipientInput } from "./ManualRecipientInput";
-export { default as SortableBlock } from "./SortableBlock";
+} from "@/components/builder/layout/share/email-composer/components/BlockSettingsPanels";
+export { EmailStepIndicator, LeaveWithoutSendingModal } from "@/components/builder/layout/share/email-composer/components/ComposerChrome";
+export { default as EmailBlocksPreview } from "@/components/builder/layout/share/email-composer/components/EmailBlocksPreview";
+export { default as FieldSourceOption } from "@/components/builder/layout/share/email-composer/components/FieldSourceOption";
+export { default as GeneralSettingsPanel } from "@/components/builder/layout/share/email-composer/components/GeneralSettingsPanel";
+export { default as ManualRecipientInput } from "@/components/builder/layout/share/email-composer/components/ManualRecipientInput";
+export { default as SortableBlock } from "@/components/builder/layout/share/email-composer/components/SortableBlock";

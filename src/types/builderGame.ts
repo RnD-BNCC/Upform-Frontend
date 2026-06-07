@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { FormResponse, FormSection } from "./form";
+import type { FormResponse, FormSection } from "@/types/form";
 
 export type GamePanelProps = {
   eventId: string;

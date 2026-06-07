@@ -2,7 +2,7 @@ import {
   buildThemeFontFamily,
   type ThemeFontCategory,
   type ThemeFontOption,
-} from "./themeConfig";
+} from "@/utils/form/themeConfig";
 
 export type GoogleFontOption = ThemeFontOption;
 

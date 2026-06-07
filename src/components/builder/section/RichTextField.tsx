@@ -1,8 +1,8 @@
 import { TextAaIcon } from "@phosphor-icons/react";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
-import RichInput from "../utils/RichInput";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
+import RichInput from "@/components/builder/utils/RichInput";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
 import type { FormField } from "@/types/form";
 
 type Props = {

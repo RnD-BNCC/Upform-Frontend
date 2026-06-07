@@ -22,7 +22,7 @@ import {
 import { usePopoverClose } from "@/hooks/usePopoverClose";
 import type { FormField } from "@/types/form";
 import { FIELD_TYPE_META } from "@/components/builder/section/fieldTypeMeta";
-import { cleanResultLabel } from "../resultsResponseUtils";
+import { cleanResultLabel } from "@/components/responses/resultsResponseUtils";
 
 type HideFieldsPopoverProps = {
   fields: FormField[];

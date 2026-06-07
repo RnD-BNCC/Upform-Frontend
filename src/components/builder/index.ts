@@ -9,8 +9,9 @@ export {
   FieldPropertiesPanel,
   FormCover,
   BuilderGamePanel,
+  SystemLogsPanel,
   BuilderSharePanel,
-} from './layout'
+} from '@/components/builder/layout'
 export {
   CoverPagePreview,
   EndingPagePreview,
@@ -18,12 +19,12 @@ export {
   RuntimeCoverPagePreview,
   RuntimeEndingPagePreview,
   RuntimeFormPagePreview,
-} from './preview'
-export { default as SectionCard } from './card/SectionCard'
-export { default as RichInput } from './utils/RichInput'
-export { default as QuestionCard } from './section'
-export { default as ThemePickerModal } from './modals/ThemePickerModal'
-export { default as ThemeImagePositionModal } from './modals/ThemeImagePositionModal'
-export { default as LogicModal } from './modals/LogicModal'
+} from '@/components/builder/preview'
+export { default as SectionCard } from '@/components/builder/card/SectionCard'
+export { default as RichInput } from '@/components/builder/utils/RichInput'
+export { default as QuestionCard } from '@/components/builder/section'
+export { default as ThemePickerModal } from '@/components/builder/modals/ThemePickerModal'
+export { default as ThemeImagePositionModal } from '@/components/builder/modals/ThemeImagePositionModal'
+export { default as LogicModal } from '@/components/builder/modals/LogicModal'
 export type { ThemeConfig, ThemeFontKey, ThemeKey } from '@/utils/form/themeConfig'
 export { THEMES } from '@/utils/form/themeConfig'

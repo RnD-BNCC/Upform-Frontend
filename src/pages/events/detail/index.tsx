@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
+} from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   BuilderHeader,
@@ -15,6 +22,7 @@ import {
   FormPagePreview,
   LogicModal,
   PageTabBar,
+  SystemLogsPanel,
   ThemeImagePositionModal,
   ThemePickerModal,
   ThemePanel,
@@ -29,18 +37,22 @@ import {
 import { RenameModal, Spinner } from "@/components/ui";
 import ResponsesPanel from "@/components/responses/ResponsesPanel";
 import ShareToast from "@/components/toast/ShareToast";
+import { useAuth } from "@/hooks";
 import { useEventDetailPage } from "@/hooks/events";
 import type { SubmitSettingsEditorState } from "@/types/builderShare";
 import {
   DesktopIcon,
   FloppyDiskIcon,
   ImageIcon,
+  LockIcon,
   PencilSimpleIcon,
   TrashIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import {
+  cloneSectionForBuilderDuplicate,
   getFormCalculationsFromSections,
+  parseFieldInsertZoneId,
   setFormCalculationsInSections,
 } from "@/utils/form";
 import { ensureGoogleFontsLoaded } from "@/utils/form/googleFonts";
@@ -93,6 +105,27 @@ function EditorLargeScreenNotice({
   );
 }
 
+const builderCollisionDetection: CollisionDetection = (args) => {
+  const withoutActive = (collisions: ReturnType<CollisionDetection>) =>
+    collisions.filter(({ id }) => id !== args.active.id);
+  const pointerCollisions = withoutActive(pointerWithin(args));
+  const pointerInsertCollisions = pointerCollisions.filter(({ id }) =>
+    parseFieldInsertZoneId(String(id)),
+  );
+
+  if (pointerInsertCollisions.length > 0) return pointerInsertCollisions;
+  if (pointerCollisions.length > 0) return pointerCollisions;
+
+  const intersectionCollisions = withoutActive(rectIntersection(args));
+  const insertIntersections = intersectionCollisions.filter(({ id }) =>
+    parseFieldInsertZoneId(String(id)),
+  );
+
+  if (insertIntersections.length > 0) return insertIntersections;
+
+  return withoutActive(closestCenter(args));
+};
+
 export default function EventDetailPage() {
   const {
     activeId,
@@ -118,8 +151,10 @@ export default function EventDetailPage() {
     dndSensors,
     dragInsertIdx,
     duplicateField,
+    editPermissionPending,
+    editPermissionRequested,
+    editPermissionRequired,
     eventStatus,
-    existing,
     formTitle,
     handleDragCancel,
     handleDragEnd,
@@ -132,11 +167,13 @@ export default function EventDetailPage() {
     handleStatusChange,
     handleThemeChange,
     id,
+    importFields,
     isAddingPage,
     isChangingStatus,
     isCoverPage,
     isDirty,
     isLoading,
+    isRequestingEditPermission,
     isLogicOpen,
     isPublishing,
     isRightPanelOpen,
@@ -150,6 +187,8 @@ export default function EventDetailPage() {
     pendingTheme,
     publicFormUrl,
     questionsEndRef,
+    requestEditPermission,
+    resourceVisibility,
     responses,
     sections,
     selectedField,
@@ -171,6 +210,7 @@ export default function EventDetailPage() {
     setLeftPanelMode,
     setLogicInitialTab,
     setPendingTheme,
+    setResourceVisibility,
     setSections,
     setSelectedId,
     setShowBgImageModal,
@@ -195,6 +235,10 @@ export default function EventDetailPage() {
     welcomeThemePicker,
   } = useEventDetailPage();
   const [isCoverBgPickerOpen, setIsCoverBgPickerOpen] = useState(false);
+  const { data: session } = useAuth();
+  const canManageAccess =
+    ((session?.user as { role?: string } | undefined)?.role ?? "admin") !==
+    "activist";
   const [isThemeImagePositionOpen, setIsThemeImagePositionOpen] =
     useState(false);
   const [submitSettingsState, setSubmitSettingsState] =
@@ -315,6 +359,57 @@ export default function EventDetailPage() {
     );
   }
 
+  if (editPermissionRequired) {
+    return (
+      <>
+        <EditorLargeScreenNotice
+          onBack={() => navigate("/")}
+          onOpenRespondentForm={id ? () => navigate(`/forms/${id}`) : undefined}
+        />
+        <div className="hidden min-h-screen items-center justify-center bg-gray-50 px-6 lg:flex">
+          <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+              <LockIcon size={24} weight="duotone" />
+            </div>
+            <h1 className="text-base font-bold text-gray-950">
+              Permission required
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+              Your account needs approval before editing this form.
+            </p>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="flex h-9 items-center justify-center rounded-md border border-gray-200 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={
+                  isRequestingEditPermission ||
+                  editPermissionPending ||
+                  editPermissionRequested
+                }
+                onClick={async () => {
+                  await requestEditPermission();
+                }}
+                className="flex h-9 items-center justify-center rounded-md bg-primary-600 px-4 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRequestingEditPermission
+                  ? "Requesting..."
+                  : editPermissionPending || editPermissionRequested
+                    ? "Request sent"
+                    : "Request permission"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <ReferenceCalculationProvider calculations={referenceCalculations}>
       <EditorLargeScreenNotice
@@ -349,6 +444,9 @@ export default function EventDetailPage() {
         isSaving={isAnySaving}
         isDirty={hasUnsavedChanges}
         eventStatus={eventStatus}
+        resourceVisibility={resourceVisibility}
+        showAccessControl={canManageAccess && id !== "new"}
+        onResourceVisibilityChange={setResourceVisibility}
         onPublish={() => setConfirmAction("publish")}
         isPublishing={isPublishing}
         onUnpublish={() => setConfirmAction("unpublish")}
@@ -358,7 +456,7 @@ export default function EventDetailPage() {
       {activeTab === "questions" ? (
         <DndContext
           sensors={dndSensors}
-          collisionDetection={closestCenter}
+          collisionDetection={builderCollisionDetection}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -446,6 +544,10 @@ export default function EventDetailPage() {
               <FieldCategoryPanel
                 onAddField={(type) => {
                   if (activePage) addField(type, activePage.id);
+                }}
+                currentEventId={id}
+                onImportFields={(fields) => {
+                  if (activePage) importFields(activePage.id, fields);
                 }}
                 onAddImageBlock={(url) => {
                   if (activePage) addField("image_block", activePage.id, url);
@@ -619,14 +721,7 @@ export default function EventDetailPage() {
                 onDuplicatePage={(idx) => {
                   const source = sections[idx];
                   if (!source) return;
-                  const duplicate = {
-                    ...source,
-                    id: crypto.randomUUID(),
-                    fields: source.fields.map((field) => ({
-                      ...field,
-                      id: crypto.randomUUID(),
-                    })),
-                  };
+                  const duplicate = cloneSectionForBuilderDuplicate(source);
                   setSections((prev) => [
                     ...prev.slice(0, idx + 1),
                     duplicate,
@@ -688,6 +783,10 @@ export default function EventDetailPage() {
             showToast={showToast}
           />
         </div>
+      ) : activeTab === "logs" ? (
+        <div className="flex-1 overflow-hidden">
+          <SystemLogsPanel eventId={id ?? ""} showToast={showToast} />
+        </div>
       ) : activeTab === "game" ? (
         <div className="flex-1 overflow-hidden">
           <BuilderGamePanel
@@ -703,9 +802,9 @@ export default function EventDetailPage() {
             responses={responses}
             allFields={sections.flatMap((section) => section.fields)}
             eventId={id ?? ""}
+            formTitle={formTitle}
             sections={sections}
             showToast={showToast}
-            spreadsheetUrl={existing?.spreadsheetUrl}
           />
         </div>
       )}
@@ -758,14 +857,7 @@ export default function EventDetailPage() {
         onDuplicatePage={(pageId) => {
           const source = sections.find((section) => section.id === pageId);
           if (!source) return;
-          const duplicate = {
-            ...source,
-            id: crypto.randomUUID(),
-            fields: source.fields.map((field) => ({
-              ...field,
-              id: crypto.randomUUID(),
-            })),
-          };
+          const duplicate = cloneSectionForBuilderDuplicate(source);
           const idx = sections.findIndex((section) => section.id === pageId);
           setSections((prev) => [
             ...prev.slice(0, idx + 1),
@@ -800,7 +892,8 @@ export default function EventDetailPage() {
         required
         onClose={() => {}}
         isLoading={isUpdatingMeta || createEvent.isPending}
-        onCreate={async (name) => {
+        showVisibilitySelect={id === "new" && canManageAccess}
+        onCreate={async (name, visibility) => {
           if (!id) return;
           setIsUpdatingMeta(true);
           try {
@@ -808,6 +901,7 @@ export default function EventDetailPage() {
               const event = await createEvent.mutateAsync({
                 name,
                 theme: pendingTheme,
+                visibility: visibility ?? "private",
               });
               const nextSections = event.sections?.length
                 ? event.sections

@@ -7,9 +7,9 @@ import {
 import { Spinner } from "@/components/ui";
 import type { FormCalculation, FormSection } from "@/types/form";
 import type { LogicModalRequestedTab } from "@/utils/form/logicModalEvents";
-import LogicModalCalculationsView from "./LogicModalCalculationsView";
-import LogicModalPageLogicView from "./LogicModalPageLogicView";
-import type { LogicBranch, PageType } from "./logicModalPageLogic.shared";
+import LogicModalCalculationsView from "@/components/builder/modals/LogicModalCalculationsView";
+import LogicModalPageLogicView from "@/components/builder/modals/LogicModalPageLogicView";
+import type { LogicBranch, PageType } from "@/components/builder/modals/logicModalPageLogic.shared";
 import { useLogicModalCalculations } from "@/hooks/builder/useLogicModalCalculations";
 import { useLogicModalPageLogic } from "@/hooks/builder/useLogicModalPageLogic";
 

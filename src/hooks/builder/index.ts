@@ -1,8 +1,8 @@
 export {
   useLogicModalCalculations,
   type LogicModalCalculationsController,
-} from "./useLogicModalCalculations";
+} from "@/hooks/builder/useLogicModalCalculations";
 export {
   useLogicModalPageLogic,
   type LogicModalPageLogicController,
-} from "./useLogicModalPageLogic";
+} from "@/hooks/builder/useLogicModalPageLogic";

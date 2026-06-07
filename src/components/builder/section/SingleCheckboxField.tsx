@@ -2,13 +2,13 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { motion } from "framer-motion";
 import { CheckSquareIcon } from "@phosphor-icons/react";
 import { SelectionCheckIcon } from "@/components/icons";
-import RichInput from "../utils/RichInput";
+import RichInput from "@/components/builder/utils/RichInput";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginRequiredValidationField } from "./FieldSettingSections";
-import { FieldPluginToggleRow } from "./FieldSettingControls";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginRequiredValidationField } from "@/components/builder/section/FieldSettingSections";
+import { FieldPluginToggleRow } from "@/components/builder/section/FieldSettingControls";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
 import type { FormField } from "@/types/form";
 

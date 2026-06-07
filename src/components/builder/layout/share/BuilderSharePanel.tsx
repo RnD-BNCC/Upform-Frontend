@@ -1,13 +1,13 @@
 ﻿import { useRef, useState } from "react";
 import { CheckCircleIcon } from "@phosphor-icons/react";
-import SendFormModal from "./SendFormModal";
+import SendFormModal from "@/components/builder/layout/share/SendFormModal";
 import {
   PublishSharePrompt,
   QrCodeModal,
   ShareLinkCard,
   ShareTabPanel,
-} from "./components";
-import { EmbedSettingsModal } from "./embed";
+} from "@/components/builder/layout/share/components";
+import { EmbedSettingsModal } from "@/components/builder/layout/share/embed";
 import type {
   BuilderSharePanelProps,
   EmbedType,

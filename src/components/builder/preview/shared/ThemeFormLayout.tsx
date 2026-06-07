@@ -9,7 +9,7 @@ import {
   getThemeImagePosition,
   type ThemeConfig,
 } from "@/utils/form/themeConfig";
-import ThemeLogo from "./ThemeLogo";
+import ThemeLogo from "@/components/builder/preview/shared/ThemeLogo";
 
 type Props = {
   children: ReactNode;

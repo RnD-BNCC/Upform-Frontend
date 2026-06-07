@@ -1,13 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import type { AxiosProgressEvent } from "axios";
 import { apiClient, publicApiClient } from "@/config/api-client";
 import { Api } from "@/constants/api";
-
-type UploadFileInput = File | {
-  file: File;
-  onUploadProgress?: (event: AxiosProgressEvent) => void;
-  signal?: AbortSignal;
-};
+import type { UploadFileInput } from "@/types/upload";
 
 function normalizeUploadInput(input: UploadFileInput) {
   return input instanceof File ? { file: input } : input;

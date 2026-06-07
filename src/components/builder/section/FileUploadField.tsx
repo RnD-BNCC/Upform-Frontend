@@ -7,12 +7,12 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { Spinner } from "@/components/ui";
-import FileTypeMultiSelect from "../layout/fields/FileTypeMultiSelect";
+import FileTypeMultiSelect from "@/components/builder/layout/fields/FileTypeMultiSelect";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginLabel, FieldPluginToggleRow } from "./FieldSettingControls";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginLabel, FieldPluginToggleRow } from "@/components/builder/section/FieldSettingControls";
 import type { FormField } from "@/types/form";
 
 type Props = {

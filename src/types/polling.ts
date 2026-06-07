@@ -1,5 +1,7 @@
 export type PollStatus = 'waiting' | 'active' | 'ended'
 
+export type QNAMonitorSort = 'votes' | 'latest' | 'oldest'
+
 export type SlideType =
   | 'word_cloud'
   | 'multiple_choice'
@@ -60,8 +62,10 @@ export type PollSlide = {
   options: string[]
   settings: SlideSettings
   locked: boolean
+  stsrc?: 'A' | 'U' | 'D'
   createdAt: string
   updatedAt: string
+  deletedAt?: string | null
 }
 
 export type Poll = {
@@ -71,18 +75,26 @@ export type Poll = {
   status: PollStatus
   currentSlide: number
   slides: PollSlide[]
+  visibility?: 'private' | 'public'
+  stsrc?: 'A' | 'U' | 'D'
+  createdBy?: string | null
+  updatedBy?: string | null
+  deletedBy?: string | null
+  deletedAt?: string | null
   createdAt: string
   updatedAt: string
 }
 
 export type CreatePollPayload = {
   title?: string
+  visibility?: 'private' | 'public'
 }
 
 export type UpdatePollPayload = {
   title?: string
   status?: PollStatus
   currentSlide?: number
+  visibility?: 'private' | 'public'
 }
 
 export type CreateSlidePayload = {
@@ -108,6 +120,22 @@ export type PollListResponse = {
     total: number
     totalPages: number
   }
+  counts?: {
+    total: number
+    deleted: number
+  }
+}
+
+export type PollAuditLog = {
+  id: string
+  pollId: string
+  action: string
+  targetType: string
+  targetId?: string | null
+  actorEmail?: string | null
+  beforeSnapshot?: unknown
+  afterSnapshot?: unknown
+  createdAt: string
 }
 
 export type WordCloudResult = { word: string; count: number }[]

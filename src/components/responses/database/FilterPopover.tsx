@@ -3,11 +3,11 @@ import { FunnelSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { usePopoverClose } from "@/hooks/usePopoverClose";
 import type { FormField } from "@/types/form";
 import type { ResultFilterGroup } from "@/types/results";
-import ResultConditionEditorPanel from "../conditions/ResultConditionEditorPanel";
+import ResultConditionEditorPanel from "@/components/responses/conditions/ResultConditionEditorPanel";
 import {
   countFilterConditions,
   createId,
-} from "./resultsDatabaseUtils";
+} from "@/components/responses/database/resultsDatabaseUtils";
 
 type FilterPopoverProps = {
   align?: "left" | "right";

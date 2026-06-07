@@ -1,4 +1,4 @@
-import type { AnalyticsDateFilter } from "./DateRangePopover";
+import type { AnalyticsDateFilter } from "@/components/responses/analytics/DateRangePopover";
 
 export function getAnalyticsDateRange(filter: AnalyticsDateFilter) {
   const now = new Date();

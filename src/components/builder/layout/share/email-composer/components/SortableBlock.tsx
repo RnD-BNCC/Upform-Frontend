@@ -11,9 +11,9 @@ import { RichInput } from "@/components/builder/utils";
 import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
-} from "../constants";
+} from "@/components/builder/layout/share/email-composer/constants";
 import type { EmailBlock, EmailBlockPatch, ImageBlock } from "@/types/builderShare";
-import { getImageWrapperClassName } from "../utils";
+import { getImageWrapperClassName } from "@/components/builder/layout/share/email-composer/utils";
 
 function EmailResizableImage({
   block,

@@ -12,11 +12,11 @@ import {
   CONDITION_FIELD_TYPE_LABELS,
   getAvailableReferenceFieldGroupsForField as getReferenceFieldGroupsForField,
   getAvailableReferenceFieldsForField as getReferenceFieldsForField,
-} from "./conditionFields";
+} from "@/utils/form/conditionFields";
 import {
   formatGroupedNumberInput,
   normalizeGroupedNumberInput,
-} from "./numberFormat";
+} from "@/utils/form/numberFormat";
 
 export const REFERENCE_TOKEN_SELECTOR = '[data-reference-token="true"]';
 

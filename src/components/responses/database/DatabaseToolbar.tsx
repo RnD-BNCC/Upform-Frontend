@@ -8,11 +8,11 @@ import { DownloadSimpleIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { RefreshButton } from "@/components/ui";
 import DateRangePopover, {
   type AnalyticsDateFilter,
-} from "../analytics/DateRangePopover";
-import FilterPopover from "./FilterPopover";
-import HideFieldsPopover from "./HideFieldsPopover";
-import SortPopover from "./SortPopover";
-import ViewPopover from "./ViewPopover";
+} from "@/components/responses/analytics/DateRangePopover";
+import FilterPopover from "@/components/responses/database/FilterPopover";
+import HideFieldsPopover from "@/components/responses/database/HideFieldsPopover";
+import SortPopover from "@/components/responses/database/SortPopover";
+import ViewPopover from "@/components/responses/database/ViewPopover";
 
 type DatabaseToolbarProps = {
   activeView: ResultDatabaseView;

@@ -1,6 +1,7 @@
 export const QUERY_KEYS = {
   EVENTS: 'events',
   EVENT_DETAIL: 'event-detail',
+  EVENT_QUESTIONS: 'event-questions',
   SECTIONS: 'sections',
   RESPONSES: 'responses',
   RESPONSE_PROGRESS: 'response-progress',
@@ -9,9 +10,14 @@ export const QUERY_KEYS = {
   POLLS: 'polls',
   POLL_DETAIL: 'poll-detail',
   POLL_SCORES: 'poll-scores',
+  POLL_AUDIT_LOGS: 'poll-audit-logs',
   PUBLIC_POLL: 'public-poll',
   EMAIL_BLASTS: 'email-blasts',
   EMAIL_BLAST_DETAIL: 'email-blast-detail',
   EMAIL_BLAST_DRAFT: 'email-blast-draft',
   SUBMIT_FORM_SETTINGS: 'submit-form-settings',
+  PERMISSION_REQUESTS: 'permission-requests',
+  PERMISSION_GRANTS: 'permission-grants',
+  USERS: 'users',
+  EVENT_AUDIT_LOGS: 'event-audit-logs',
 } as const

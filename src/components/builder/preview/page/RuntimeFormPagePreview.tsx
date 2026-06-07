@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import type { FormCalculation, FormSection } from "@/types/form";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
-import RuntimeSectionFields from "../shared/RuntimeSectionFields";
+import RuntimeSectionFields from "@/components/builder/preview/shared/RuntimeSectionFields";
 
 type Props = {
   answers: Record<string, string | string[]>;

@@ -1,5 +1,5 @@
 import { PageHeroBanner } from "@/components/layout";
-import type { GalleryTab } from "../utils";
+import type { GalleryTab } from "@/pages/gallery/utils";
 
 type Props = {
   tab: GalleryTab;

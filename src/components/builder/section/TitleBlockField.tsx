@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { TextHOneIcon } from "@phosphor-icons/react";
-import RichInput from "../utils/RichInput";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import RichInput from "@/components/builder/utils/RichInput";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
 import type { FormField } from "@/types/form";
 

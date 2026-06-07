@@ -6,7 +6,7 @@ import {
   type ResolvedTheme,
   type ThemeConfig,
 } from "@/utils/form/themeConfig";
-import { EMAIL_STYLE_OPTIONS } from "../constants";
+import { EMAIL_STYLE_OPTIONS } from "@/components/builder/layout/share/email-composer/constants";
 import type { EmailStyle } from "@/types/builderShare";
 
 function ThemeSelectIcon({ theme }: { theme: ThemeConfig }) {

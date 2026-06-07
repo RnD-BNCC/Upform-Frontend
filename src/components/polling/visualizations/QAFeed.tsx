@@ -37,7 +37,7 @@ export default function QAFeed({
   const answeredCount = data.filter((q) => q.isAnswered).length
   const totalCount = data.length
   const currentQuestion = highlightedVoteId
-    ? (combined.find((q) => q.voteId === highlightedVoteId) ?? combined[0] ?? null)
+    ? (combined.find((q) => q.voteId === highlightedVoteId) ?? null)
     : (combined[0] ?? null)
 
   const handleNext = useCallback(() => {

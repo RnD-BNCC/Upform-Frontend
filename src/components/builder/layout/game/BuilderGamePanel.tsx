@@ -1,4 +1,4 @@
-import { getAllGamePlugins } from "./gameRegistry";
+import { getAllGamePlugins } from "@/components/builder/layout/game/gameRegistry";
 import type { GamePanelProps } from "@/types/builderGame";
 
 export default function BuilderGamePanel(props: GamePanelProps) {

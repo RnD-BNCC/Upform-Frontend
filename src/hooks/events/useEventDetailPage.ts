@@ -9,13 +9,18 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import type { ThemeKey } from "@/components/builder";
-import { useCreateEvent, useGetEventDetail, useUpdateEvent } from "@/hooks/events";
 import {
-  useCreateSection,
-  useDeleteSection,
-  useUpdateSection,
-} from "@/hooks/sections";
+  useCreateEvent,
+  useGetEventDetail,
+  useSaveBuilderEvent,
+  useUpdateEvent,
+} from "@/hooks/events";
+import { useCreateSection } from "@/hooks/sections";
 import { useGetResponses } from "@/hooks/responses";
+import {
+  useMutationCreatePermissionRequest,
+  useQueryPermissionAccess,
+} from "@/api/permission-requests";
 import { useMutationUploadImage } from "@/api/upload";
 import {
   OPEN_LOGIC_MODAL_EVENT,
@@ -28,18 +33,26 @@ import {
   type RuntimePageLogicBranch,
 } from "@/utils/form/pageLogic";
 import {
+  clampFieldInsertIndex,
   ensureNextButton,
   getVerticalInsertIndex,
   normalizeBuilderSections,
+  parseFieldInsertZoneId,
 } from "@/utils/form/formBuilder";
+import {
+  cloneFieldForBuilderDuplicate,
+  cloneFieldsForImport,
+} from "@/utils/form/cloneForm";
 import { resolveTheme, serializeCustomTheme } from "@/utils/form/themeConfig";
 import {
   createDefaultField,
   createPageTypeDefaultFields,
 } from "@/components/builder/section/fieldRegistry";
 import type { FieldType, FormField, FormSection } from "@/types/form";
+import type { ResourceVisibility } from "@/types/api";
+import { getPermissionRequiredError } from "@/utils/permissionRequests";
 
-type Tab = "questions" | "share" | "game" | "responses";
+type Tab = "questions" | "share" | "game" | "responses" | "logs";
 type LeftPanelMode = "fields" | "theme";
 type BuilderRouteState = {
   sections?: FormSection[];
@@ -49,6 +62,89 @@ type BuilderRouteState = {
   theme?: string;
   isNewDraft?: boolean;
 };
+
+type SavedBuilderState = {
+  color: string;
+  image: string | null;
+  sections: FormSection[];
+  theme: string;
+  title: string;
+  visibility: ResourceVisibility;
+};
+
+function serializeBuilderState(state: SavedBuilderState) {
+  return JSON.stringify(state);
+}
+
+function parseSavedState(value: string): SavedBuilderState | null {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value) as SavedBuilderState;
+  } catch {
+    return null;
+  }
+}
+
+function isEqualJson(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function buildChangedSectionPayloads(
+  sections: FormSection[],
+  savedSections: FormSection[],
+) {
+  const savedById = new Map(
+    savedSections.map((section, index) => [section.id, { index, section }]),
+  );
+
+  return sections.flatMap((section, index) => {
+    const saved = savedById.get(section.id);
+
+    if (!saved) {
+      return [
+        {
+          sectionId: section.id,
+          title: section.title,
+          description: section.description,
+          fields: section.fields,
+          pageType: section.pageType,
+          settings: section.settings,
+          logicX: section.logicX,
+          logicY: section.logicY,
+          order: index,
+        },
+      ];
+    }
+
+    const payload: {
+      sectionId: string;
+      title?: string;
+      description?: string;
+      fields?: FormField[];
+      pageType?: string;
+      settings?: Record<string, unknown>;
+      logicX?: number;
+      logicY?: number;
+      order?: number;
+    } = { sectionId: section.id };
+
+    if (saved.index !== index) payload.order = index;
+    if (saved.section.title !== section.title) payload.title = section.title;
+    if (saved.section.description !== section.description) {
+      payload.description = section.description;
+    }
+    if (saved.section.pageType !== section.pageType) payload.pageType = section.pageType;
+    if (!isEqualJson(saved.section.fields, section.fields)) payload.fields = section.fields;
+    if (!isEqualJson(saved.section.settings, section.settings)) {
+      payload.settings = section.settings;
+    }
+    if (saved.section.logicX !== section.logicX) payload.logicX = section.logicX;
+    if (saved.section.logicY !== section.logicY) payload.logicY = section.logicY;
+
+    return Object.keys(payload).length > 1 ? [payload] : [];
+  });
+}
 
 function createDefaultBuilderSections() {
   const pageId = crypto.randomUUID();
@@ -89,13 +185,41 @@ export function useEventDetailPage() {
   const hasBuilderRouteState =
     !isLocalNewForm && Array.isArray(routeState?.sections);
 
-  const { data: existing, isLoading } = useGetEventDetail(persistedEventId);
-  const { data: responses = [] } = useGetResponses(persistedEventId);
+  const editAccessQuery = useQueryPermissionAccess(
+    {
+      action: "forms.edit",
+      resourceId: persistedEventId,
+      resourceType: "event",
+    },
+    !isLocalNewForm && !!persistedEventId,
+  );
+  const hasEditAccess = isLocalNewForm || editAccessQuery.data?.allowed === true;
+  const isEditAccessLoading =
+    !isLocalNewForm && !!persistedEventId && editAccessQuery.isLoading;
+  const {
+    data: existing,
+    error: eventDetailError,
+    isLoading,
+  } = useGetEventDetail(persistedEventId, hasEditAccess);
+  const editPermissionError = getPermissionRequiredError(eventDetailError);
+  const editPermissionRequired =
+    !isLocalNewForm &&
+    !!persistedEventId &&
+    (!!editPermissionError ||
+      editAccessQuery.isError ||
+      (editAccessQuery.isSuccess && !editAccessQuery.data?.allowed));
+  const editPermissionPending = editAccessQuery.data?.pending === true;
+  const editPermissionKey = persistedEventId
+    ? `forms.edit:event:${persistedEventId}`
+    : "";
+  const { data: responses = [] } = useGetResponses(
+    hasEditAccess && existing ? persistedEventId : "",
+  );
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
-  const updateSection = useUpdateSection(persistedEventId);
+  const saveBuilderEvent = useSaveBuilderEvent(persistedEventId);
   const createSection = useCreateSection(persistedEventId);
-  const deleteSection = useDeleteSection(persistedEventId);
+  const createPermissionRequest = useMutationCreatePermissionRequest();
   const uploadImage = useMutationUploadImage();
 
   const deletedSectionIdsRef = useRef<string[]>([]);
@@ -103,6 +227,15 @@ export function useEventDetailPage() {
   const activeSectionIdRef = useRef<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
   const savedStateRef = useRef<string>("");
+  const latestBuilderStateRef = useRef<SavedBuilderState>({
+    color: "#0054a5",
+    image: null,
+    sections: [],
+    theme: "light",
+    title: "Untitled Form",
+    visibility: "private",
+  });
+  const permissionRequestKeysRef = useRef(new Set<string>());
   const bgImgRef = useRef<HTMLInputElement>(null);
   const routeIdRef = useRef(id);
 
@@ -110,6 +243,8 @@ export function useEventDetailPage() {
   const [bannerColor, setBannerColor] = useState("#0054a5");
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState<string>("light");
+  const [resourceVisibility, setResourceVisibility] =
+    useState<ResourceVisibility>("private");
   const [activePageIdx, setActivePageIdx] = useState(0);
   const [leftPanelMode, setLeftPanelMode] =
     useState<LeftPanelMode>("fields");
@@ -143,6 +278,9 @@ export function useEventDetailPage() {
     "unpublish" | "close" | null
   >(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [requestedPermissionKeys, setRequestedPermissionKeys] = useState<
+    Set<string>
+  >(() => new Set());
   const [startButtonText, setStartButtonText] = useState("Start");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
@@ -167,10 +305,21 @@ export function useEventDetailPage() {
   );
 
   const dndSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
   const sections = history.stack[history.index];
+
+  useEffect(() => {
+    latestBuilderStateRef.current = {
+      title: formTitle,
+      color: bannerColor,
+      image: bannerImage,
+      theme: activeTheme,
+      sections,
+      visibility: resourceVisibility,
+    };
+  }, [activeTheme, bannerColor, bannerImage, formTitle, resourceVisibility, sections]);
 
   const setSections = useCallback(
     (
@@ -239,6 +388,134 @@ export function useEventDetailPage() {
     [],
   );
 
+  const markPermissionRequestPending = useCallback((key: string) => {
+    permissionRequestKeysRef.current.add(key);
+    setRequestedPermissionKeys((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  const clearPermissionRequestPending = useCallback((key: string) => {
+    permissionRequestKeysRef.current.delete(key);
+    setRequestedPermissionKeys((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const editPermissionRequested =
+    !!editPermissionKey && requestedPermissionKeys.has(editPermissionKey);
+
+  useEffect(() => {
+    if (!editPermissionKey || !editAccessQuery.isSuccess) return;
+
+    if (editAccessQuery.data?.pending) {
+      markPermissionRequestPending(editPermissionKey);
+      return;
+    }
+
+    clearPermissionRequestPending(editPermissionKey);
+  }, [
+    clearPermissionRequestPending,
+    editAccessQuery.data?.pending,
+    editAccessQuery.isSuccess,
+    editPermissionKey,
+    markPermissionRequestPending,
+  ]);
+
+  const requestPermissionFromError = useCallback(
+    async (error: unknown, reason: string) => {
+      const permissionError = getPermissionRequiredError(error);
+      if (!permissionError) return false;
+
+      const key = `${permissionError.action}:${permissionError.resourceType}:${permissionError.resourceId}`;
+      if (permissionRequestKeysRef.current.has(key)) {
+        return true;
+      }
+
+      markPermissionRequestPending(key);
+
+      try {
+        await createPermissionRequest.mutateAsync({
+          action: permissionError.action,
+          reason,
+          resourceId: permissionError.resourceId,
+          resourceType: permissionError.resourceType,
+        });
+        showToast("Permission request sent", "success");
+      } catch (requestError) {
+        clearPermissionRequestPending(key);
+        console.error("[requestPermissionFromError]:", requestError);
+        showToast("Failed to request permission", "error");
+      }
+
+      return true;
+    },
+    [
+      clearPermissionRequestPending,
+      createPermissionRequest,
+      markPermissionRequestPending,
+      showToast,
+    ],
+  );
+
+  const requestEditPermission = useCallback(
+    async () => {
+      if (!persistedEventId) return false;
+
+      if (editPermissionError) {
+        const requested = await requestPermissionFromError(
+          eventDetailError,
+          "Need to edit form",
+        );
+        void editAccessQuery.refetch();
+        return requested;
+      }
+
+      const key = editPermissionKey;
+      if (permissionRequestKeysRef.current.has(key) || editPermissionPending) {
+        return true;
+      }
+
+      markPermissionRequestPending(key);
+
+      try {
+        await createPermissionRequest.mutateAsync({
+          action: "forms.edit",
+          reason: "Need to edit form",
+          resourceId: persistedEventId,
+          resourceType: "event",
+        });
+        await editAccessQuery.refetch();
+        showToast("Permission request sent", "success");
+        return true;
+      } catch (requestError) {
+        clearPermissionRequestPending(key);
+        console.error("[requestEditPermission]:", requestError);
+        showToast("Failed to request permission", "error");
+        return false;
+      }
+    },
+    [
+      createPermissionRequest,
+      clearPermissionRequestPending,
+      editAccessQuery,
+      editPermissionError,
+      editPermissionKey,
+      editPermissionPending,
+      eventDetailError,
+      markPermissionRequestPending,
+      persistedEventId,
+      requestPermissionFromError,
+      showToast,
+    ],
+  );
+
   useEffect(() => {
     return () => {
       if (toastTimeoutRef.current) {
@@ -298,15 +575,17 @@ export function useEventDetailPage() {
       setBannerColor(color);
       setBannerImage(null);
       setActiveTheme(theme);
+      setResourceVisibility("private");
       setEventStatus("draft");
       setHistory({ stack: [initialSections], index: 0 });
       syncCoverStateFromSections(initialSections);
-      savedStateRef.current = JSON.stringify({
+      savedStateRef.current = serializeBuilderState({
         title,
         color,
         image: null,
         theme,
         sections: initialSections,
+        visibility: "private",
       });
       setInitialized(true);
       setWelcomeThemePicker(true);
@@ -315,6 +594,8 @@ export function useEventDetailPage() {
       }
       return;
     }
+
+    if (!hasEditAccess) return;
 
     if (nav?.sections) {
       const normalizedSections = ensureNextButton(
@@ -326,18 +607,20 @@ export function useEventDetailPage() {
       setBannerImage(nav.bannerImage ?? null);
       syncCoverStateFromSections(normalizedSections);
       if (nav.theme) setActiveTheme(nav.theme);
+      setResourceVisibility(existing?.visibility ?? "private");
       setHistory({ stack: [normalizedSections], index: 0 });
       if (existing) {
         setEventStatus(existing.status);
       }
       setWelcomeThemePicker(false);
       setWelcomeRename(false);
-      savedStateRef.current = JSON.stringify({
+      savedStateRef.current = serializeBuilderState({
         title: nav.formTitle ?? "Untitled Form",
         color: nav.bannerColor ?? "#0054a5",
         image: nav.bannerImage ?? null,
         theme: nav.theme ?? "light",
         sections: normalizedSections,
+        visibility: existing?.visibility ?? "private",
       });
       setInitialized(true);
       window.history.replaceState({}, "");
@@ -358,22 +641,25 @@ export function useEventDetailPage() {
 
       const image = existing.image ?? null;
       const theme = existing.theme || "light";
+      const visibility = existing.visibility ?? "private";
       setFormTitle(title);
       setBannerColor(color);
       setBannerImage(image);
       setActiveTheme(theme);
+      setResourceVisibility(visibility);
       setHistory({ stack: [nextSections], index: 0 });
       setEventStatus(existing.status);
       syncCoverStateFromSections(nextSections);
       setWelcomeThemePicker(false);
       setWelcomeRename(false);
 
-      savedStateRef.current = JSON.stringify({
+      savedStateRef.current = serializeBuilderState({
         title,
         color,
         image,
         theme,
         sections: nextSections,
+        visibility,
       });
       setInitialized(true);
     } else {
@@ -381,6 +667,7 @@ export function useEventDetailPage() {
     }
   }, [
     existing,
+    hasEditAccess,
     initialized,
     isLocalNewForm,
     isLoading,
@@ -403,15 +690,16 @@ export function useEventDetailPage() {
   const isDirty = useMemo(() => {
     if (!savedStateRef.current) return false;
     return (
-      JSON.stringify({
+      serializeBuilderState({
         title: formTitle,
         color: bannerColor,
         image: bannerImage,
         theme: activeTheme,
         sections,
+        visibility: resourceVisibility,
       }) !== savedStateRef.current
     );
-  }, [activeTheme, bannerColor, bannerImage, formTitle, sections]);
+  }, [activeTheme, bannerColor, bannerImage, formTitle, resourceVisibility, sections]);
 
   const uploadImageWithToast = useCallback(
     async (
@@ -535,45 +823,36 @@ export function useEventDetailPage() {
       const showFeedback = options?.showFeedback ?? true;
       if (!persistedEventId || isSaving) return false;
 
+      const latestState = latestBuilderStateRef.current;
+      const sectionsToPersist =
+        options?.sectionsOverride ?? buildSectionsForPageLogic(latestState.sections);
+      const snapshotState: SavedBuilderState = {
+        ...latestState,
+        sections: sectionsToPersist,
+      };
+      const snapshotKey = serializeBuilderState(snapshotState);
+
       setIsSaving(true);
       if (showFeedback) {
         showToast("Saving...", "info", 0);
       }
 
       try {
-        if (deletedSectionIdsRef.current.length > 0) {
-          await Promise.all(
-            deletedSectionIdsRef.current.map((sectionId) =>
-              deleteSection.mutateAsync(sectionId).catch(console.error),
-            ),
-          );
-          deletedSectionIdsRef.current = [];
-        }
+        const resolvedBannerImage = latestState.image?.startsWith("blob:")
+          ? await uploadBlobUrl(latestState.image)
+          : latestState.image;
 
-        const resolvedBannerImage = bannerImage?.startsWith("blob:")
-          ? await uploadBlobUrl(bannerImage)
-          : bannerImage;
+        const resolvedThemeValue = await resolveThemeValueForSave(latestState.theme);
 
-        if (resolvedBannerImage !== bannerImage) {
-          setBannerImage(resolvedBannerImage);
-        }
-
-        const resolvedThemeValue = await resolveThemeValueForSave(activeTheme);
-
-        if (resolvedThemeValue !== activeTheme) {
-          setActiveTheme(resolvedThemeValue);
-        }
-
-        await updateEvent.mutateAsync({
-          eventId: persistedEventId,
-          name: formTitle,
-          color: bannerColor,
-          image: resolvedBannerImage,
-          theme: resolvedThemeValue,
-        });
-
-        const sectionsToPersist =
-          options?.sectionsOverride ?? buildSectionsForPageLogic();
+        const savedState = parseSavedState(savedStateRef.current);
+        const eventChanged =
+          !savedState ||
+          savedState.title !== latestState.title ||
+          savedState.color !== latestState.color ||
+          savedState.image !== resolvedBannerImage ||
+          savedState.theme !== resolvedThemeValue;
+        const visibilityChanged =
+          !savedState || savedState.visibility !== latestState.visibility;
 
         const resolvedSections = await Promise.all(
           sectionsToPersist.map(async (section) => {
@@ -586,9 +865,6 @@ export function useEventDetailPage() {
               settings.coverHeroImage = await uploadBlobUrl(
                 settings.coverHeroImage as string,
               );
-              if (section.pageType === "cover") {
-                setCoverHeroImage(settings.coverHeroImage as string);
-              }
             }
 
             if (
@@ -598,9 +874,6 @@ export function useEventDetailPage() {
               settings.coverBgImage = await uploadBlobUrl(
                 settings.coverBgImage as string,
               );
-              if (section.pageType === "cover") {
-                setCoverBgImage(settings.coverBgImage as string);
-              }
             }
 
             const fields = await Promise.all(
@@ -635,30 +908,71 @@ export function useEventDetailPage() {
           }),
         );
 
-        await Promise.all(
-          resolvedSections.map((section, index) =>
-            updateSection.mutateAsync({
-              sectionId: section.id,
-              title: section.title,
-              description: section.description,
-              fields: section.fields,
-              pageType: section.pageType,
-              settings: section.settings,
-              logicX: section.logicX,
-              logicY: section.logicY,
-              order: index,
-            }),
-          ),
+        const changedSectionPayloads = buildChangedSectionPayloads(
+          resolvedSections,
+          savedState?.sections ?? [],
+        );
+        const deletedSectionIds = [...new Set(deletedSectionIdsRef.current)];
+
+        if (
+          eventChanged ||
+          visibilityChanged ||
+          changedSectionPayloads.length > 0 ||
+          deletedSectionIds.length > 0
+        ) {
+          await saveBuilderEvent.mutateAsync({
+            ...(eventChanged || visibilityChanged
+              ? {
+                  event: {
+                    ...(eventChanged
+                      ? {
+                          name: latestState.title,
+                          color: latestState.color,
+                          image: resolvedBannerImage,
+                          theme: resolvedThemeValue,
+                        }
+                      : {}),
+                    ...(visibilityChanged
+                      ? { visibility: latestState.visibility }
+                      : {}),
+                  },
+                }
+              : {}),
+            ...(changedSectionPayloads.length > 0
+              ? { sections: changedSectionPayloads }
+              : {}),
+            ...(deletedSectionIds.length > 0 ? { deletedSectionIds } : {}),
+          });
+        }
+
+        deletedSectionIdsRef.current = deletedSectionIdsRef.current.filter(
+          (sectionId) => !deletedSectionIds.includes(sectionId),
         );
 
-        setSections(resolvedSections);
-        savedStateRef.current = JSON.stringify({
-          title: formTitle,
-          color: bannerColor,
+        const resolvedSavedState: SavedBuilderState = {
+          title: latestState.title,
+          color: latestState.color,
           image: resolvedBannerImage,
           theme: resolvedThemeValue,
           sections: resolvedSections,
-        });
+          visibility: latestState.visibility,
+        };
+        savedStateRef.current = serializeBuilderState(resolvedSavedState);
+
+        const canApplyResolvedState =
+          !!options?.sectionsOverride ||
+          serializeBuilderState(latestBuilderStateRef.current) === snapshotKey;
+
+        if (canApplyResolvedState) {
+          if (resolvedBannerImage !== latestState.image) {
+            setBannerImage(resolvedBannerImage);
+          }
+          if (resolvedThemeValue !== latestState.theme) {
+            setActiveTheme(resolvedThemeValue);
+          }
+          setSections(resolvedSections);
+          syncCoverStateFromSections(resolvedSections);
+        }
 
         if (showFeedback) {
           showToast("Saved successfully");
@@ -667,6 +981,11 @@ export function useEventDetailPage() {
         return true;
       } catch (error) {
         console.error("[handleSave]:", error);
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          "Need to edit form",
+        );
+        if (permissionRequested) return false;
         if (showFeedback) {
           showToast("Save failed", "error");
         }
@@ -676,22 +995,28 @@ export function useEventDetailPage() {
       }
     },
     [
-      activeTheme,
-      bannerColor,
-      bannerImage,
       buildSectionsForPageLogic,
-      deleteSection,
-      formTitle,
       isSaving,
       persistedEventId,
+      requestPermissionFromError,
+      saveBuilderEvent,
       setSections,
       showToast,
-      updateEvent,
-      updateSection,
       resolveThemeValueForSave,
+      syncCoverStateFromSections,
       uploadBlobUrl,
     ],
   );
+
+  useEffect(() => {
+    if (!initialized || !persistedEventId || !isDirty || isSaving) return;
+
+    const timer = window.setTimeout(() => {
+      void handleSave({ showFeedback: false });
+    }, 1400);
+
+    return () => window.clearTimeout(timer);
+  }, [handleSave, initialized, isDirty, isSaving, persistedEventId]);
 
   const handlePublish = useCallback(async () => {
     if (!persistedEventId || isPublishing) return;
@@ -705,10 +1030,18 @@ export function useEventDetailPage() {
       setShowShareToast(false);
     } catch (error) {
       console.error("[handlePublish]", error);
+      await requestPermissionFromError(error, "Need to edit form");
     } finally {
       setIsPublishing(false);
     }
-  }, [handleSave, isDirty, isPublishing, persistedEventId, updateEvent]);
+  }, [
+    handleSave,
+    isDirty,
+    isPublishing,
+    persistedEventId,
+    requestPermissionFromError,
+    updateEvent,
+  ]);
 
   const handleStatusChange = useCallback(
     async (action: "unpublish" | "close") => {
@@ -722,11 +1055,12 @@ export function useEventDetailPage() {
         setStatusResult(action);
       } catch (error) {
         console.error("[handleStatusChange]", error);
+        await requestPermissionFromError(error, "Need to edit form");
       } finally {
         setIsChangingStatus(false);
       }
     },
-    [isChangingStatus, persistedEventId, updateEvent],
+    [isChangingStatus, persistedEventId, requestPermissionFromError, updateEvent],
   );
 
   const handleNodeMove = useCallback(
@@ -785,13 +1119,26 @@ export function useEventDetailPage() {
         return result.id;
       } catch (error) {
         console.error("[addPage]", error);
+        const permissionRequested = await requestPermissionFromError(
+          error,
+          "Need to edit form",
+        );
+        if (permissionRequested) return undefined;
         showToast(`Failed to add ${pageLabel}`, "error");
         return undefined;
       } finally {
         setIsAddingPage(false);
       }
     },
-    [createSection, getPageToastLabel, persistedEventId, sections.length, setSections, showToast],
+    [
+      createSection,
+      getPageToastLabel,
+      persistedEventId,
+      requestPermissionFromError,
+      sections.length,
+      setSections,
+      showToast,
+    ],
   );
 
   const handleLogicFlowChange = useCallback(
@@ -914,13 +1261,14 @@ export function useEventDetailPage() {
         prev.map((section) => {
           if (section.id !== sectionId) return section;
 
+          const targetRowId = section.fields.find((item) => item.id === fieldId)?.rowId;
           const fields = section.fields.map((field) => {
             if (field.id !== fieldId) {
               if (
                 "fieldWidth" in updates &&
                 updates.fieldWidth !== "half" &&
                 field.rowId &&
-                field.rowId === section.fields.find((item) => item.id === fieldId)?.rowId
+                field.rowId === targetRowId
               ) {
                 return { ...field, rowId: undefined };
               }
@@ -952,7 +1300,10 @@ export function useEventDetailPage() {
         prev.map((item) =>
           item.id !== sectionId
             ? item
-            : { ...item, fields: item.fields.filter((field) => field.id !== fieldId) },
+            : {
+                ...item,
+                fields: item.fields.filter((field) => field.id !== fieldId),
+              },
         ),
       );
 
@@ -966,14 +1317,15 @@ export function useEventDetailPage() {
 
   const duplicateField = useCallback(
     (sectionId: string, fieldId: string) => {
-      const duplicatedId = crypto.randomUUID();
+      const sourceSection = sections.find((section) => section.id === sectionId);
+      const field = sourceSection?.fields.find((item) => item.id === fieldId);
+      if (!field) return;
+
+      const newField = cloneFieldForBuilderDuplicate(field);
 
       setSections((prev) =>
         prev.map((section) => {
           if (section.id !== sectionId) return section;
-          const field = section.fields.find((item) => item.id === fieldId);
-          if (!field) return section;
-          const newField: FormField = { ...field, id: duplicatedId };
           const index = section.fields.findIndex((item) => item.id === fieldId);
           const updatedFields = [...section.fields];
           updatedFields.splice(index + 1, 0, newField);
@@ -981,16 +1333,47 @@ export function useEventDetailPage() {
         }),
       );
 
-      setSelectedId(duplicatedId);
+      setSelectedId(newField.id);
       setIsRightPanelOpen(true);
     },
-    [setSections],
+    [sections, setSections],
+  );
+
+  const importFields = useCallback(
+    (sectionId: string, sourceFields: FormField[]) => {
+      const importedFields = cloneFieldsForImport(sourceFields);
+      if (importedFields.length === 0) return;
+
+      setSections((prev) =>
+        prev.map((section) => {
+          if (section.id !== sectionId) return section;
+
+          const nextButtonIdx = section.fields.findIndex(
+            (field) => field.type === "next_button",
+          );
+          const nextFields = [...section.fields];
+          nextFields.splice(
+            nextButtonIdx >= 0 ? nextButtonIdx : nextFields.length,
+            0,
+            ...importedFields,
+          );
+          return { ...section, fields: nextFields };
+        }),
+      );
+
+      setSelectedId(importedFields[importedFields.length - 1]?.id ?? null);
+      setIsRightPanelOpen(true);
+      showToast(`${importedFields.length} question${importedFields.length === 1 ? "" : "s"} imported`);
+    },
+    [setSections, showToast],
   );
 
   const findFieldInfo = useCallback(
     (fieldId: string) => {
       for (const section of sections) {
-        const fieldIdx = section.fields.findIndex((field) => field.id === fieldId);
+        const fieldIdx = section.fields.findIndex(
+          (field) => field.id === fieldId,
+        );
         if (fieldIdx !== -1) {
           return { sectionId: section.id, fieldIdx };
         }
@@ -1015,6 +1398,7 @@ export function useEventDetailPage() {
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
       const { active, over } = event;
+      const overId = over ? String(over.id) : "";
 
       if ((active.id as string).startsWith("palette:")) {
         setDragInsertIdx(null);
@@ -1022,10 +1406,19 @@ export function useEventDetailPage() {
         if (
           over &&
           activePage &&
-          !String(over.id).startsWith("palette:") &&
-          !String(over.id).startsWith("side-")
+          !overId.startsWith("palette:") &&
+          !overId.startsWith("side-")
         ) {
-          const overInfo = findFieldInfo(over.id as string);
+          const insertZone = parseFieldInsertZoneId(overId);
+
+          if (insertZone?.sectionId === activePage.id) {
+            setPaletteInsertIdx(
+              clampFieldInsertIndex(activePage.fields, insertZone.index),
+            );
+            return;
+          }
+
+          const overInfo = findFieldInfo(overId);
 
           if (overInfo && overInfo.sectionId === activePage.id) {
             let nextIndex = getVerticalInsertIndex(
@@ -1033,12 +1426,7 @@ export function useEventDetailPage() {
               over.rect,
               active.rect.current?.translated,
             );
-            const nextButtonIdx = activePage.fields.findIndex(
-              (field) => field.type === "next_button",
-            );
-            if (nextButtonIdx >= 0 && nextIndex > nextButtonIdx) {
-              nextIndex = nextButtonIdx;
-            }
+            nextIndex = clampFieldInsertIndex(activePage.fields, nextIndex);
             setPaletteInsertIdx(nextIndex);
           } else {
             setPaletteInsertIdx(null);
@@ -1052,25 +1440,58 @@ export function useEventDetailPage() {
 
       setPaletteInsertIdx(null);
 
-      if (!over || active.id === over.id || String(over.id).startsWith("side-")) {
+      if (!over || overId.startsWith("palette:") || overId.startsWith("side-")) {
         setDragInsertIdx(null);
         return;
       }
 
       const activeInfo = findFieldInfo(active.id as string);
-      const overInfo = findFieldInfo(over.id as string);
 
-      if (!activeInfo || !overInfo) {
+      if (!activeInfo) {
+        setDragInsertIdx(null);
+        return;
+      }
+
+      const insertZone = parseFieldInsertZoneId(overId);
+
+      if (insertZone) {
+        const activeSection = sections.find(
+          (section) => section.id === activeInfo.sectionId,
+        );
+        if (activeSection && insertZone.sectionId === activeInfo.sectionId) {
+          setDragInsertIdx(
+            clampFieldInsertIndex(activeSection.fields, insertZone.index),
+          );
+        } else {
+          setDragInsertIdx(null);
+        }
+        return;
+      }
+
+      if (active.id === over.id) {
+        setDragInsertIdx(null);
+        return;
+      }
+
+      const overInfo = findFieldInfo(overId);
+
+      if (!overInfo) {
         setDragInsertIdx(null);
         return;
       }
 
       if (activeInfo.sectionId === overInfo.sectionId) {
+        const activeSection = sections.find(
+          (section) => section.id === activeInfo.sectionId,
+        );
         setDragInsertIdx(
-          getVerticalInsertIndex(
-            overInfo.fieldIdx,
-            over.rect,
-            active.rect.current?.translated,
+          clampFieldInsertIndex(
+            activeSection?.fields ?? [],
+            getVerticalInsertIndex(
+              overInfo.fieldIdx,
+              over.rect,
+              active.rect.current?.translated,
+            ),
           ),
         );
         return;
@@ -1089,21 +1510,26 @@ export function useEventDetailPage() {
           (field) => field.id === over.id,
         );
         destination.fields.splice(
-          destinationIdx >= 0 ? destinationIdx : destination.fields.length,
+          clampFieldInsertIndex(
+            destination.fields,
+            destinationIdx >= 0 ? destinationIdx : destination.fields.length,
+          ),
           0,
           moved,
         );
         return next;
       });
     },
-    [activePage, findFieldInfo, setSections],
+    [activePage, findFieldInfo, sections, setSections],
   );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
+      const overId = over ? String(over.id) : "";
 
       if ((active.id as string).startsWith("palette:")) {
+        const currentPaletteInsertIdx = paletteInsertIdx;
         setPaletteDragType(null);
         setPaletteInsertIdx(null);
         setDragInsertIdx(null);
@@ -1111,31 +1537,31 @@ export function useEventDetailPage() {
         const fieldType = active.data.current?.fieldType as FieldType | undefined;
         if (!fieldType || !activePage) return;
 
-        let insertAtIdx: number | undefined;
+        let insertAtIdx =
+          currentPaletteInsertIdx !== null ? currentPaletteInsertIdx : undefined;
         if (
           over &&
-          !String(over.id).startsWith("palette:") &&
-          !String(over.id).startsWith("side-")
+          !overId.startsWith("palette:") &&
+          !overId.startsWith("side-")
         ) {
-          const overInfo = findFieldInfo(over.id as string);
-          if (overInfo && overInfo.sectionId === activePage.id) {
-            insertAtIdx = getVerticalInsertIndex(
-              overInfo.fieldIdx,
-              over.rect,
-              active.rect.current?.translated,
-            );
+          const insertZone = parseFieldInsertZoneId(overId);
+
+          if (insertZone?.sectionId === activePage.id) {
+            insertAtIdx = insertZone.index;
+          } else {
+            const overInfo = findFieldInfo(overId);
+            if (overInfo && overInfo.sectionId === activePage.id) {
+              insertAtIdx = getVerticalInsertIndex(
+                overInfo.fieldIdx,
+                over.rect,
+                active.rect.current?.translated,
+              );
+            }
           }
         }
 
-        const nextButtonIdx = activePage.fields.findIndex(
-          (field) => field.type === "next_button",
-        );
-        if (
-          nextButtonIdx >= 0 &&
-          insertAtIdx !== undefined &&
-          insertAtIdx > nextButtonIdx
-        ) {
-          insertAtIdx = nextButtonIdx;
+        if (insertAtIdx !== undefined) {
+          insertAtIdx = clampFieldInsertIndex(activePage.fields, insertAtIdx);
         }
 
         addField(fieldType, activePage.id, undefined, insertAtIdx);
@@ -1146,10 +1572,10 @@ export function useEventDetailPage() {
       const reorderTargetIdx = dragInsertIdx;
       setDragInsertIdx(null);
 
-      if (!over || active.id === over.id) return;
+      if (!over && reorderTargetIdx === null) return;
 
-      if ((over.id as string).startsWith("side-")) {
-        const targetFieldId = (over.id as string).slice(5);
+      if (overId.startsWith("side-")) {
+        const targetFieldId = overId.slice(5);
         const activeInfo = findFieldInfo(active.id as string);
         const targetInfo = findFieldInfo(targetFieldId);
 
@@ -1169,12 +1595,14 @@ export function useEventDetailPage() {
             if (section.id !== activeInfo.sectionId) return section;
             const fields = section.fields.map((field) => ({ ...field }));
             const activeIdx = fields.findIndex((field) => field.id === active.id);
+            if (activeIdx < 0) return section;
             const [moved] = fields.splice(activeIdx, 1);
             moved.fieldWidth = "half";
             moved.rowId = newRowId;
             const newTargetIdx = fields.findIndex(
               (field) => field.id === targetFieldId,
             );
+            if (newTargetIdx < 0) return section;
             fields[newTargetIdx] = {
               ...fields[newTargetIdx],
               fieldWidth: "half",
@@ -1187,29 +1615,66 @@ export function useEventDetailPage() {
         return;
       }
 
-      const activeInfo = findFieldInfo(active.id as string);
-      const overInfo = findFieldInfo(over.id as string);
+      if (overId.startsWith("palette:")) return;
 
-      if (!activeInfo || !overInfo || activeInfo.sectionId !== overInfo.sectionId) {
+      const activeInfo = findFieldInfo(active.id as string);
+      if (!activeInfo) return;
+
+      const insertZone = over ? parseFieldInsertZoneId(overId) : null;
+      let insertIdx = reorderTargetIdx;
+
+      if (insertZone) {
+        if (insertZone.sectionId !== activeInfo.sectionId) return;
+        insertIdx = insertZone.index;
+      } else if (over && active.id !== over.id) {
+        const overInfo = findFieldInfo(overId);
+
+        if (
+          !overInfo ||
+          activeInfo.sectionId !== overInfo.sectionId
+        ) {
+          return;
+        }
+
+        if (insertIdx === null) {
+          insertIdx = getVerticalInsertIndex(
+            overInfo.fieldIdx,
+            over.rect,
+            active.rect.current?.translated,
+          );
+        }
+      } else if (insertIdx === null) {
         return;
       }
+
+      if (insertIdx === null) return;
 
       setSections((prev) =>
         prev.map((section) => {
           if (section.id !== activeInfo.sectionId) return section;
           const fields = [...section.fields];
-          const [moved] = fields.splice(activeInfo.fieldIdx, 1);
-          let insertIdx = reorderTargetIdx ?? overInfo.fieldIdx;
-          if (activeInfo.fieldIdx < insertIdx) {
-            insertIdx -= 1;
+          const activeIdx = fields.findIndex((field) => field.id === active.id);
+          if (activeIdx < 0) return section;
+          const safeInsertIdx = clampFieldInsertIndex(section.fields, insertIdx);
+          const [moved] = fields.splice(activeIdx, 1);
+          let targetIdx = safeInsertIdx;
+          if (activeIdx < targetIdx) {
+            targetIdx -= 1;
           }
-          insertIdx = Math.max(0, Math.min(insertIdx, fields.length));
-          fields.splice(insertIdx, 0, moved);
+          targetIdx = Math.max(0, Math.min(targetIdx, fields.length));
+          fields.splice(targetIdx, 0, moved);
           return { ...section, fields };
         }),
       );
     },
-    [activePage, addField, dragInsertIdx, findFieldInfo, setSections],
+    [
+      activePage,
+      addField,
+      dragInsertIdx,
+      findFieldInfo,
+      paletteInsertIdx,
+      setSections,
+    ],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -1252,12 +1717,14 @@ export function useEventDetailPage() {
     createSection,
     deleteErrorOpen,
     deleteField,
-    deleteSection,
     deletedSectionIdsRef,
     dndSensors,
     dragInsertIdx,
     duplicateField,
     eventStatus,
+    editPermissionPending,
+    editPermissionRequested,
+    editPermissionRequired,
     existing,
     formTitle,
     handleDragCancel,
@@ -1272,12 +1739,16 @@ export function useEventDetailPage() {
     handleThemeChange,
     history,
     id,
+    importFields,
     initialized,
     isAddingPage,
     isChangingStatus,
     isCoverPage,
     isDirty,
-    isLoading: isLoading && !hasBuilderRouteState,
+    isLoading:
+      !editPermissionRequired &&
+      (isEditAccessLoading || (hasEditAccess && isLoading && !hasBuilderRouteState)),
+    isRequestingEditPermission: createPermissionRequest.isPending,
     isLogicOpen,
     isPublishing,
     isRightPanelOpen,
@@ -1292,6 +1763,8 @@ export function useEventDetailPage() {
     pendingTheme,
     publicFormUrl,
     questionsEndRef,
+    requestEditPermission,
+    resourceVisibility,
     responses,
     sections,
     selectedField,
@@ -1316,6 +1789,7 @@ export function useEventDetailPage() {
     setLeftPanelMode,
     setLogicInitialTab,
     setPendingTheme,
+    setResourceVisibility,
     setSections,
     setSelectedId,
     setShowBgImageModal,
@@ -1338,7 +1812,6 @@ export function useEventDetailPage() {
     toastType,
     updateEvent,
     updateField,
-    updateSection,
     uploadImageWithToast,
     welcomeRename,
     welcomeThemePicker,

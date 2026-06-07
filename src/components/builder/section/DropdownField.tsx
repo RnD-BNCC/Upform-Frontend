@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { CaretDownIcon, XIcon } from "@phosphor-icons/react";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import {
   FieldPluginOptionsEditor,
   FieldPluginRequiredValidationField,
-} from "./FieldSettingSections";
+} from "@/components/builder/section/FieldSettingSections";
 
 type Props = {
   defaultValue?: string;

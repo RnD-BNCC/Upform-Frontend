@@ -1,4 +1,4 @@
-export { default as BarChartCard } from "./BarChartCard";
-export { default as FileResponseList } from "./FileResponseList";
-export { default as PieChartCard } from "./PieChartCard";
-export { default as TextResponseList } from "./TextResponseList";
+export { default as BarChartCard } from "@/components/responses/charts/BarChartCard";
+export { default as FileResponseList } from "@/components/responses/charts/FileResponseList";
+export { default as PieChartCard } from "@/components/responses/charts/PieChartCard";
+export { default as TextResponseList } from "@/components/responses/charts/TextResponseList";

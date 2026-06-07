@@ -38,7 +38,7 @@ import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
   EMAIL_RE,
-} from "./constants";
+} from "@/components/builder/layout/share/email-composer/constants";
 import {
   AddBlockDropdown,
   BlockInsertControl,
@@ -52,7 +52,7 @@ import {
   SortableBlock,
   SpacerSettingsPanel,
   TextSettingsPanel,
-} from "./components";
+} from "@/components/builder/layout/share/email-composer/components";
 import type {
   EmailBlock,
   EmailBlockPatch,
@@ -71,7 +71,7 @@ import {
   serializeEmailDraft,
   toSaveEmailDraftPayload,
   uid,
-} from "./utils";
+} from "@/components/builder/layout/share/email-composer/utils";
 
 type SendFormModalEditorProps = SendFormModalProps & {
   initialDraft: EmailComposerDraftState;

@@ -4,10 +4,14 @@ import type {
   FormEvent,
   FormField,
   RespondentDeviceType,
-} from './form'
+} from '@/types/form'
+
+export type ResourceVisibility = 'private' | 'public'
 
 // Event list response
-export type EventListItem = Omit<FormEvent, 'responses'>
+export type EventListItem = Omit<FormEvent, 'responses' | 'sections'> & {
+  sections?: FormEvent['sections']
+}
 
 export type EventListResponse = {
   data: EventListItem[]
@@ -20,6 +24,7 @@ export type EventListResponse = {
   counts: {
     total: number
     active: number
+    deleted: number
     totalResponses: number
   }
 }
@@ -29,12 +34,14 @@ export type EventListParams = {
   take?: number
   status?: 'draft' | 'active' | 'closed'
   search?: string
+  deleted?: boolean
 }
 
 export type CreateEventPayload = {
   name?: string
   color?: string
   theme?: string
+  visibility?: ResourceVisibility
 }
 
 export type UpdateEventPayload = {
@@ -43,6 +50,7 @@ export type UpdateEventPayload = {
   color?: string
   image?: string | null
   theme?: string
+  visibility?: ResourceVisibility
 }
 
 export type UpdateSectionWithPageTypePayload = {
@@ -72,6 +80,16 @@ export type UpdateSectionPayload = {
   logicY?: number
 }
 
+export type SaveBuilderSectionPayload = UpdateSectionPayload & {
+  sectionId: string
+}
+
+export type SaveBuilderEventPayload = {
+  deletedSectionIds?: string[]
+  event?: Pick<UpdateEventPayload, 'color' | 'image' | 'name' | 'theme' | 'visibility'>
+  sections?: SaveBuilderSectionPayload[]
+}
+
 // Response payloads
 export type SubmitResponsePayload = {
   answers: Record<string, FormAnswerValue>
@@ -83,6 +101,10 @@ export type SubmitResponsePayload = {
   sectionHistory?: number[]
   startedAt?: string
   userAgent?: string
+}
+
+export type EventQuestionBank = Pick<FormEvent, 'id' | 'name'> & {
+  sections: FormEvent['sections']
 }
 
 export type UpdateResponsePayload = {
@@ -233,4 +255,113 @@ export type SaveSubmitFormSettingsPayload = {
   raffleSuffix: string
   raffleStart: number
   rafflePadding: number
+}
+
+export type PermissionAction =
+  | 'responses.view'
+  | 'responses.edit'
+  | 'responses.delete'
+  | 'forms.edit'
+  | 'forms.delete'
+  | 'forms.rollback'
+  | 'polls.edit'
+  | 'polls.delete'
+  | 'polls.rollback'
+  | 'gallery.view'
+  | 'gallery.manage'
+  | 'gallery.delete'
+
+export type PermissionRequest = {
+  id: string
+  requesterId?: string | null
+  requesterEmail: string
+  action: PermissionAction
+  resourceType: string
+  resourceId: string
+  resourceKind?: string | null
+  resourceName?: string | null
+  resourceStatus?: string | null
+  reason?: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  approvedBy?: string | null
+  approvedAt?: string | null
+  rejectedBy?: string | null
+  rejectedAt?: string | null
+  expiresAt?: string | null
+  usedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type PermissionRequestListResponse = {
+  approver: boolean
+  approverEmails: string[]
+  data: PermissionRequest[]
+}
+
+export type PermissionListMeta = {
+  page: number
+  take: number
+  total: number
+  totalPages: number
+}
+
+export type PermissionGrantListResponse = PermissionRequestListResponse & {
+  meta: PermissionListMeta
+}
+
+export type PermissionAccessResponse = {
+  allowed: boolean
+  pending: boolean
+  request?: Pick<PermissionRequest, 'createdAt' | 'id' | 'status'> | null
+}
+
+export type CreatePermissionRequestPayload = {
+  action: PermissionAction
+  reason?: string
+  resourceId: string
+  resourceType?: string
+}
+
+export type CreatePermissionGrantPayload = CreatePermissionRequestPayload & {
+  requesterEmail: string
+}
+
+export type PermissionAccessParams = {
+  action: PermissionAction
+  resourceId: string
+  resourceType?: string
+}
+
+export type PermissionGrantParams = {
+  page?: number
+  requesterEmail?: string
+  resourceId?: string
+  resourceType?: string
+  status?: string
+  take?: number
+}
+
+export type UserSearchItem = {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  role: string
+}
+
+export type UserSearchResponse = {
+  data: UserSearchItem[]
+}
+
+export type FormAuditLog = {
+  id: string
+  eventId: string
+  action: string
+  targetType: string
+  targetId?: string | null
+  actorEmail?: string | null
+  beforeSnapshot?: unknown
+  afterSnapshot?: unknown
+  createdAt: string
 }

@@ -16,10 +16,10 @@ import {
   CONDITION_FIELD_TYPE_LABELS,
   getAvailableConditionFieldsForField,
 } from "@/utils/form";
-import { ConditionPopup } from "../reference/FieldConditionEditor";
-import { countConditionNodes } from "../reference/fieldConditionUtils";
-import ReferenceTextEditor from "../reference/ReferenceTextEditor";
-import RichInput from "../../utils/RichInput";
+import { ConditionPopup } from "@/components/builder/layout/reference/FieldConditionEditor";
+import { countConditionNodes } from "@/components/builder/layout/reference/fieldConditionUtils";
+import ReferenceTextEditor from "@/components/builder/layout/reference/ReferenceTextEditor";
+import RichInput from "@/components/builder/utils/RichInput";
 import {
   getAvailableReferenceFieldGroupsForField,
   stripHtmlToText,
@@ -32,7 +32,7 @@ import {
   formatCurrencyInput,
   normalizeCurrencyInput,
 } from "@/components/builder/section/CurrencyField";
-import HelpTooltip from "../shared/HelpTooltip";
+import HelpTooltip from "@/components/builder/layout/shared/HelpTooltip";
 
 type Props = {
   isOpen: boolean;

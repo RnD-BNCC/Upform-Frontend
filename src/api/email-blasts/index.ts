@@ -7,4 +7,4 @@ export {
   useQuerySubmitFormSettings,
   useMutationSaveSubmitFormSettings,
   useMutationCancelEmailBlast,
-} from './queries'
+} from '@/api/email-blasts/queries'
