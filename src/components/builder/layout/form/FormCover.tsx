@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { ImageIcon, TrashSimpleIcon } from "@phosphor-icons/react";
-import RichInput from "../../utils/RichInput";
+import RichInput from "@/components/builder/utils/RichInput";
 
 const BANNER_COLORS = [
   "#0054a5",

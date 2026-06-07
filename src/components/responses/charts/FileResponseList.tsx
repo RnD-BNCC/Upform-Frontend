@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { FileIcon, DownloadSimpleIcon, ArrowSquareOutIcon } from '@phosphor-icons/react'
-import FilePreviewModal from '../FilePreviewModal'
+import FilePreviewModal from '@/components/responses/FilePreviewModal'
 
 interface FileResponseListProps {
   values: string[]

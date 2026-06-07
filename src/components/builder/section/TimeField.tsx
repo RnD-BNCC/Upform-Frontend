@@ -2,8 +2,8 @@ import { ClockIcon } from "@phosphor-icons/react";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginRequiredValidationField } from "./FieldSettingSections";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginRequiredValidationField } from "@/components/builder/section/FieldSettingSections";
 
 type Props = {
   placeholder?: string;

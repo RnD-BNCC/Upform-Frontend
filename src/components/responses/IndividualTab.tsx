@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react'
 import type { FormField, FormResponse } from '@/types/form'
-import IndividualResponseCard from './IndividualResponseCard'
+import IndividualResponseCard from '@/components/responses/IndividualResponseCard'
 
 interface IndividualTabProps {
   responses: FormResponse[]

@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { CheckCircleIcon } from "@phosphor-icons/react";
-import RichInput from "../utils/RichInput";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
-import { FieldPluginToggleRow } from "./FieldSettingControls";
+import RichInput from "@/components/builder/utils/RichInput";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginToggleRow } from "@/components/builder/section/FieldSettingControls";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
 import type { FormField } from "@/types/form";
 

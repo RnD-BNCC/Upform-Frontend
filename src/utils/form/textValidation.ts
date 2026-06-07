@@ -1,6 +1,6 @@
 import type { FormField, FormAnswerValue } from "@/types/form";
-import { stripHtmlToText } from "./referenceTokens";
-import { parsePhoneAnswer } from "./phoneAnswer";
+import { stripHtmlToText } from "@/utils/form/referenceTokens";
+import { parsePhoneAnswer } from "@/utils/form/phoneAnswer";
 
 function getTextValue(value: FormAnswerValue | undefined) {
   if (Array.isArray(value) || value === undefined) {

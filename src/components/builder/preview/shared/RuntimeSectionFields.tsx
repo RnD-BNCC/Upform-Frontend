@@ -5,8 +5,8 @@ import { buildRows } from "@/utils/form/formBuilder";
 import { getVisibleFields } from "@/utils/form";
 import { getRuntimeDefaultAnswer } from "@/utils/form/defaultAnswers";
 import type { ThemeConfig } from "@/utils/form/themeConfig";
-import PreviewField from "./PreviewField";
-import ThemeFormLayout from "./ThemeFormLayout";
+import PreviewField from "@/components/builder/preview/shared/PreviewField";
+import ThemeFormLayout from "@/components/builder/preview/shared/ThemeFormLayout";
 
 type Props = {
   answers: Record<string, string | string[]>;

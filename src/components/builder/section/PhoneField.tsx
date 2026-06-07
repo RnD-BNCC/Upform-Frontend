@@ -9,9 +9,9 @@ import { BUILDER_PHONE_COUNTRIES, getCountryByCode } from "@/constants";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
-import { FieldPluginLabel } from "./FieldSettingControls";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
+import { FieldPluginLabel } from "@/components/builder/section/FieldSettingControls";
 import { sanitizePhoneNumber } from "@/utils/form/phoneAnswer";
 
 type Props = {

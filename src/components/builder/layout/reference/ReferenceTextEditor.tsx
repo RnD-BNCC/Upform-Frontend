@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormField } from "@/types/form";
 import type { ConditionFieldGroup } from "@/utils/form/conditionFields";
-import ReferencePickerPopover from "./ReferencePickerPopover";
+import ReferencePickerPopover from "@/components/builder/layout/reference/ReferencePickerPopover";
 import {
   createCalculationReferenceTokenHtml,
   createDateReferenceTokenHtml,

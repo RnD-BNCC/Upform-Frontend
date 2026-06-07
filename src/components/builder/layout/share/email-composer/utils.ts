@@ -6,7 +6,7 @@ import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
   EMAIL_RE,
-} from "./constants";
+} from "@/components/builder/layout/share/email-composer/constants";
 import type {
   EmailBlock,
   EmailComposerDraftState,

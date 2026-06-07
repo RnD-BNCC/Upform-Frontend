@@ -1,10 +1,14 @@
-import { useState, useEffect, type RefObject } from 'react'
+import { useState, useEffect, useRef, type RefObject } from 'react'
 import type { PollSlide, SlideType } from '@/types/polling'
 import {
   Copy,
   DotsSixVertical,
   FloppyDisk,
+  ChatCircleText,
+  ClockCounterClockwise,
+  GlobeHemisphereWest,
   HouseIcon,
+  Lock,
   PencilSimple,
   Plus,
   Presentation,
@@ -13,12 +17,15 @@ import {
 } from '@phosphor-icons/react'
 import { SLIDE_TYPES, TYPE_ICONS } from '@/config/polling'
 import { BrandLogo } from '@/components/layout'
+import type { ResourceVisibility } from '@/types/api'
 type SlidesSidebarProps = {
-  activePanel: 'edit' | 'results'
+  activePanel: 'edit' | 'logs' | 'qna' | 'results'
   title: string
   pollCode: string
+  pollVisibility?: ResourceVisibility
   slides: PollSlide[]
   selectedIndex: number
+  selectedSlideType?: SlideType
   liveQuestion: string | null
   onBack: () => void
   onTitleChange: (title: string) => void
@@ -30,10 +37,14 @@ type SlidesSidebarProps = {
   saveReorderRef: RefObject<(() => void) | null>
   onCopyCode: () => void
   onPresent: () => void
+  onVisibilityChange?: (visibility: ResourceVisibility) => void
   onSave: () => void
   onShowEdit: () => void
+  onShowLogs: () => void
+  onShowQnaMonitor: () => void
   onShowResults: () => void
   isAddPending: boolean
+  saveStatus: 'error' | 'saved' | 'saving' | 'unsaved'
 }
 import { DndContext, closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
@@ -152,8 +163,10 @@ export default function SlidesSidebar({
   activePanel,
   title,
   pollCode,
+  pollVisibility = 'private',
   slides,
   selectedIndex,
+  selectedSlideType,
   liveQuestion,
   onBack,
   onTitleChange,
@@ -165,13 +178,18 @@ export default function SlidesSidebar({
   saveReorderRef,
   onCopyCode,
   onPresent,
+  onVisibilityChange,
   onSave,
   onShowEdit,
+  onShowLogs,
+  onShowQnaMonitor,
   onShowResults,
   isAddPending,
+  saveStatus,
 }: SlidesSidebarProps) {
   const [localSlides, setLocalSlides] = useState(slides)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const requestedOrderRef = useRef('')
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -193,11 +211,31 @@ export default function SlidesSidebar({
     saveReorderRef.current = () => onReorderSlides(localSlides.map((s) => s.id))
   }, [localSlides, onReorderSlides, saveReorderRef])
 
+  useEffect(() => {
+    const localOrder = localSlides.map((slide) => slide.id).join('|')
+    const savedOrder = slides.map((slide) => slide.id).join('|')
+
+    if (localOrder === savedOrder) {
+      requestedOrderRef.current = ''
+      return
+    }
+
+    if (requestedOrderRef.current === localOrder) return
+
+    const timer = window.setTimeout(() => {
+      requestedOrderRef.current = localOrder
+      onReorderSlides(localSlides.map((slide) => slide.id))
+    }, 900)
+
+    return () => window.clearTimeout(timer)
+  }, [localSlides, onReorderSlides, slides])
+
   const slideIds = localSlides.map((s) => s.id)
   const activeSlideId = slides[selectedIndex]?.id
   const localSelectedIndex = localSlides.findIndex((s) => s.id === activeSlideId)
   const activeSlide = activeId ? localSlides.find((s) => s.id === activeId) : null
   const activeIndex = activeId ? localSlides.findIndex((s) => s.id === activeId) : -1
+  const canOpenQnaMonitor = selectedSlideType === 'qa'
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
@@ -235,6 +273,38 @@ export default function SlidesSidebar({
           placeholder="Poll title..."
           className="w-full text-sm font-semibold text-gray-900 bg-transparent outline-none border-b border-gray-200 hover:border-gray-400 focus:border-primary-500 px-0.5 py-1.5 transition-colors placeholder:text-gray-300"
         />
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-semibold">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              saveStatus === 'error'
+                ? 'bg-red-500'
+                : saveStatus === 'saving'
+                  ? 'bg-primary-500'
+                  : saveStatus === 'unsaved'
+                    ? 'bg-amber-500'
+                    : 'bg-emerald-500'
+            }`}
+          />
+          <span
+            className={
+              saveStatus === 'error'
+                ? 'text-red-500'
+                : saveStatus === 'saving'
+                  ? 'text-primary-500'
+                  : saveStatus === 'unsaved'
+                    ? 'text-amber-500'
+                    : 'text-emerald-600'
+            }
+          >
+            {saveStatus === 'error'
+              ? 'Not saved'
+              : saveStatus === 'saving'
+                ? 'Saving...'
+                : saveStatus === 'unsaved'
+                  ? 'Unsaved changes'
+                  : 'Saved'}
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2.5 px-4 pb-4">
@@ -247,6 +317,29 @@ export default function SlidesSidebar({
             <Copy size={13} weight="bold" />
           </button>
         </div>
+        {onVisibilityChange ? (
+          <div className="mt-2 grid grid-cols-2 gap-1 rounded-sm border border-gray-200 bg-white p-1">
+            {(['private', 'public'] as const).map((visibility) => {
+              const active = pollVisibility === visibility
+              const Icon = visibility === 'private' ? Lock : GlobeHemisphereWest
+              return (
+                <button
+                  key={visibility}
+                  type="button"
+                  onClick={() => onVisibilityChange(visibility)}
+                  className={`flex h-7 items-center justify-center gap-1 rounded-[3px] text-[11px] font-bold capitalize transition-colors ${
+                    active
+                      ? 'bg-primary-500 text-white shadow-sm'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon size={12} weight={active ? 'fill' : 'bold'} />
+                  {visibility}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
         <button
           onClick={onPresent}
           className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-emerald-500 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-600"
@@ -254,7 +347,20 @@ export default function SlidesSidebar({
           <Presentation size={14} weight="bold" />
           Present
         </button>
-        <div className="grid grid-cols-2 gap-1 rounded-sm border border-gray-200 bg-white p-1">
+        {canOpenQnaMonitor ? (
+          <button
+            onClick={onShowQnaMonitor}
+            className={`flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm border px-4 text-xs font-bold transition-colors ${
+              activePanel === 'qna'
+                ? 'border-primary-500 bg-primary-500 text-white shadow-sm'
+                : 'border-primary-100 bg-white text-primary-600 hover:bg-primary-50'
+            }`}
+          >
+            <ChatCircleText size={14} weight="bold" />
+            Q&A Monitor
+          </button>
+        ) : null}
+        <div className="grid grid-cols-3 gap-1 rounded-sm border border-gray-200 bg-white p-1">
           <button
             type="button"
             onClick={onShowEdit}
@@ -278,6 +384,18 @@ export default function SlidesSidebar({
           >
             <Trophy size={13} weight="fill" />
             Results
+          </button>
+          <button
+            type="button"
+            onClick={onShowLogs}
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-[3px] text-xs font-bold transition-colors ${
+              activePanel === 'logs'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+            }`}
+          >
+            <ClockCounterClockwise size={13} weight="bold" />
+            Logs
           </button>
         </div>
       </div>
@@ -333,10 +451,11 @@ export default function SlidesSidebar({
       <div className="mt-auto border-t border-gray-100 p-3">
         <button
           onClick={onSave}
-          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-primary-500 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-600"
+          disabled={saveStatus === 'saving'}
+          className="flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-primary-500 px-3 text-xs font-bold text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FloppyDisk size={14} weight="bold" />
-          Save
+          {saveStatus === 'saving' ? 'Saving...' : 'Save now'}
         </button>
       </div>
     </aside>

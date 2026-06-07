@@ -8,9 +8,9 @@
 import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_WIDTH,
-} from "../constants";
+} from "@/components/builder/layout/share/email-composer/constants";
 import type { EmailBlockPatch, ImageBlock, SpacerBlock } from "@/types/builderShare";
-import { BlockTypeIcon } from "./BlockControls";
+import { BlockTypeIcon } from "@/components/builder/layout/share/email-composer/components/BlockControls";
 
 function ModalToggle({
   checked,

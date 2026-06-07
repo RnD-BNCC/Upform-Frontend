@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FunnelSimpleIcon } from "@phosphor-icons/react";
 import type { FormField } from "@/types/form";
 import type { ResultFilterGroup } from "@/types/results";
-import ResultConditionEditorPanel from "../conditions/ResultConditionEditorPanel";
-import { countFilterConditions } from "../database/resultsDatabaseUtils";
+import ResultConditionEditorPanel from "@/components/responses/conditions/ResultConditionEditorPanel";
+import { countFilterConditions } from "@/components/responses/database/resultsDatabaseUtils";
 
 type AnalyticsConditionPopoverProps = {
   fields: FormField[];

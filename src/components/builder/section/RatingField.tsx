@@ -1,12 +1,12 @@
 import { HeartIcon, StarIcon, ThumbsUpIcon } from "@phosphor-icons/react";
 import ReferenceTextEditor from "@/components/builder/layout/reference/ReferenceTextEditor";
-import { RatingSection } from "./RatingSection";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import { RatingSection } from "@/components/builder/section/RatingSection";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import {
   FieldPluginLabel,
   FieldPluginToggleRow,
   normalizeFieldSettingValue,
-} from "./FieldSettingControls";
+} from "@/components/builder/section/FieldSettingControls";
 
 type Props = {
   allowHalfStar?: boolean;

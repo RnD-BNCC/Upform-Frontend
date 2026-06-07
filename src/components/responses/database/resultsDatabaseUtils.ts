@@ -1,5 +1,5 @@
 import type { FormField, FormResponse } from "@/types/form";
-import { cleanResultLabel, isResultField } from "../resultsResponseUtils";
+import { cleanResultLabel, isResultField } from "@/components/responses/resultsResponseUtils";
 import type {
   ResultDatabaseView,
   ResultFieldColumn,

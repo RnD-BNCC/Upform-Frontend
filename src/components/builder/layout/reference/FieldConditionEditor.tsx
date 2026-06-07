@@ -14,10 +14,10 @@ import {
 import ConditionSelect, {
   closeConditionSelectMenus,
   type ConditionSelectOption,
-} from "./ConditionSelect";
-import ReferencePickerPopover from "./ReferencePickerPopover";
-import { useReferenceCalculations } from "./ReferenceCalculationContext";
-import ReferenceTextEditor from "./ReferenceTextEditor";
+} from "@/components/builder/layout/reference/ConditionSelect";
+import ReferencePickerPopover from "@/components/builder/layout/reference/ReferencePickerPopover";
+import { useReferenceCalculations } from "@/components/builder/layout/reference/ReferenceCalculationContext";
+import ReferenceTextEditor from "@/components/builder/layout/reference/ReferenceTextEditor";
 import { ChevronDownIcon, ConditionTrashIcon } from "@/components/icons";
 
 type LogicType = "and" | "or";

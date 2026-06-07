@@ -12,7 +12,7 @@ import {
   ImageUpload,
   ScaleStatementsEditor,
   CorrectAreaPicker,
-} from './settings'
+} from '@/pages/polls/edit/components/settings'
 
 const fieldLabelClassName = "mb-2 block text-xs font-medium text-gray-600"
 const hintClassName = "mb-2 text-xs leading-4 text-gray-400"

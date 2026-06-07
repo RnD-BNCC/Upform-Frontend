@@ -8,15 +8,16 @@ import {
 } from "@phosphor-icons/react";
 import { Spinner } from "@/components/ui";
 import type { FormField, FormResponse } from "@/types/form";
-import { cleanResultLabel, getResponseTimestamp } from "../resultsResponseUtils";
-import { formatAnswerValue, toStableResponseUuid } from "./resultsDatabaseUtils";
-import ResponseFieldEditor from "./ResponseFieldEditor";
+import { cleanResultLabel, getResponseTimestamp } from "@/components/responses/resultsResponseUtils";
+import { formatAnswerValue, toStableResponseUuid } from "@/components/responses/database/resultsDatabaseUtils";
+import ResponseFieldEditor from "@/components/responses/database/ResponseFieldEditor";
 
 type ResponseDrawerProps = {
   fields: FormField[];
   index: number;
   lotteryId?: string;
   response: FormResponse;
+  readOnly?: boolean;
   saveStatus: ResponseSaveStatus;
   total: number;
   viewName: string;
@@ -61,6 +62,7 @@ export default function ResponseDrawer({
   onClose,
   onMove,
   onUpdateAnswer,
+  readOnly = false,
   response,
   saveStatus,
   total,
@@ -98,7 +100,13 @@ export default function ResponseDrawer({
             {index + 1} of {total} in{" "}
             <span className="font-semibold text-gray-800">{viewName}</span>
           </span>
-          <SaveStatusLabel status={saveStatus} />
+          {readOnly ? (
+            <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-gray-500">
+              Read only
+            </span>
+          ) : (
+            <SaveStatusLabel status={saveStatus} />
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -142,11 +150,21 @@ export default function ResponseDrawer({
                     {cleanResultLabel(field.label)}
                   </label>
                 ) : null}
-                <ResponseFieldEditor
-                  field={field}
-                  value={response.answers[field.id]}
-                  onChange={(value) => onUpdateAnswer(response.id, field.id, value)}
-                />
+                {readOnly ? (
+                  <div className="min-h-10 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 shadow-sm">
+                    {formatAnswerValue(response.answers[field.id]) || (
+                      <span className="text-gray-300">Empty</span>
+                    )}
+                  </div>
+                ) : (
+                  <ResponseFieldEditor
+                    field={field}
+                    value={response.answers[field.id]}
+                    onChange={(value) =>
+                      onUpdateAnswer(response.id, field.id, value)
+                    }
+                  />
+                )}
               </div>
             ))}
 

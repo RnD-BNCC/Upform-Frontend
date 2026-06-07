@@ -14,7 +14,7 @@ import {
   formatEmailActivityDate,
   getBlastStatusMeta,
   getLogStatusMeta,
-} from "./emailActivityMeta";
+} from "@/components/builder/layout/share/email-activity/emailActivityMeta";
 
 type EmailActivityPanelProps = {
   eventId: string;

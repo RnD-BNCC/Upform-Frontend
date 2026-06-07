@@ -5,6 +5,7 @@ import {
   ClockIcon,
   DatabaseIcon,
   FileTextIcon,
+  ShareNetworkIcon,
 } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,22 +13,30 @@ import {
   useQueryResponseProgress,
   useQueryResponses,
 } from "@/api/responses";
+import { useMutationCreatePermissionRequest } from "@/api/permission-requests";
 import { useQuerySubmitFormSettings } from "@/api/email-blasts";
+import {
+  useMutationUpdateResultShare,
+  useQueryResultShare,
+} from "@/api/results-share";
 import { QUERY_KEYS } from "@/api/queryKeys";
 import type { FormField, FormResponse, FormSection } from "@/types/form";
 import type { ResultsSection } from "@/types/results";
 import type { ShareToast } from "@/types/builderShare";
-import AnalyticsTab from "./analytics/AnalyticsTab";
-import DatabaseView from "./database/DatabaseView";
-import SummaryTab from "./SummaryTab";
+import AnalyticsTab from "@/components/responses/analytics/AnalyticsTab";
+import DatabaseView from "@/components/responses/database/DatabaseView";
+import SummaryTab from "@/components/responses/SummaryTab";
+import ResultShareModal from "@/components/responses/ResultShareModal";
+import { getPermissionRequiredError } from "@/utils/permissionRequests";
+import type { ResultShareVisibility } from "@/types/resultsShare";
 
 interface ResponsesPanelProps {
   responses: FormResponse[];
   allFields: FormField[];
   eventId: string;
+  formTitle?: string;
   sections: FormSection[];
   showToast?: ShareToast;
-  spreadsheetUrl?: string | null;
 }
 
 const RESULT_SECTIONS: Array<{
@@ -46,16 +55,21 @@ export default function ResponsesPanel({
   responses,
   allFields,
   eventId,
+  formTitle,
   sections,
   showToast,
 }: ResponsesPanelProps) {
   const [activeSection, setActiveSection] =
     useState<ResultsSection>("database");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const responsesQuery = useQueryResponses(eventId);
   const progressQuery = useQueryResponseProgress(eventId);
   const analyticsEventsQuery = useQueryAnalyticsEvents(eventId);
   const submitSettingsQuery = useQuerySubmitFormSettings(eventId, !!eventId);
+  const resultShareQuery = useQueryResultShare(eventId, shareModalOpen);
+  const updateResultShare = useMutationUpdateResultShare(eventId);
+  const createPermissionRequest = useMutationCreatePermissionRequest();
   const currentResponses = responsesQuery.data ?? responses;
   const progressResponses = progressQuery.data ?? [];
   const analyticsEvents = analyticsEventsQuery.data ?? [];
@@ -74,7 +88,73 @@ export default function ResponsesPanel({
     ]).then(() => undefined);
   };
 
+  const copyResultShareUrl = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    showToast?.("Results link copied", "success");
+  };
+
+  const saveResultShareVisibility = (
+    visibility: ResultShareVisibility,
+    publicRole: "viewer" | "editor",
+    members: Array<{ email: string; role: "viewer" | "editor" }>,
+  ) => {
+    updateResultShare.mutate(
+      { members, publicRole, visibility },
+      {
+        onSuccess: (share) => {
+          showToast?.(
+            share.visibility === "public"
+              ? "Results link is public"
+              : "Results link is private",
+            "success",
+          );
+        },
+        onError: () => showToast?.("Failed to update results share", "error"),
+      },
+    );
+  };
+
   const renderContent = () => {
+    const permissionError = getPermissionRequiredError(responsesQuery.error);
+
+    if (permissionError) {
+      return (
+        <div className="flex h-full items-center justify-center bg-gray-50 p-6">
+          <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm">
+            <h2 className="text-base font-bold text-gray-950">
+              Permission required
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+              Your account needs approval before viewing respondent data for this form.
+            </p>
+            <button
+              type="button"
+              disabled={createPermissionRequest.isPending}
+              onClick={() =>
+                createPermissionRequest.mutate(
+                  {
+                    action: permissionError.action,
+                    reason: "Need access to respondent data",
+                    resourceId: permissionError.resourceId,
+                    resourceType: permissionError.resourceType,
+                  },
+                  {
+                    onSuccess: () =>
+                      showToast?.("Permission request sent", "success"),
+                    onError: () =>
+                      showToast?.("Failed to request permission", "error"),
+                  },
+                )
+              }
+              className="mt-5 h-9 rounded-md bg-primary-600 px-4 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-60"
+            >
+              {createPermissionRequest.isPending ? "Requesting..." : "Request permission"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     if (activeSection === "database") {
       return (
         <DatabaseView
@@ -85,6 +165,7 @@ export default function ResponsesPanel({
           onRefresh={refreshResults}
           progressResponses={progressResponses}
           responses={currentResponses}
+          sections={sections}
           showToast={showToast}
           submitFormSettings={submitFormSettings}
           title="My form database"
@@ -101,6 +182,7 @@ export default function ResponsesPanel({
           mode="submissions"
           onRefresh={refreshResults}
           responses={currentResponses}
+          sections={sections}
           showToast={showToast}
           submitFormSettings={submitFormSettings}
           title="Submissions"
@@ -121,6 +203,8 @@ export default function ResponsesPanel({
         <AnalyticsTab
           allFields={allFields}
           analyticsEvents={analyticsEvents}
+          eventId={eventId}
+          formTitle={formTitle}
           onRefresh={refreshResults}
           sections={sections}
         />
@@ -136,6 +220,7 @@ export default function ResponsesPanel({
         onRefresh={refreshResults}
         progressResponses={progressResponses}
         responses={[]}
+        sections={sections}
         showToast={showToast}
         title="In progress"
       />
@@ -145,6 +230,14 @@ export default function ResponsesPanel({
   return (
     <div className="flex h-full min-w-0 bg-white">
       <aside className="flex w-56 shrink-0 flex-col border-r border-gray-200 bg-gray-50 px-2 py-2">
+        <button
+          type="button"
+          onClick={() => setShareModalOpen(true)}
+          className="mb-2 flex h-9 w-full items-center justify-center gap-2 rounded-md bg-primary-600 px-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700"
+        >
+          <ShareNetworkIcon size={15} weight="bold" />
+          Share results
+        </button>
         <nav className="space-y-1">
           {RESULT_SECTIONS.map(({ icon: Icon, key, label }) => {
             const isActive = activeSection === key;
@@ -188,6 +281,17 @@ export default function ResponsesPanel({
       </aside>
 
       <main className="min-w-0 flex-1 overflow-hidden">{renderContent()}</main>
+
+      <ResultShareModal
+        formTitle={formTitle}
+        isLoading={resultShareQuery.isLoading}
+        isOpen={shareModalOpen}
+        isSaving={updateResultShare.isPending}
+        onClose={() => setShareModalOpen(false)}
+        onCopy={(url) => void copyResultShareUrl(url)}
+        onSave={saveResultShareVisibility}
+        share={resultShareQuery.data}
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
-export { default as CountdownOverlay } from "./CountdownOverlay";
-export { default as BlankScreenOverlay } from "./BlankScreenOverlay";
-export { default as HotkeysModal } from "./HotkeysModal";
-export type { HotkeyGroup } from "./HotkeysModal";
-export { default as JoinOverlay } from "./JoinOverlay";
-export { default as QAPresenterModal } from "./QAPresenterModal";
-export { default as RestartingOverlay } from "./RestartingOverlay";
-export { default as SlideGridModal } from "./SlideGridModal";
+export { default as CountdownOverlay } from "@/pages/polls/present/components/modal/CountdownOverlay";
+export { default as BlankScreenOverlay } from "@/pages/polls/present/components/modal/BlankScreenOverlay";
+export { default as HotkeysModal } from "@/pages/polls/present/components/modal/HotkeysModal";
+export type { HotkeyGroup } from "@/pages/polls/present/components/modal/HotkeysModal";
+export { default as JoinOverlay } from "@/pages/polls/present/components/modal/JoinOverlay";
+export { default as QAPresenterModal } from "@/pages/polls/present/components/modal/QAPresenterModal";
+export { default as RestartingOverlay } from "@/pages/polls/present/components/modal/RestartingOverlay";
+export { default as SlideGridModal } from "@/pages/polls/present/components/modal/SlideGridModal";

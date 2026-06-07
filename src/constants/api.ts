@@ -1,6 +1,10 @@
 export const Api = {
   events: '/events',
+  eventBuilder: (id: string) => `/events/${id}/builder`,
   eventDetail: (id: string) => `/events/${id}`,
+  eventDuplicate: (id: string) => `/events/${id}/duplicate`,
+  eventQuestions: (id: string) => `/events/${id}/questions`,
+  eventRestore: (id: string) => `/events/${id}/restore`,
   sections: (eventId: string) => `/events/${eventId}/sections`,
   sectionDetail: (eventId: string, sectionId: string) =>
     `/events/${eventId}/sections/${sectionId}`,
@@ -14,6 +18,10 @@ export const Api = {
   responseProgressDetail: (eventId: string, progressId: string) =>
     `/events/${eventId}/response-progress/${progressId}`,
   eventAnalytics: (eventId: string) => `/events/${eventId}/analytics`,
+  eventAnalyticsReport: (eventId: string) =>
+    `/events/${eventId}/analytics/report.pdf`,
+  resultShare: (eventId: string) => `/results/events/${eventId}/share`,
+  sharedResults: (token: string) => `/results/share/${token}`,
   publicEventDetail: (id: string) => `/public/events/${id}`,
   publicResponses: (eventId: string) => `/public/events/${eventId}/responses`,
   publicEventAnalytics: (eventId: string) =>
@@ -26,11 +34,15 @@ export const Api = {
   // Polls
   polls: '/polls',
   pollDetail: (id: string) => `/polls/${id}`,
+  pollRestore: (id: string) => `/polls/${id}/restore`,
   pollSlides: (pollId: string) => `/polls/${pollId}/slides`,
   pollSlideDetail: (pollId: string, slideId: string) =>
     `/polls/${pollId}/slides/${slideId}`,
   pollSlidesReorder: (pollId: string) => `/polls/${pollId}/slides/reorder`,
   pollScores: (pollId: string) => `/polls/${pollId}/scores`,
+  pollAuditLogs: (pollId: string) => `/polls/${pollId}/audit-logs`,
+  pollAuditLogRollback: (pollId: string, logId: string) =>
+    `/polls/${pollId}/audit-logs/${logId}/rollback`,
   pollVotes: (pollId: string) => `/polls/${pollId}/votes`,
 
   // Public polls
@@ -44,9 +56,6 @@ export const Api = {
 
   // Q&A Questions
   pollQuestions: (pollId: string) => `/polls/${pollId}/questions`,
-
-  // Spreadsheet integration
-  eventSpreadsheet: (eventId: string) => `/events/${eventId}/spreadsheet`,
 
   // Upload
   upload: '/upload',
@@ -71,4 +80,23 @@ export const Api = {
     `/email-blasts/events/${eventId}/draft`,
   submitFormSettings: (eventId: string) =>
     `/email-blasts/events/${eventId}/submit-settings`,
+
+  // Permission requests
+  permissionRequests: '/permission-requests',
+  permissionRequestAccess: '/permission-requests/access',
+  permissionGrants: '/permission-requests/grants',
+  permissionGrantReactivate: (id: string) =>
+    `/permission-requests/grants/${id}/reactivate`,
+  permissionGrantRevoke: (id: string) =>
+    `/permission-requests/grants/${id}/revoke`,
+  permissionRequestApprove: (id: string) => `/permission-requests/${id}/approve`,
+  permissionRequestReject: (id: string) => `/permission-requests/${id}/reject`,
+
+  // Users
+  usersSearch: '/users/search',
+
+  // Form audit logs
+  eventAuditLogs: (eventId: string) => `/events/${eventId}/audit-logs`,
+  eventAuditLogRollback: (eventId: string, logId: string) =>
+    `/events/${eventId}/audit-logs/${logId}/rollback`,
 } as const

@@ -4,7 +4,7 @@ import ReferenceTextEditor from "@/components/builder/layout/reference/Reference
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
+} from "@/components/builder/section/fieldDefinitionHelpers";
 import {
   formatOptionIndexes,
   getIndexedOptionValues,
@@ -13,8 +13,8 @@ import {
 import {
   FieldPluginOptionsEditor,
   FieldPluginSelectionValidationFields,
-} from "./FieldSettingSections";
-import { normalizeFieldSettingValue } from "./FieldSettingControls";
+} from "@/components/builder/section/FieldSettingSections";
+import { normalizeFieldSettingValue } from "@/components/builder/section/FieldSettingControls";
 
 type Props = {
   hasError?: boolean;

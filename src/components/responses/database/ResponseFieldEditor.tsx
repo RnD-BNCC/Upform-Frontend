@@ -34,7 +34,7 @@ import {
   serializePhoneAnswer,
 } from "@/utils/form/phoneAnswer";
 import { stripHtmlToText } from "@/utils/form/referenceTokens";
-import { cleanResultLabel } from "../resultsResponseUtils";
+import { cleanResultLabel } from "@/components/responses/resultsResponseUtils";
 
 type ResponseFieldEditorProps = {
   field: FormField;

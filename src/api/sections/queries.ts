@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationOptions } from '@tanstack/react-query'
 import { apiClient } from '@/config/api-client'
 import { Api } from '@/constants/api'
-import { QUERY_KEYS } from '../queryKeys'
+import { QUERY_KEYS } from '@/api/queryKeys'
 import type { FormSection } from '@/types/form'
 import type { CreateSectionPayload, UpdateSectionPayload } from '@/types/api'
 

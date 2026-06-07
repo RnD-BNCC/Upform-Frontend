@@ -1,17 +1,17 @@
 import type { SlideType, SlideResults, SlideSettings } from "@/types/polling";
-import WordCloudViz from "./WordCloudViz";
-import MCBarChart from "./MCBarChart";
-import ScaleViz from "./ScaleViz";
-import QAFeed from "./QAFeed";
-import GuessNumberViz from "./GuessNumberViz";
-import PinOnImageViz from "./PinOnImageViz";
+import WordCloudViz from "@/components/polling/visualizations/WordCloudViz";
+import MCBarChart from "@/components/polling/visualizations/MCBarChart";
+import ScaleViz from "@/components/polling/visualizations/ScaleViz";
+import QAFeed from "@/components/polling/visualizations/QAFeed";
+import GuessNumberViz from "@/components/polling/visualizations/GuessNumberViz";
+import PinOnImageViz from "@/components/polling/visualizations/PinOnImageViz";
 
-export { default as QAFeed } from "./QAFeed";
-export { default as WordCloudViz } from "./WordCloudViz";
-export { default as MCBarChart } from "./MCBarChart";
-export { default as ScaleViz } from "./ScaleViz";
-export { default as GuessNumberViz } from "./GuessNumberViz";
-export { default as PinOnImageViz } from "./PinOnImageViz";
+export { default as QAFeed } from "@/components/polling/visualizations/QAFeed";
+export { default as WordCloudViz } from "@/components/polling/visualizations/WordCloudViz";
+export { default as MCBarChart } from "@/components/polling/visualizations/MCBarChart";
+export { default as ScaleViz } from "@/components/polling/visualizations/ScaleViz";
+export { default as GuessNumberViz } from "@/components/polling/visualizations/GuessNumberViz";
+export { default as PinOnImageViz } from "@/components/polling/visualizations/PinOnImageViz";
 
 export default function SlideVisualization({
   type,

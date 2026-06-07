@@ -31,7 +31,7 @@ import {
   type LogicBranch,
   type LogicNode,
   type PageType,
-} from "./logicModalPageLogic.shared";
+} from "@/components/builder/modals/logicModalPageLogic.shared";
 
 export function ConnectPreview({
   nodes,

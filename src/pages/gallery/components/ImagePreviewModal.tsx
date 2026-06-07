@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { X } from "@phosphor-icons/react";
-import { getGalleryPreviewUrl } from "../utils";
+import { getGalleryPreviewUrl } from "@/pages/gallery/utils";
 
 type Props = {
   url: string;

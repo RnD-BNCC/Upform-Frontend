@@ -1,12 +1,12 @@
 ﻿import { useMemo } from "react";
 import { useQueryEmailComposerDraft } from "@/api/email-blasts";
-import SendFormModalEditor from "./email-composer/SendFormModalEditor";
+import SendFormModalEditor from "@/components/builder/layout/share/email-composer/SendFormModalEditor";
 import type { SendFormModalProps } from "@/types/builderShare";
 import {
   createDefaultDraft,
   getEmailDraftFromApi,
   serializeEmailDraft,
-} from "./email-composer/utils";
+} from "@/components/builder/layout/share/email-composer/utils";
 
 export default function SendFormModal(props: SendFormModalProps) {
   const draftQuery = useQueryEmailComposerDraft(props.eventId, props.isOpen);

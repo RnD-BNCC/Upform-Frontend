@@ -32,7 +32,7 @@ import * as PhosphorIcons from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { ImagePickerModal } from "@/components/modal";
 import HelpTooltip from "@/components/builder/layout/shared/HelpTooltip";
-import ThemeFontPickerModal from "./ThemeFontPickerModal";
+import ThemeFontPickerModal from "@/components/builder/layout/settings/ThemeFontPickerModal";
 
 type Props = {
   activeTheme: string;

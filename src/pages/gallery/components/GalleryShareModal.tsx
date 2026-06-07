@@ -21,7 +21,7 @@ import type {
   GalleryShareMember,
   GalleryShareRole,
   GalleryShareVisibility,
-} from "@/api/gallery";
+} from "@/types/gallery";
 
 type Props = {
   eventName: string;
@@ -189,7 +189,16 @@ function RoleDropdown({
   );
 }
 
-export default function GalleryShareModal({
+export default function GalleryShareModal(props: Props) {
+  return (
+    <GalleryShareModalContent
+      key={props.share?.id ?? (props.isLoading ? "loading" : "empty")}
+      {...props}
+    />
+  );
+}
+
+function GalleryShareModalContent({
   eventName,
   share,
   isLoading,
@@ -201,22 +210,18 @@ export default function GalleryShareModal({
   onSave,
 }: Props) {
   const [visibility, setVisibility] =
-    useState<GalleryShareVisibility>("private");
-  const [publicRole, setPublicRole] = useState<GalleryShareRole>("viewer");
-  const [driveSyncEnabled, setDriveSyncEnabled] = useState(false);
+    useState<GalleryShareVisibility>(share?.visibility ?? "private");
+  const [publicRole, setPublicRole] = useState<GalleryShareRole>(
+    share?.publicRole ?? "viewer",
+  );
+  const [driveSyncEnabled] = useState(
+    share?.driveSyncEnabled ?? false,
+  );
   const [members, setMembers] = useState<
     Array<{ email: string; role: GalleryShareRole }>
-  >([]);
+  >(() => cleanMembers(share?.members ?? []));
   const [emailInput, setEmailInput] = useState("");
   const [openRoleMenu, setOpenRoleMenu] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!share) return;
-    setVisibility(share.visibility);
-    setPublicRole(share.publicRole);
-    setDriveSyncEnabled(share.driveSyncEnabled);
-    setMembers(cleanMembers(share.members));
-  }, [share]);
 
   const canShareLink = visibility !== "private" && !!share?.shareUrl;
   const normalizedEmail = emailInput.trim().toLowerCase();

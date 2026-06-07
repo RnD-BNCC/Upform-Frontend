@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ImageIcon } from "@phosphor-icons/react";
 import { ImagePickerModal } from "@/components/modal";
-import { ResizableImage } from "../utils/ResizableImage";
-import { createFieldFactory, createFieldPlugin } from "./fieldDefinitionHelpers";
+import { ResizableImage } from "@/components/builder/utils/ResizableImage";
+import { createFieldFactory, createFieldPlugin } from "@/components/builder/section/fieldDefinitionHelpers";
 import type { FormField } from "@/types/form";
 
 type ImageBlockFieldCardProps = {

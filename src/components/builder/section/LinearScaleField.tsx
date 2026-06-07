@@ -4,15 +4,15 @@ import ReferenceTextEditor from "@/components/builder/layout/reference/Reference
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
+} from "@/components/builder/section/fieldDefinitionHelpers";
 import {
   FieldPluginRequiredValidationField,
   FieldPluginScaleRangeFields,
-} from "./FieldSettingSections";
+} from "@/components/builder/section/FieldSettingSections";
 import {
   FieldPluginLabel,
   FieldPluginToggleRow,
-} from "./FieldSettingControls";
+} from "@/components/builder/section/FieldSettingControls";
 import { stripHtmlToText } from "@/utils/form/referenceTokens";
 
 type Props = {

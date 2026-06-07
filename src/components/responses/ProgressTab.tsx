@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import IndividualTab from "./IndividualTab";
-import { toDatabaseProgressResponse } from "./resultsResponseUtils";
+import IndividualTab from "@/components/responses/IndividualTab";
+import { toDatabaseProgressResponse } from "@/components/responses/resultsResponseUtils";
 import type { FormField, FormResponseProgress } from "@/types/form";
 
 type ProgressTabProps = {

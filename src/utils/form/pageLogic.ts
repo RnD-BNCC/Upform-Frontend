@@ -6,7 +6,7 @@ import type {
   PageLogicConfig,
 } from "@/types/form";
 import { evaluateReferenceConditionTree } from "@/utils/form/referenceTokens";
-import { getFormCalculationsFromSections } from "./calculations";
+import { getFormCalculationsFromSections } from "@/utils/form/calculations";
 
 export type RuntimePageLogicBranch = {
   id: string;

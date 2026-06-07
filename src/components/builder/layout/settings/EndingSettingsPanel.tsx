@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import type { FieldType } from "@/types/form";
 import { getFieldPaletteGroups } from "@/components/builder/section/fieldRegistry";
-import BuilderPaletteItem from "../fields/BuilderPaletteItem";
+import BuilderPaletteItem from "@/components/builder/layout/fields/BuilderPaletteItem";
 
 type Props = {
   hasThankyou?: boolean;

@@ -4,7 +4,7 @@ import {
   createFieldFactory,
   createFieldPlugin,
   wrapSvgIcon,
-} from "./fieldDefinitionHelpers";
+} from "@/components/builder/section/fieldDefinitionHelpers";
 import type { FormField } from "@/types/form";
 
 const DividerIcon = wrapSvgIcon(DividerLineIcon);

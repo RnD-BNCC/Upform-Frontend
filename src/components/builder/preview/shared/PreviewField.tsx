@@ -35,7 +35,7 @@ import {
   parsePhoneAnswer,
   serializePhoneAnswer,
 } from "@/utils/form/phoneAnswer";
-import RuntimeFileUploadField from "./RuntimeFileUploadField";
+import RuntimeFileUploadField from "@/components/builder/preview/shared/RuntimeFileUploadField";
 
 const shakeVariants = {
   shake: {

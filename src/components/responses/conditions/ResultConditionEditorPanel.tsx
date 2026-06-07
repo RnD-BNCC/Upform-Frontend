@@ -14,8 +14,8 @@ import {
   DEFAULT_FILTER_GROUP,
   createId,
   getOperatorLabel,
-} from "../database/resultsDatabaseUtils";
-import { cleanResultLabel } from "../resultsResponseUtils";
+} from "@/components/responses/database/resultsDatabaseUtils";
+import { cleanResultLabel } from "@/components/responses/resultsResponseUtils";
 
 type ResultConditionEditorPanelProps = {
   fields: FormField[];

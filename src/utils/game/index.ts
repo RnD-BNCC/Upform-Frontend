@@ -1,2 +1,2 @@
-export * from "./color";
-export * from "./lottery";
+export * from "@/utils/game/color";
+export * from "@/utils/game/lottery";

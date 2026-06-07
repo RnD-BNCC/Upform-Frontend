@@ -5,13 +5,15 @@ import {
   CaretDownIcon,
   EyeIcon,
   FloppyDiskIcon,
+  GlobeHemisphereWestIcon,
   RocketLaunchIcon,
   ProhibitIcon,
   LockIcon,
 } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui'
+import type { ResourceVisibility } from '@/types/api'
 
-type Tab = 'questions' | 'share' | 'game' | 'responses'
+type Tab = 'questions' | 'share' | 'game' | 'responses' | 'logs'
 
 type BuilderHeaderProps = {
   formTitle: string
@@ -24,6 +26,9 @@ type BuilderHeaderProps = {
   isSaving?: boolean
   isDirty?: boolean
   eventStatus?: 'draft' | 'active' | 'closed'
+  resourceVisibility?: ResourceVisibility
+  showAccessControl?: boolean
+  onResourceVisibilityChange?: (visibility: ResourceVisibility) => void
   onPublish?: () => void
   isPublishing?: boolean
   onUnpublish?: () => void
@@ -35,6 +40,7 @@ const NAV_TABS: { key: Tab; label: string }[] = [
   { key: 'share', label: 'Share' },
   { key: 'game', label: 'Game' },
   { key: 'responses', label: 'Results' },
+  { key: 'logs', label: 'Logs' },
 ]
 
 export default function BuilderHeader({
@@ -48,6 +54,9 @@ export default function BuilderHeader({
   isSaving,
   isDirty,
   eventStatus,
+  resourceVisibility = 'private',
+  showAccessControl,
+  onResourceVisibilityChange,
   onPublish,
   isPublishing,
   onUnpublish,
@@ -93,7 +102,7 @@ export default function BuilderHeader({
               <CaretDownIcon size={12} className="text-gray-400 shrink-0" />
             </button>
           )}
-          {isDirty && (
+          {(isDirty || isSaving) && (
             <span className="text-[10px] font-medium pointer-events-none whitespace-nowrap leading-none -mt-0.5">
               {isSaving ? (
                 <span className="flex items-center gap-1 text-primary-500">
@@ -106,6 +115,12 @@ export default function BuilderHeader({
                   Unsaved
                 </span>
               )}
+            </span>
+          )}
+          {!isDirty && !isSaving && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-600 pointer-events-none whitespace-nowrap leading-none -mt-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Saved
             </span>
           )}
         </div>
@@ -135,6 +150,32 @@ export default function BuilderHeader({
 
       {/* Right: actions */}
       <div className="flex items-center gap-1.5 shrink-0">
+        {showAccessControl && onResourceVisibilityChange ? (
+          <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+            {(['private', 'public'] as const).map((visibility) => {
+              const active = resourceVisibility === visibility
+              const Icon =
+                visibility === 'private' ? LockIcon : GlobeHemisphereWestIcon
+              return (
+                <button
+                  key={visibility}
+                  type="button"
+                  onClick={() => onResourceVisibilityChange(visibility)}
+                  className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] font-bold capitalize transition-colors ${
+                    active
+                      ? 'bg-white text-primary-700 shadow-sm'
+                      : 'text-gray-500 hover:bg-white hover:text-gray-800'
+                  }`}
+                  title={`Set form ${visibility}`}
+                >
+                  <Icon size={13} weight={active ? 'fill' : 'bold'} />
+                  {visibility}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+
         <button
           onClick={onPreview}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"

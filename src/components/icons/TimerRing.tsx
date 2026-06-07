@@ -1,4 +1,4 @@
-import TimerRingSvg from "./TimerRingSvg";
+import TimerRingSvg from "@/components/icons/TimerRingSvg";
 
 export function TimerRing({
   remaining,

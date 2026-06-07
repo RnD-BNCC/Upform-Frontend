@@ -2,8 +2,8 @@ import { TextTIcon } from "@phosphor-icons/react";
 import {
   createFieldFactory,
   createFieldPlugin,
-} from "./fieldDefinitionHelpers";
-import { FieldPluginTextValidationFields } from "./FieldSettingSections";
+} from "@/components/builder/section/fieldDefinitionHelpers";
+import { FieldPluginTextValidationFields } from "@/components/builder/section/FieldSettingSections";
 
 type Props = {
   placeholder?: string;

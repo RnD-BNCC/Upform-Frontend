@@ -1,20 +1,20 @@
 import type { Route } from '@/types/route'
 import HomePage from '@/pages/home'
-import PublicHomePage from '@/pages/public-home'
 import GalleryPage from '@/pages/gallery'
 import SharedGalleryPage from '@/pages/gallery/share'
+import SharedResultsPage from '@/pages/results/share'
 import LoginPage from '@/pages/login'
 import EventDetailPage from '@/pages/events/detail'
 import EventPreviewPage from '@/pages/events/preview'
 import PublicFormPage from '@/pages/forms'
 import PollsPage from '@/pages/polls'
 import PollEditPage from '@/pages/polls/edit'
+import PollQNAMonitorPage from '@/pages/polls/qna-monitor'
 import PollPresentPage from '@/pages/polls/present'
+import PermissionsPage from '@/pages/permissions'
 import LiveJoinPage from '@/pages/live'
 import LiveVotePage from '@/pages/live/vote'
 import NotFoundPage from '@/pages/not-found'
-import PrivacyPolicyPage from '@/pages/legal/privacy-policy'
-import TermsOfServicePage from '@/pages/legal/terms-of-service'
 
 export const publicRoutes: Route[] = [
   {
@@ -33,15 +33,6 @@ export const publicRoutes: Route[] = [
     isEnabled: true,
     noLayout: true,
     isPublic: true,
-  },
-  {
-    key: 'public-home',
-    title: 'UpForm',
-    path: '/home',
-    component: PublicHomePage,
-    isEnabled: true,
-    noLayout: true,
-    isUnguarded: true,
   },
   {
     key: 'form-builder',
@@ -86,6 +77,15 @@ export const publicRoutes: Route[] = [
     isUnguarded: true,
   },
   {
+    key: 'shared-results',
+    title: 'Shared Results',
+    path: '/results/share/:token',
+    component: SharedResultsPage,
+    isEnabled: true,
+    noLayout: true,
+    isUnguarded: true,
+  },
+  {
     key: 'polls',
     title: 'Polls',
     path: '/polls',
@@ -110,6 +110,14 @@ export const publicRoutes: Route[] = [
     noLayout: true,
   },
   {
+    key: 'poll-qna-monitor',
+    title: 'Q&A Monitor',
+    path: '/polls/:id/qna-monitor',
+    component: PollQNAMonitorPage,
+    isEnabled: true,
+    noLayout: true,
+  },
+  {
     key: 'live-join',
     title: 'Join Poll',
     path: '/live',
@@ -128,22 +136,12 @@ export const publicRoutes: Route[] = [
     isUnguarded: true,
   },
   {
-    key: 'privacy-policy',
-    title: 'Privacy Policy',
-    path: '/privacy-policy',
-    component: PrivacyPolicyPage,
+    key: 'permissions',
+    title: 'Permissions',
+    path: '/permissions',
+    component: PermissionsPage,
     isEnabled: true,
     noLayout: true,
-    isUnguarded: true,
-  },
-  {
-    key: 'terms-of-service',
-    title: 'Terms of Service',
-    path: '/terms-of-service',
-    component: TermsOfServicePage,
-    isEnabled: true,
-    noLayout: true,
-    isUnguarded: true,
   },
   {
     key: 'not-found',

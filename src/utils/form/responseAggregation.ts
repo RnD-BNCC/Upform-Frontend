@@ -3,7 +3,7 @@ import {
   formatPhoneAnswer,
   isPhoneAnswerEmpty,
   isSerializedPhoneAnswer,
-} from './phoneAnswer'
+} from '@/utils/form/phoneAnswer'
 
 export const PASTEL_COLORS = [
   '#FDE68A',

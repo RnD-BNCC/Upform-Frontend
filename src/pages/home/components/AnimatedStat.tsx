@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { formatCompactNumber } from "../utils";
+import { formatCompactNumber } from "@/pages/home/utils";
 
 function useAnimatedNumber(target: number, duration = 800) {
   const [display, setDisplay] = useState(0);

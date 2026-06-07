@@ -1,6 +1,6 @@
 import type { FormCalculation, FormField, FormSection } from "@/types/form";
-import { getVisibleFields } from "./fieldVisibility";
-import { resolvePageLogicNextSectionId } from "./pageLogic";
+import { getVisibleFields } from "@/utils/form/fieldVisibility";
+import { resolvePageLogicNextSectionId } from "@/utils/form/pageLogic";
 
 export type RuntimeNextTarget =
   | { kind: "section"; index: number }
